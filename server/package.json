@@ -1,0 +1,31 @@
+{
+  "name": "jagtap-tours-crm-server",
+  "version": "2.0.0",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "node --test test/*.test.js",
+    "db:migrate": "node scripts/database.js migrate",
+    "db:import": "node scripts/database.js import",
+    "backup": "node scripts/database.js backup",
+    "restore": "node scripts/database.js restore"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.0.0",
+    "helmet": "^8.1.0",
+    "multer": "^2.4.0",
+    "pg": "^8.16.3",
+    "proper-lockfile": "^4.1.2"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.4.0",
+    "supertest": "^7.2.2"
+  }
+}

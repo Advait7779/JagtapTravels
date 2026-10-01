@@ -1,0 +1,33 @@
+{
+  "name": "jagtap-tours-and-travels-crm",
+  "version": "2.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "install:all": "npm --prefix server ci && npm --prefix client ci",
+    "start": "npm --prefix server start",
+    "server": "npm --prefix server start",
+    "server:dev": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "client:build": "npm --prefix client run build",
+    "test": "npm --prefix server test && npm --prefix client test",
+    "check": "npm run lint && npm test && npm run build",
+    "db:migrate": "npm --prefix server run db:migrate",
+    "db:import": "npm --prefix server run db:import",
+    "backup": "npm --prefix server run backup",
+    "restore": "npm --prefix server run restore",
+    "lint": "eslint server client/src client/vite.config.js",
+    "format": "prettier --write server/*.js server/data/*.js server/config/*.js server/scripts/*.js server/test/*.js client/src/**/*.{js,jsx,css} client/vite.config.js",
+    "test:e2e": "npm run build && playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "eslint": "^10.10.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.0.0"
+  }
+}

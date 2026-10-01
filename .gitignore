@@ -1,0 +1,17 @@
+node_modules/
+**/node_modules/
+client/dist/
+.audit-build/
+.audit/
+**/.env
+**/.env.*
+!**/.env.example
+server/data/*.json
+server/data/*.bak
+server/data/*.tmp
+server/data/*.lock/
+server/data/uploads/
+backups/
+*.log
+test-results/
+playwright-report/

@@ -1,0 +1,55 @@
+name: CRM checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+      - run: npm ci
+      - run: npm run install:all
+      - run: npm run check
+      - run: npm audit --audit-level=moderate
+      - run: npm --prefix server audit --audit-level=moderate
+      - run: npm --prefix client audit --audit-level=moderate
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan repository files for secrets
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          format: table
+          exit-code: '1'
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+
+  container:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build production image
+        run: docker build -t jagtap-tours-crm:${{ github.sha }} .
+      - name: Scan image for high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: jagtap-tours-crm:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
