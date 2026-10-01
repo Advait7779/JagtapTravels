@@ -20,11 +20,11 @@ export async function request(endpoint, options = {}) {
     if (!res.ok) {
       if (res.status === 401 && !endpoint.startsWith('/auth/'))
         window.dispatchEvent(new Event('session-expired'));
-      const error = new Error(data.error || 'Request failed.');
+      const error = new Error(data?.error || 'Request failed.');
       error.status = res.status;
       throw error;
     }
-    if (data.csrfToken) csrfToken = data.csrfToken;
+    if (data?.csrfToken) csrfToken = data.csrfToken;
     return data;
   } catch (error) {
     if (error.name === 'AbortError')

@@ -75,7 +75,7 @@ const TYPE_CONFIG = {
   },
 };
 
-function ToastItem({ toast: item, onDismiss }) {
+const ToastItem = React.forwardRef(function ToastItem({ toast: item, onDismiss }, ref) {
   const [isPaused, setIsPaused] = useState(false);
   const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.info;
   const Icon = config.icon;
@@ -83,6 +83,7 @@ function ToastItem({ toast: item, onDismiss }) {
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, y: -20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -137,7 +138,7 @@ function ToastItem({ toast: item, onDismiss }) {
       />
     </motion.div>
   );
-}
+});
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
