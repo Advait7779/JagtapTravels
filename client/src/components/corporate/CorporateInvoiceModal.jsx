@@ -578,7 +578,7 @@ export default function CorporateInvoiceModal({
         margin: [6, 6, 6, 6],
         filename: `${prefix}-${clientName}-${period || selectedMonth}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1024 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       };
       await html2pdf().set(opt).from(element).save();
@@ -1035,11 +1035,11 @@ export default function CorporateInvoiceModal({
       : '';
 
     return (
-      <div className="print-preview-container overflow-y-auto max-h-[calc(100vh-180px)] bg-slate-100 p-3 sm:p-6 print:overflow-visible print:max-h-none print:h-auto print:bg-white print:p-0 print:m-0 print:shadow-none">
+      <div className="print-preview-container overflow-auto max-h-[calc(100vh-180px)] bg-slate-100 p-3 sm:p-6 print:overflow-visible print:max-h-none print:h-auto print:bg-white print:p-0 print:m-0 print:shadow-none">
         <div
           ref={printRef}
           className="printable-area bg-white mx-auto shadow-lg print:shadow-none print:m-0 print:max-w-none"
-          style={{ maxWidth: 820, padding: '28px 32px', fontFamily: "'Times New Roman', Times, serif", fontSize: 13, color: '#000', lineHeight: 1.4 }}
+          style={{ width: '100%', maxWidth: 820, minWidth: 760, padding: '28px 32px', fontFamily: "'Times New Roman', Times, serif", fontSize: 13, color: '#000', lineHeight: 1.4, boxSizing: 'border-box' }}
         >
           {/* Title */}
           <h1 style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 16, letterSpacing: 4 }}>
@@ -1053,37 +1053,37 @@ export default function CorporateInvoiceModal({
               <tbody>
                 <tr>
                   {/* Left: Company Info & Official Logo */}
-                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '48%' }}>
+                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '54%' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: 4 }}>
                         <div style={{ fontWeight: 'bold', color: '#000', fontSize: 14 }}>{company.companyName}</div>
                         <div style={{ whiteSpace: 'pre-line', fontSize: 12 }}>{company.address}</div>
-                        <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12 }}>GSTIN/UIN: {company.gstin}</div>
+                        <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12, whiteSpace: 'nowrap' }}>GSTIN/UIN: {company.gstin}</div>
                         <div style={{ fontSize: 11 }}>E-Mail :</div>
-                        <div style={{ fontSize: 11 }}>{company.email}</div>
-                        <div style={{ fontSize: 11, display: 'flex', gap: '4px', alignItems: 'flex-start' }}>
+                        <div style={{ fontSize: 11, whiteSpace: 'nowrap', wordBreak: 'keep-all' }}>{company.email}</div>
+                        <div style={{ fontSize: 11, display: 'flex', gap: '4px', alignItems: 'flex-start', whiteSpace: 'nowrap' }}>
                           <span>Contact :</span>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span>{company.contact || '9011507220'}</span>
                             {company.contact2 && <span>{company.contact2}</span>}
                           </div>
                         </div>
-                        <div style={{ fontSize: 11 }}>HSN/SAC code : {company.hsnSac || '996419'}</div>
+                        <div style={{ fontSize: 11, whiteSpace: 'nowrap' }}>HSN/SAC code : {company.hsnSac || '996419'}</div>
                       </div>
-                      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: 4, marginTop: 12 }}>
+                      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: 6, marginTop: 4 }}>
                         <img
                           src="/jagtap-logo.png"
                           alt="Jagtap Travels Logo"
-                          style={{ height: 92, maxHeight: 100, maxWidth: 180, objectFit: 'contain' }}
+                          style={{ height: 74, maxHeight: 80, maxWidth: 120, objectFit: 'contain' }}
                         />
                       </div>
                     </div>
                   </td>
                   {/* Right top: Invoice no */}
-                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', fontSize: 12, verticalAlign: 'top', width: '26%' }}>
+                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', fontSize: 12, verticalAlign: 'top', width: '23%' }}>
                     <b>Invoice No :</b> &nbsp;&nbsp; {invoiceNo}
                   </td>
-                  <td style={{ borderBottom: '1px solid #000', padding: '8px 10px', fontSize: 12, verticalAlign: 'top', lineHeight: 1.6, width: '26%' }}>
+                  <td style={{ borderBottom: '1px solid #000', padding: '8px 10px', fontSize: 12, verticalAlign: 'top', lineHeight: 1.6, width: '23%' }}>
                     <b>Date :</b> &nbsp;&nbsp; {dateFormatted}<br />
                     <b>Period :</b> &nbsp;&nbsp; {period}<br />
                     <b>PO No :</b> &nbsp;&nbsp; {poNo}
@@ -1096,13 +1096,13 @@ export default function CorporateInvoiceModal({
             <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: 0 }}>
               <tbody>
                 <tr>
-                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '48%' }}>
+                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '54%' }}>
                     <div style={{ fontSize: 12 }}>Party Name :-</div>
                     <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>{partyName}</div>
                     <div style={{ fontSize: 11, whiteSpace: 'pre-line' }}>{partyAddress}</div>
-                    {partyGstin && <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12 }}>GST – {partyGstin}</div>}
+                    {partyGstin && <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12, whiteSpace: 'nowrap' }}>GST – {partyGstin}</div>}
                   </td>
-                  <td style={{ borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', fontSize: 12 }}>
+                  <td style={{ borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', fontSize: 12, width: '46%' }}>
                     <div style={{ fontWeight: 'bold', fontSize: 12 }}>{company.companyName} ACCOUNT DETAILS</div>
                     <div>BANK - &nbsp;&nbsp; {company.bankName}</div>
                     <div>BRANCH - &nbsp;&nbsp; {company.bankBranch}</div>
