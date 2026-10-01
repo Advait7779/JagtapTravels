@@ -26,7 +26,8 @@ export default function Settings({ settings, onSave, onSignedOut }) {
   const labels = {
     companyName: 'Company name',
     address: 'Office address',
-    phone: 'Business phone',
+    phone: 'Business phone 1',
+    phone2: 'Business phone 2 (Below 1st number)',
     email: 'Business email',
     gstNumber: 'GSTIN',
     bankName: 'Bank / branch',
@@ -171,6 +172,13 @@ export default function Settings({ settings, onSave, onSignedOut }) {
                   className="form-input"
                   required={key === 'companyName'}
                   maxLength={500}
+                  placeholder={
+                    key === 'phone'
+                      ? '9011507220 (Default 1st number)'
+                      : key === 'phone2'
+                      ? 'e.g. 8888094770 (Adds below 1st number)'
+                      : ''
+                  }
                   value={form[key] || ''}
                   onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                 />

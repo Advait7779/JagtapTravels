@@ -538,6 +538,7 @@ function createApp(repo, options = {}) {
         'companyName',
         'address',
         'phone',
+        'phone2',
         'email',
         'gstNumber',
         'bankName',

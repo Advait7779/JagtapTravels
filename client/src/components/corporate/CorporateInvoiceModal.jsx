@@ -30,6 +30,7 @@ const defaultCompany = {
   gstin: '27AKGPJ1825N1ZX',
   email: 'jagtap.travels1985@gmail.com',
   contact: '9011507220',
+  contact2: '',
   hsnSac: '996419',
   bankName: 'AXIS BANK',
   bankBranch: 'SASWAD',
@@ -37,15 +38,30 @@ const defaultCompany = {
   bankIfsc: 'UTIB0002985',
 };
 
-const mergeCompanySettings = (current, settings = {}) => ({
-  ...current,
-  ...settings,
-  gstin: settings.gstNumber || settings.gstin || current.gstin || '',
-  contact: settings.phone || settings.contact || current.contact || '',
-  hsnSac: settings.hsnSac || settings.hsnCode || current.hsnSac || '996419',
-  bankAccountNo: settings.accountNumber || settings.bankAccountNo || current.bankAccountNo || '',
-  bankIfsc: settings.ifsc || settings.bankIfsc || current.bankIfsc || '',
-});
+const mergeCompanySettings = (current, settings = {}) => {
+  let c1 = settings.phone || settings.contact || current.contact || '9011507220';
+  let c2 = settings.phone2 || settings.contact2 || current.contact2 || '';
+
+  // If user entered both numbers in a single field separated by comma, slash, or newline
+  if (!c2 && c1 && /[,/\n]/.test(c1)) {
+    const parts = c1.split(/[,/\n]+/).map((s) => s.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      c1 = parts[0];
+      c2 = parts.slice(1).join(', ');
+    }
+  }
+
+  return {
+    ...current,
+    ...settings,
+    gstin: settings.gstNumber || settings.gstin || current.gstin || '',
+    contact: c1,
+    contact2: c2,
+    hsnSac: settings.hsnSac || settings.hsnCode || current.hsnSac || '996419',
+    bankAccountNo: settings.accountNumber || settings.bankAccountNo || current.bankAccountNo || '',
+    bankIfsc: settings.ifsc || settings.bankIfsc || current.bankIfsc || '',
+  };
+};
 
 const emptyLineItem = () => ({
   id: Date.now() + Math.random(),
@@ -609,7 +625,7 @@ export default function CorporateInvoiceModal({
         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
           <Receipt size={16} weight="bold" /> Invoice Details
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           <label className="form-label">Invoice No
             <input className="form-input" required maxLength={100} value={invoiceNo} onChange={(e) => { setInvoiceNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 390" />
           </label>
@@ -631,6 +647,28 @@ export default function CorporateInvoiceModal({
                 setIsSaved(false);
               }}
               placeholder="996419"
+            />
+          </label>
+          <label className="form-label">Contact 1
+            <input
+              className="form-input"
+              value={company.contact || ''}
+              onChange={(e) => {
+                setCompany((prev) => ({ ...prev, contact: e.target.value }));
+                setIsSaved(false);
+              }}
+              placeholder="9011507220"
+            />
+          </label>
+          <label className="form-label">Contact 2 (Below 1st)
+            <input
+              className="form-input"
+              value={company.contact2 || ''}
+              onChange={(e) => {
+                setCompany((prev) => ({ ...prev, contact2: e.target.value }));
+                setIsSaved(false);
+              }}
+              placeholder="e.g. 8888094770"
             />
           </label>
         </div>
@@ -958,7 +996,13 @@ export default function CorporateInvoiceModal({
                         <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12 }}>GSTIN/UIN: {company.gstin}</div>
                         <div style={{ fontSize: 11 }}>E-Mail :</div>
                         <div style={{ fontSize: 11 }}>{company.email}</div>
-                        <div style={{ fontSize: 11 }}>Contact : {company.contact}</div>
+                        <div style={{ fontSize: 11, display: 'flex', gap: '4px', alignItems: 'flex-start' }}>
+                          <span>Contact :</span>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span>{company.contact || '9011507220'}</span>
+                            {company.contact2 && <span>{company.contact2}</span>}
+                          </div>
+                        </div>
                         <div style={{ fontSize: 11 }}>HSN/SAC code : {company.hsnSac || '996419'}</div>
                       </div>
                       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: 4, marginTop: 12 }}>

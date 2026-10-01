@@ -114,6 +114,7 @@ export default function BillPrintView({ bill, onClose, settings = {} }) {
                 {company.ownerName && <p className="text-slate-600">{company.ownerName}</p>}
                 {company.email && <p>{company.email}</p>}
                 {company.phone && <p>{company.phone}</p>}
+                {company.phone2 && <p>{company.phone2}</p>}
                 {company.address && <p>{company.address}</p>}
                 {company.gstNumber && <p className="font-semibold">GSTIN: {company.gstNumber}</p>}
               </div>
