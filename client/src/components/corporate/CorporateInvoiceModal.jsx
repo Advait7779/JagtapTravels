@@ -487,7 +487,7 @@ export default function CorporateInvoiceModal({
         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
           <Receipt size={16} weight="bold" /> Invoice Details
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <label className="form-label">Invoice No
             <input className="form-input" value={invoiceNo} onChange={(e) => { setInvoiceNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 390" />
           </label>
@@ -499,6 +499,17 @@ export default function CorporateInvoiceModal({
           </label>
           <label className="form-label">PO No
             <input className="form-input" value={poNo} onChange={(e) => { setPoNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 4593518741" />
+          </label>
+          <label className="form-label">HSN/SAC Code
+            <input
+              className="form-input"
+              value={company.hsnSac || '996419'}
+              onChange={(e) => {
+                setCompany((prev) => ({ ...prev, hsnSac: e.target.value }));
+                setIsSaved(false);
+              }}
+              placeholder="996419"
+            />
           </label>
         </div>
       </div>
@@ -796,7 +807,7 @@ export default function CorporateInvoiceModal({
       <div className="overflow-y-auto max-h-[calc(100vh-180px)] bg-slate-100 p-3 sm:p-6">
         <div ref={printRef} className="printable-area bg-white mx-auto shadow-lg" style={{ maxWidth: 820, padding: '28px 32px', fontFamily: "'Times New Roman', Times, serif", fontSize: 13, color: '#000', lineHeight: 1.4 }}>
           {/* Title */}
-          <h1 style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold', color: '#d00', marginBottom: 16, letterSpacing: 4 }}>
+          <h1 style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 16, letterSpacing: 4 }}>
             Tax &nbsp; Invoice
           </h1>
 
@@ -808,12 +819,13 @@ export default function CorporateInvoiceModal({
                 <td style={{ border: '1.5px solid #000', padding: '6px 8px', verticalAlign: 'top', width: '48%' }} rowSpan={3}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 14 }}>{company.companyName}</div>
+                      <div style={{ fontWeight: 'bold', color: '#000', fontSize: 14 }}>{company.companyName}</div>
                       <div style={{ whiteSpace: 'pre-line', fontSize: 12 }}>{company.address}</div>
-                      <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 12 }}>GSTIN/UIN: {company.gstin}</div>
+                      <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12 }}>GSTIN/UIN: {company.gstin}</div>
                       <div style={{ fontSize: 11 }}>E-Mail :</div>
                       <div style={{ fontSize: 11 }}>{company.email}</div>
                       <div style={{ fontSize: 11 }}>Contact : {company.contact}</div>
+                      <div style={{ fontSize: 11 }}>HSN/SAC code : {company.hsnSac || '996419'}</div>
                     </div>
                     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: 4, marginTop: 12 }}>
                       <img
@@ -853,9 +865,9 @@ export default function CorporateInvoiceModal({
               <tr>
                 <td style={{ border: '1.5px solid #000', padding: '6px 8px', verticalAlign: 'top', width: '48%' }}>
                   <div style={{ fontSize: 12 }}>Party Name :-</div>
-                  <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 13 }}>{partyName}</div>
+                  <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>{partyName}</div>
                   <div style={{ fontSize: 11, whiteSpace: 'pre-line' }}>{partyAddress}</div>
-                  {partyGstin && <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 12 }}>GST – {partyGstin}</div>}
+                  {partyGstin && <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12 }}>GST – {partyGstin}</div>}
                 </td>
                 <td style={{ border: '1.5px solid #000', padding: '6px 8px', verticalAlign: 'top', fontSize: 12 }}>
                   <div style={{ fontWeight: 'bold', fontSize: 12 }}>{company.companyName} ACCOUNT DETAILS</div>
