@@ -40,10 +40,13 @@ const emptyLineItem = () => ({
   amount: 0,
 });
 
-const emptyTollItem = () => ({
+const emptyTollItem = (defaultVehicle = '', defaultDuty = '') => ({
   id: Date.now() + Math.random(),
+  vehicle: defaultVehicle,
+  duty: defaultDuty,
+  type: 'TOLL',
   label: '',
-  amount: 0,
+  amount: '',
 });
 
 export default function CorporateInvoiceModal({
@@ -156,9 +159,23 @@ export default function CorporateInvoiceModal({
     };
     setLineItems([item]);
 
+    // Extract clean short vehicle name (e.g. 'INNOVA', 'ERTIGA', etc.)
+    const rawVeh = contract.vehicleName || matchedVehicle?.name || matchedVehicle?.model || 'INNOVA';
+    const shortVeh = rawVeh
+      .replace(/Toyota /i, '')
+      .replace(/ Crysta/i, '')
+      .replace(/Maruti /i, '')
+      .replace(/Suzuki /i, '')
+      .trim()
+      .split(' ')[0]
+      .toUpperCase() || 'INNOVA';
+
     if (totalToll > 0) {
       setTollItems([{
         id: Date.now() + 1,
+        vehicle: shortVeh,
+        duty: (contract.dutyType || '24 X 7').toUpperCase(),
+        type: 'TOLL & PARKING',
         label: `${contract.vehicleNumber || 'Vehicle'} TOLL & PARKING`,
         amount: totalToll,
       }]);
@@ -185,7 +202,8 @@ export default function CorporateInvoiceModal({
     const lineTotal = lineItems.reduce((acc, item) => {
       const pkgAmt = Number(item.packageAmount) || 0;
       const extAmt = Number(item.extraAmount) || 0;
-      return acc + pkgAmt + extAmt;
+      const amt = item.amount !== undefined && item.amount !== '' ? Number(item.amount) : pkgAmt + extAmt;
+      return acc + amt;
     }, 0);
     const tollTotal = tollItems.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
     const taxableValue = lineTotal + tollTotal;
@@ -201,11 +219,14 @@ export default function CorporateInvoiceModal({
       prev.map((item) => {
         if (item.id !== id) return item;
         const updated = { ...item, [field]: value };
-        // Recompute extraAmount and amount
-        const extraKm = Number(updated.extraKm) || 0;
-        const extraRate = Number(updated.extraKmRate) || 0;
-        updated.extraAmount = Math.round(extraKm * extraRate);
-        updated.amount = (Number(updated.packageAmount) || 0) + updated.extraAmount;
+        if (field === 'packageKm' || field === 'extraKm' || field === 'extraKmRate' || field === 'packageAmount') {
+          const extraKm = Number(updated.extraKm) || 0;
+          const extraRate = Number(updated.extraKmRate) || 0;
+          updated.extraAmount = Math.round(extraKm * extraRate);
+          updated.amount = (Number(updated.packageAmount) || 0) + updated.extraAmount;
+        } else if (field === 'extraAmount') {
+          updated.amount = (Number(updated.packageAmount) || 0) + Number(value || 0);
+        }
         return updated;
       }),
     );
@@ -217,7 +238,22 @@ export default function CorporateInvoiceModal({
   const updateTollItem = (id, field, value) => {
     setTollItems((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
   };
-  const addTollItem = () => setTollItems((prev) => [...prev, emptyTollItem()]);
+  const addTollItem = () => {
+    const rawVehicle = vehicleType || contract?.vehicleName || 'INNOVA';
+    const shortVeh = rawVehicle
+      .replace(/Toyota /i, '')
+      .replace(/ Crysta/i, '')
+      .replace(/Maruti /i, '')
+      .replace(/Suzuki /i, '')
+      .trim()
+      .split(' ')[0]
+      .toUpperCase() || 'INNOVA';
+
+    setTollItems((prev) => [
+      ...prev,
+      emptyTollItem(shortVeh, prev.length === 0 ? '24 X 7' : 'PUNE'),
+    ]);
+  };
   const removeTollItem = (id) => setTollItems((prev) => prev.filter((t) => t.id !== id));
 
   // Format number Indian style (without currency symbol)
@@ -346,11 +382,11 @@ export default function CorporateInvoiceModal({
                   <td className="p-1 border border-slate-200">
                     <input type="number" className="w-full px-1.5 py-1 text-xs text-right border border-slate-200 rounded" value={item.extraKmRate} onChange={(e) => updateLineItem(item.id, 'extraKmRate', Number(e.target.value))} />
                   </td>
-                  <td className="p-1 border border-slate-200 text-right font-semibold px-2">
-                    {fmtNum(item.extraAmount)}
+                  <td className="p-1 border border-slate-200 text-right font-semibold">
+                    <input type="number" className="w-full px-1.5 py-1 text-xs text-right border border-slate-200 rounded font-semibold" value={item.extraAmount ?? ''} onChange={(e) => updateLineItem(item.id, 'extraAmount', e.target.value === '' ? '' : Number(e.target.value))} />
                   </td>
-                  <td className="p-1 border border-slate-200 text-right font-bold px-2">
-                    {fmtNum(item.amount)}
+                  <td className="p-1 border border-slate-200 text-right font-bold">
+                    <input type="number" className="w-full px-1.5 py-1 text-xs text-right border border-slate-200 rounded font-bold" value={item.amount ?? ''} onChange={(e) => updateLineItem(item.id, 'amount', e.target.value === '' ? '' : Number(e.target.value))} />
                   </td>
                   <td className="p-1 border border-slate-200 text-center">
                     {lineItems.length > 1 && (
@@ -369,25 +405,91 @@ export default function CorporateInvoiceModal({
       {/* Toll & Parking Items */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-800">Toll & Parking Reimbursements</h3>
-          <button type="button" onClick={addTollItem} className="text-xs font-bold text-navy-900 hover:text-amber-600 flex items-center gap-1 cursor-pointer">
-            <Plus size={14} weight="bold" /> Add Toll
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Toll & Parking Charges</h3>
+            <p className="text-[11px] text-slate-500">Each entry appears as its own line above the TOTAL row on the invoice (Vehicle, Duty, Toll Type, Amount)</p>
+          </div>
+          <button
+            type="button"
+            onClick={addTollItem}
+            className="text-xs font-bold text-navy-900 bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1.5 rounded flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+          >
+            <Plus size={14} weight="bold" /> Add Toll / Parking Row
           </button>
         </div>
         {tollItems.length > 0 ? (
-          <div className="space-y-2">
-            {tollItems.map((t) => (
-              <div key={t.id} className="flex items-center gap-2">
-                <input className="flex-1 form-input text-xs" value={t.label} onChange={(e) => updateTollItem(t.id, 'label', e.target.value)} placeholder="e.g. SASWAD 45 SEATER TOLL" />
-                <input type="number" className="w-28 form-input text-xs text-right" value={t.amount} onChange={(e) => updateTollItem(t.id, 'amount', Number(e.target.value))} placeholder="Amount" />
-                <button type="button" onClick={() => removeTollItem(t.id)} className="text-rose-500 hover:text-rose-700 cursor-pointer p-1">
-                  <Trash size={14} />
-                </button>
-              </div>
-            ))}
+          <div className="overflow-x-auto border border-slate-200 rounded-md shadow-xs">
+            <table className="w-full text-xs">
+              <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="p-2 text-left w-36">Vehicle</th>
+                  <th className="p-2 text-left w-40">Duty / Route</th>
+                  <th className="p-2 text-left w-44">Toll Type</th>
+                  <th className="p-2 text-right w-36">Amount (₹)</th>
+                  <th className="p-2 text-center w-12">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white">
+                {tollItems.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="p-1.5">
+                      <input
+                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded font-semibold uppercase focus:border-navy-900"
+                        value={t.vehicle || ''}
+                        onChange={(e) => updateTollItem(t.id, 'vehicle', e.target.value.toUpperCase())}
+                        placeholder="e.g. INNOVA"
+                      />
+                    </td>
+                    <td className="p-1.5">
+                      <input
+                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded uppercase focus:border-navy-900"
+                        value={t.duty || ''}
+                        onChange={(e) => updateTollItem(t.id, 'duty', e.target.value.toUpperCase())}
+                        placeholder="e.g. 24 X 7 or PUNE"
+                      />
+                    </td>
+                    <td className="p-1.5">
+                      <select
+                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded font-bold text-slate-800 bg-white focus:border-navy-900 cursor-pointer"
+                        value={t.type || 'TOLL'}
+                        onChange={(e) => updateTollItem(t.id, 'type', e.target.value)}
+                      >
+                        <option value="TOLL">TOLL</option>
+                        <option value="TOLL & PARKING">TOLL & PARKING</option>
+                        <option value="PARKING">PARKING</option>
+                        <option value="FASTAG">FASTAG</option>
+                      </select>
+                    </td>
+                    <td className="p-1.5">
+                      <input
+                        type="number"
+                        className="w-full px-2 py-1 text-xs text-right font-bold border border-slate-200 rounded text-slate-900 focus:border-navy-900"
+                        value={t.amount ?? ''}
+                        onChange={(e) => updateTollItem(t.id, 'amount', e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="0"
+                      />
+                    </td>
+                    <td className="p-1.5 text-center">
+                      <button
+                        type="button"
+                        onClick={() => removeTollItem(t.id)}
+                        className="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 cursor-pointer transition-colors"
+                        title="Remove row"
+                      >
+                        <Trash size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic">No toll/parking entries. Click "Add Toll" to add.</p>
+          <div className="bg-slate-50 border border-dashed border-slate-300 rounded-md p-3 text-center">
+            <p className="text-xs text-slate-500">
+              No toll or parking entries added yet. Click <span className="font-semibold text-slate-700">"+ Add Toll / Parking Row"</span> to add toll charges above the total.
+            </p>
+          </div>
         )}
       </div>
 
@@ -452,9 +554,9 @@ export default function CorporateInvoiceModal({
       {/* Summary */}
       <div className="bg-slate-50 border border-slate-200 rounded-md p-4 space-y-1 text-sm">
         <div className="flex justify-between"><span className="text-slate-600">Line Items Total:</span><span className="font-bold">{fmtNum(computedTotals.lineTotal)}</span></div>
-        <div className="flex justify-between"><span className="text-slate-600">Toll & Parking:</span><span className="font-bold">{fmtNum(computedTotals.tollTotal)}</span></div>
+        <div className="flex justify-between"><span className="text-slate-600">Toll & Parking Total:</span><span className="font-bold text-amber-700">₹ {fmtNum(computedTotals.tollTotal)}</span></div>
         <hr className="border-slate-200" />
-        <div className="flex justify-between"><span className="text-slate-600">Taxable Value:</span><span className="font-bold">{fmtNum(computedTotals.taxableValue)}</span></div>
+        <div className="flex justify-between"><span className="text-slate-600">Taxable Value (Items + Toll):</span><span className="font-bold">{fmtNum(computedTotals.taxableValue)}</span></div>
         <div className="flex justify-between"><span className="text-slate-600">CGST ({gstRate}%):</span><span className="font-semibold">{fmtNum(computedTotals.cgst)}</span></div>
         <div className="flex justify-between"><span className="text-slate-600">SGST ({gstRate}%):</span><span className="font-semibold">{fmtNum(computedTotals.sgst)}</span></div>
         <hr className="border-slate-300" />
@@ -555,44 +657,90 @@ export default function CorporateInvoiceModal({
             <tbody>
               {lineItems.map((item, idx) => (
                 <tr key={item.id} style={{ fontSize: 12 }}>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center' }}>{idx + 1}</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', fontWeight: 'bold' }}>{item.particulars}</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(item.packageKm)}</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(item.packageAmount)}</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(item.extraKm)}</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(item.extraKmRate)}</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(item.extraAmount)}</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(item.amount)}</td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center' }}>
+                    {item.particulars || item.packageKm ? idx + 1 : ''}
+                  </td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', fontWeight: 'bold' }}>
+                    {item.particulars}
+                  </td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                    {item.packageKm ? fmtNum(item.packageKm) : ''}
+                  </td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                    {item.packageAmount ? fmtNum(item.packageAmount) : ''}
+                  </td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                    {item.extraKm ? fmtNum(item.extraKm) : (item.packageKm ? '0' : '')}
+                  </td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                    {item.extraKmRate ? fmtNum(item.extraKmRate) : (item.packageKm ? '0' : '')}
+                  </td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                    {item.extraAmount ? fmtNum(item.extraAmount) : (item.packageKm ? '0' : '')}
+                  </td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>
+                    {fmtNum(item.amount)}
+                  </td>
                 </tr>
               ))}
-              {/* Toll rows */}
-              {tollItems.map((t) => (
-                <tr key={t.id} style={{ fontSize: 12 }}>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px' }}></td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={4}></td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }} colSpan={2}>{t.label}</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(t.amount)}</td>
-                </tr>
-              ))}
+              {/* Toll rows - Rendered directly above the TOTAL row */}
+              {tollItems.map((t) => {
+                const vehicle = (t.vehicle || '').trim();
+                const duty = (t.duty || '').trim();
+                const tollType = (
+                  t.type ||
+                  (t.label && t.label.toUpperCase().includes('PARKING') ? 'TOLL & PARKING' : t.label ? t.label.toUpperCase() : 'TOLL')
+                ).trim();
+                const hasVehicleOrDuty = Boolean(vehicle || duty);
+
+                return (
+                  <tr key={t.id} style={{ fontSize: 12 }}>
+                    {hasVehicleOrDuty ? (
+                      <>
+                        <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={4}></td>
+                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
+                          {vehicle}
+                        </td>
+                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
+                          {duty}
+                        </td>
+                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
+                          {tollType}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
+                          {tollType}
+                        </td>
+                      </>
+                    )}
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>
+                      {fmtNum(t.amount)}
+                    </td>
+                  </tr>
+                );
+              })}
               {/* Totals */}
               <tr style={{ fontSize: 12 }}>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={5}></td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }} colSpan={2}>TOTAL</td>
+                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
                 <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(taxableValue)}</td>
               </tr>
               <tr style={{ fontSize: 12 }}>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={5}></td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }} colSpan={2}>C GST {gstRate}%</td>
+                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>C GST {gstRate}%</td>
                 <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(cgst)}</td>
               </tr>
               <tr style={{ fontSize: 12 }}>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={5}></td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }} colSpan={2}>S GST {gstRate}%</td>
+                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>S GST {gstRate}%</td>
                 <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(sgst)}</td>
               </tr>
               <tr style={{ fontSize: 13, fontWeight: 'bold' }}>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={5}></td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }} colSpan={2}>TOTAL</td>
+                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
                 <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(grandTotal)}</td>
               </tr>
             </tbody>
