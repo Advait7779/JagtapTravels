@@ -742,8 +742,8 @@ export default function App() {
                     'Delete Trip Log',
                   )
                 }
-                onGenerateInvoice={(contract, month) =>
-                  setCorporateInvoice({ contract, month })
+                onGenerateInvoice={(contract, month, options = {}) =>
+                  setCorporateInvoice({ contract, month, ...options })
                 }
               />
             )}
@@ -1233,6 +1233,7 @@ export default function App() {
           vehicles={vehicles}
           selectedMonth={corporateInvoice.month || ''}
           settings={settings}
+          initialIsNonGst={Boolean(corporateInvoice.isNonGst)}
         />
       )}
 

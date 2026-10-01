@@ -283,10 +283,18 @@ function createApp(repo, options = {}) {
     wrap(async (req, res) => {
       const state = await repo.read();
       const month = req.query.month || '';
+      const isNonGstQuery = req.query.isNonGst;
       const list = state.corporateInvoices || [];
-      const found = list.find(
-        (inv) => String(inv.contractId) === String(req.params.id) && (!month || inv.month === month),
-      );
+      const found = list.find((inv) => {
+        if (String(inv.contractId) !== String(req.params.id)) return false;
+        if (month && inv.month !== month) return false;
+        if (isNonGstQuery !== undefined) {
+          const wantNonGst = isNonGstQuery === 'true';
+          const invNonGst = Boolean(inv.isNonGst || inv.invoiceType === 'nongst');
+          if (invNonGst !== wantNonGst) return false;
+        }
+        return true;
+      });
       res.json(found || null);
     }),
   );
@@ -298,14 +306,20 @@ function createApp(repo, options = {}) {
         d.corporateInvoices = Array.isArray(d.corporateInvoices) ? d.corporateInvoices : [];
         const contractId = String(req.params.id);
         const month = req.body.month || req.body.selectedMonth || '';
-        const idx = d.corporateInvoices.findIndex(
-          (inv) => String(inv.contractId) === contractId && (!month || inv.month === month),
-        );
+        const isNonGst = Boolean(req.body.isNonGst || req.body.invoiceType === 'nongst');
+        const idx = d.corporateInvoices.findIndex((inv) => {
+          if (String(inv.contractId) !== contractId) return false;
+          if (month && inv.month !== month) return false;
+          const invNonGst = Boolean(inv.isNonGst || inv.invoiceType === 'nongst');
+          return invNonGst === isNonGst;
+        });
         const record = {
           ...req.body,
           id: d.corporateInvoices[idx]?.id || Date.now(),
           contractId,
           month,
+          isNonGst,
+          invoiceType: isNonGst ? 'nongst' : 'gst',
           updatedAt: new Date().toISOString(),
         };
         if (idx >= 0) {

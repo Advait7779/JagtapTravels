@@ -62,17 +62,28 @@ export default function CorporateInvoiceModal({
   vehicles = [],
   selectedMonth = '',
   settings = {},
+  initialIsNonGst = false,
 }) {
   const printRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const [activeView, setActiveView] = useState('editor'); // 'editor' | 'preview'
 
+  // Invoice format state
+  const [isNonGst, setIsNonGst] = useState(Boolean(initialIsNonGst));
+  const [invoiceTitle, setInvoiceTitle] = useState(initialIsNonGst ? 'INVOICE' : 'TAX INVOICE');
+
   // Invoice header fields
   const [invoiceNo, setInvoiceNo] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(localDate());
   const [period, setPeriod] = useState('');
   const [poNo, setPoNo] = useState('');
+
+  // Synchronize format state whenever initialIsNonGst or modal opens
+  useEffect(() => {
+    setIsNonGst(Boolean(initialIsNonGst));
+    setInvoiceTitle(initialIsNonGst ? 'INVOICE' : 'TAX INVOICE');
+  }, [initialIsNonGst, isOpen]);
 
   // Vehicle info
   const [vehicleType, setVehicleType] = useState('');
@@ -93,11 +104,50 @@ export default function CorporateInvoiceModal({
   const [tollItems, setTollItems] = useState([]);
 
   // Tax
-  const [gstRate, setGstRate] = useState(9); // Each side (CGST = 9%, SGST = 9%)
+  const [gstRate, setGstRate] = useState(initialIsNonGst ? 0 : 9); // Each side (CGST = 9%, SGST = 9%, or 0% for Non-GST)
 
   // Stamp & Signature toggles - synchronized with saved settings
   const [showStamp, setShowStamp] = useState(settings?.stampUrl !== 'none');
   const [showSignature, setShowSignature] = useState(settings?.signatureUrl !== 'none');
+
+  // Resolved stamp and signature URLs (authoritative settings take precedence over stale invoice cache)
+  const isStampRemoved = settings?.stampUrl === 'none';
+  const effectiveStampUrl = useMemo(() => {
+    if (isStampRemoved) return null;
+    if (settings?.stampUrl && settings.stampUrl !== 'none') return settings.stampUrl;
+    if (company?.stampUrl && company.stampUrl !== 'none') return company.stampUrl;
+    return '/stamp.jpg';
+  }, [isStampRemoved, settings?.stampUrl, company?.stampUrl]);
+
+  const isSignatureRemoved = settings?.signatureUrl === 'none';
+  const effectiveSignatureUrl = useMemo(() => {
+    if (isSignatureRemoved) return null;
+    if (settings?.signatureUrl && settings.signatureUrl !== 'none') return settings.signatureUrl;
+    if (company?.signatureUrl && company.signatureUrl !== 'none') return company.signatureUrl;
+    return '/signature.jpg';
+  }, [isSignatureRemoved, settings?.signatureUrl, company?.signatureUrl]);
+
+  // Keep company profile and stamp/signature synchronized whenever settings prop updates
+  useEffect(() => {
+    if (!settings || Object.keys(settings).length === 0) return;
+    setCompany((prev) => ({
+      ...prev,
+      ...settings,
+      hsnSac: settings.hsnSac || settings.hsnCode || prev.hsnSac || '996419',
+      stampUrl: (settings.stampUrl !== undefined && settings.stampUrl !== 'none') ? settings.stampUrl : prev.stampUrl,
+      signatureUrl: (settings.signatureUrl !== undefined && settings.signatureUrl !== 'none') ? settings.signatureUrl : prev.signatureUrl,
+    }));
+    if (settings.stampUrl === 'none') {
+      setShowStamp(false);
+    } else if (settings.stampUrl) {
+      setShowStamp(true);
+    }
+    if (settings.signatureUrl === 'none') {
+      setShowSignature(false);
+    } else if (settings.signatureUrl) {
+      setShowSignature(true);
+    }
+  }, [settings?.stampUrl, settings?.signatureUrl, settings]);
 
   // Persistence state
   const [saving, setSaving] = useState(false);
@@ -105,12 +155,12 @@ export default function CorporateInvoiceModal({
   const [savedAt, setSavedAt] = useState(null);
 
   const getStorageKey = useCallback(
-    () => (contract?.id ? `jagtap_corp_invoice_${contract.id}_${selectedMonth || 'all'}` : null),
-    [contract?.id, selectedMonth],
+    () => (contract?.id ? `jagtap_corp_invoice_${isNonGst ? 'nongst' : 'gst'}_${contract.id}_${selectedMonth || 'all'}` : null),
+    [contract?.id, selectedMonth, isNonGst],
   );
   const getFallbackStorageKey = useCallback(
-    () => (contract?.id ? `jagtap_corp_invoice_${contract.id}` : null),
-    [contract?.id],
+    () => (contract?.id ? (isNonGst ? `jagtap_corp_invoice_nongst_${contract.id}` : `jagtap_corp_invoice_${contract.id}`) : null),
+    [contract?.id, isNonGst],
   );
 
   // Populate from contract + trip logs (default initializer)
@@ -216,11 +266,29 @@ export default function CorporateInvoiceModal({
     } else if (settings?.signatureUrl) {
       setShowSignature(true);
     }
-  }, [contract, selectedMonth, tripLogs, customers, vehicles, settings]);
+
+    if (initialIsNonGst) {
+      setGstRate(0);
+      setInvoiceTitle('INVOICE');
+      setIsNonGst(true);
+    } else {
+      setGstRate(9);
+      setInvoiceTitle('TAX INVOICE');
+      setIsNonGst(false);
+    }
+  }, [contract, selectedMonth, tripLogs, customers, vehicles, settings, initialIsNonGst]);
 
   // Apply saved invoice payload into state
   const applySavedInvoiceData = useCallback((data) => {
     if (!data) return false;
+    if (data.isNonGst !== undefined) {
+      setIsNonGst(Boolean(data.isNonGst));
+    }
+    if (data.invoiceTitle !== undefined) {
+      setInvoiceTitle(data.invoiceTitle || (data.isNonGst ? 'INVOICE' : 'TAX INVOICE'));
+    } else if (data.isNonGst) {
+      setInvoiceTitle('INVOICE');
+    }
     if (data.invoiceNo !== undefined) setInvoiceNo(data.invoiceNo || '');
     if (data.invoiceDate !== undefined) setInvoiceDate(data.invoiceDate || localDate());
     if (data.period !== undefined) setPeriod(data.period || '');
@@ -234,7 +302,14 @@ export default function CorporateInvoiceModal({
       setCompany((prev) => ({
         ...prev,
         ...data.company,
-        hsnSac: data.company.hsnSac || prev.hsnSac || '996419',
+        ...settings,
+        hsnSac: data.company.hsnSac || settings?.hsnSac || settings?.hsnCode || prev.hsnSac || '996419',
+        stampUrl: (settings?.stampUrl !== undefined && settings?.stampUrl !== 'none')
+          ? settings.stampUrl
+          : (data.company.stampUrl || prev.stampUrl),
+        signatureUrl: (settings?.signatureUrl !== undefined && settings?.signatureUrl !== 'none')
+          ? settings.signatureUrl
+          : (data.company.signatureUrl || prev.signatureUrl),
       }));
     }
     if (Array.isArray(data.lineItems) && data.lineItems.length > 0) {
@@ -243,14 +318,28 @@ export default function CorporateInvoiceModal({
     if (Array.isArray(data.tollItems)) {
       setTollItems(data.tollItems);
     }
-    if (data.gstRate !== undefined) setGstRate(Number(data.gstRate) || 9);
-    if (data.showStamp !== undefined) setShowStamp(Boolean(data.showStamp));
-    if (data.showSignature !== undefined) setShowSignature(Boolean(data.showSignature));
+    if (data.gstRate !== undefined) setGstRate(Number(data.gstRate) || 0);
+
+    if (settings?.stampUrl && settings.stampUrl !== 'none') {
+      setShowStamp(true);
+    } else if (settings?.stampUrl === 'none') {
+      setShowStamp(false);
+    } else if (data.showStamp !== undefined) {
+      setShowStamp(Boolean(data.showStamp));
+    }
+
+    if (settings?.signatureUrl && settings.signatureUrl !== 'none') {
+      setShowSignature(true);
+    } else if (settings?.signatureUrl === 'none') {
+      setShowSignature(false);
+    } else if (data.showSignature !== undefined) {
+      setShowSignature(Boolean(data.showSignature));
+    }
 
     setIsSaved(true);
     setSavedAt(data.updatedAt || new Date().toISOString());
     return true;
-  }, []);
+  }, [settings]);
 
   // Synchronous restore from localStorage on open, then background sync with server
   useEffect(() => {
@@ -262,7 +351,11 @@ export default function CorporateInvoiceModal({
     try {
       const key = getStorageKey();
       const fallbackKey = getFallbackStorageKey();
-      const rawSaved = (key && localStorage.getItem(key)) || (fallbackKey && localStorage.getItem(fallbackKey));
+      const legacyKey = !initialIsNonGst && contract?.id ? `jagtap_corp_invoice_${contract.id}_${selectedMonth || 'all'}` : null;
+      const rawSaved =
+        (key && localStorage.getItem(key)) ||
+        (legacyKey && localStorage.getItem(legacyKey)) ||
+        (fallbackKey && localStorage.getItem(fallbackKey));
       if (rawSaved) {
         const parsed = JSON.parse(rawSaved);
         if (parsed && (Array.isArray(parsed.lineItems) ? parsed.lineItems.length > 0 : true)) {
@@ -285,7 +378,7 @@ export default function CorporateInvoiceModal({
 
     // 3. Asynchronously fetch from server to sync if any newer saved invoice exists
     let isCancelled = false;
-    api.getSavedCorporateInvoice(contract.id, selectedMonth)
+    api.getSavedCorporateInvoice(contract.id, selectedMonth, initialIsNonGst)
       .then((serverData) => {
         if (!isCancelled && serverData && serverData.id) {
           applySavedInvoiceData(serverData);
@@ -304,7 +397,7 @@ export default function CorporateInvoiceModal({
     return () => {
       isCancelled = true;
     };
-  }, [contract, selectedMonth, isOpen, getStorageKey, getFallbackStorageKey, applySavedInvoiceData, initializeFromContractAndLogs]);
+  }, [contract, selectedMonth, isOpen, initialIsNonGst, getStorageKey, getFallbackStorageKey, applySavedInvoiceData, initializeFromContractAndLogs]);
 
   // Save current invoice changes to localStorage & server database
   const handleSaveInvoice = async () => {
@@ -313,6 +406,9 @@ export default function CorporateInvoiceModal({
     const invoicePayload = {
       contractId: String(contract.id),
       month: selectedMonth || '',
+      isNonGst,
+      invoiceTitle,
+      invoiceType: isNonGst ? 'nongst' : 'gst',
       invoiceNo,
       invoiceDate,
       period,
@@ -322,7 +418,11 @@ export default function CorporateInvoiceModal({
       partyName,
       partyAddress,
       partyGstin,
-      company,
+      company: {
+        ...company,
+        stampUrl: effectiveStampUrl || company.stampUrl,
+        signatureUrl: effectiveSignatureUrl || company.signatureUrl,
+      },
       lineItems,
       tollItems,
       gstRate,
@@ -346,7 +446,7 @@ export default function CorporateInvoiceModal({
       await api.saveCorporateInvoice(contract.id, invoicePayload);
       setIsSaved(true);
       setSavedAt(invoicePayload.updatedAt);
-      toast.success('Corporate invoice saved successfully!');
+      toast.success(isNonGst ? 'Corporate Non-GST invoice saved successfully!' : 'Corporate Tax invoice saved successfully!');
       setActiveView('preview');
     } catch (err) {
       console.error('Server save error:', err);
@@ -460,9 +560,10 @@ export default function CorporateInvoiceModal({
       const html2pdfModule = await import('html2pdf.js');
       const html2pdf = html2pdfModule.default || html2pdfModule;
       const clientName = (partyName || 'Corporate').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const prefix = isNonGst ? 'Corporate-NonGST-Invoice' : 'Corporate-Tax-Invoice';
       const opt = {
         margin: [6, 6, 6, 6],
-        filename: `Corporate-Invoice-${clientName}-${period || selectedMonth}.pdf`,
+        filename: `${prefix}-${clientName}-${period || selectedMonth}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -475,7 +576,7 @@ export default function CorporateInvoiceModal({
     } finally {
       setDownloading(false);
     }
-  }, [partyName, period, selectedMonth]);
+  }, [partyName, period, selectedMonth, isNonGst]);
 
   if (!isOpen) return null;
 
@@ -483,11 +584,62 @@ export default function CorporateInvoiceModal({
   const renderEditor = () => (
     <div className="p-4 sm:p-6 space-y-5 overflow-y-auto max-h-[calc(100vh-180px)]">
       {/* Invoice Meta */}
-      <div className="space-y-1">
-        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-          <Receipt size={16} weight="bold" /> Invoice Details
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <Receipt size={16} weight="bold" /> Invoice Details
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500">Invoice Format:</span>
+            <div className="inline-flex rounded-md shadow-xs bg-slate-100 p-0.5 border border-slate-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNonGst(false);
+                  setInvoiceTitle('TAX INVOICE');
+                  if (gstRate === 0) setGstRate(9);
+                  setIsSaved(false);
+                }}
+                className={`px-2.5 py-1 text-xs font-bold rounded transition-colors cursor-pointer ${
+                  !isNonGst
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                GST Tax Invoice
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNonGst(true);
+                  setInvoiceTitle('INVOICE');
+                  setGstRate(0);
+                  setIsSaved(false);
+                }}
+                className={`px-2.5 py-1 text-xs font-bold rounded transition-colors cursor-pointer ${
+                  isNonGst
+                    ? 'bg-teal-700 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Non-GST Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+          <label className="form-label">Invoice Title
+            <input
+              className="form-input font-bold"
+              value={invoiceTitle}
+              onChange={(e) => {
+                setInvoiceTitle(e.target.value);
+                setIsSaved(false);
+              }}
+              placeholder={isNonGst ? 'INVOICE' : 'TAX INVOICE'}
+            />
+          </label>
           <label className="form-label">Invoice No
             <input className="form-input" value={invoiceNo} onChange={(e) => { setInvoiceNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 390" />
           </label>
@@ -692,10 +844,26 @@ export default function CorporateInvoiceModal({
           {[
             { label: '18% (9% + 9%)', value: 9 },
             { label: '5% (2.5% + 2.5%)', value: 2.5 },
-            { label: '0% (Exempt)', value: 0 },
+            { label: '0% (Non-GST / Exempt)', value: 0 },
           ].map((opt) => (
             <label key={opt.value} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
-              <input type="radio" name="gstRate" checked={gstRate === opt.value} onChange={() => { setGstRate(opt.value); setIsSaved(false); }} className="accent-navy-900" />
+              <input
+                type="radio"
+                name="gstRate"
+                checked={gstRate === opt.value}
+                onChange={() => {
+                  setGstRate(opt.value);
+                  if (opt.value === 0) {
+                    setIsNonGst(true);
+                    if (invoiceTitle === 'TAX INVOICE') setInvoiceTitle('INVOICE');
+                  } else {
+                    setIsNonGst(false);
+                    if (invoiceTitle === 'INVOICE') setInvoiceTitle('TAX INVOICE');
+                  }
+                  setIsSaved(false);
+                }}
+                className="accent-navy-900"
+              />
               {opt.label}
             </label>
           ))}
@@ -707,36 +875,36 @@ export default function CorporateInvoiceModal({
         <h3 className="text-sm font-bold text-slate-800">Stamp & Signature on Invoice</h3>
         <div className="flex items-center gap-6 pt-0.5">
           <label className={`flex items-center gap-2 text-xs font-semibold ${
-            settings?.stampUrl === 'none' || company.stampUrl === 'none'
+            isStampRemoved
               ? 'text-slate-400 cursor-not-allowed'
               : 'text-slate-700 cursor-pointer'
           }`}>
             <input
               type="checkbox"
-              checked={Boolean(showStamp && settings?.stampUrl !== 'none' && company.stampUrl !== 'none')}
+              checked={Boolean(showStamp && !isStampRemoved)}
               onChange={(e) => { setShowStamp(e.target.checked); setIsSaved(false); }}
-              disabled={settings?.stampUrl === 'none' || company.stampUrl === 'none'}
+              disabled={isStampRemoved}
               className="accent-navy-900 rounded"
             />
             <span>Include Official Company Stamp</span>
-            {(settings?.stampUrl === 'none' || company.stampUrl === 'none') && (
+            {isStampRemoved && (
               <span className="text-[10px] text-rose-600 font-bold ml-1">(Removed in Settings)</span>
             )}
           </label>
           <label className={`flex items-center gap-2 text-xs font-semibold ${
-            settings?.signatureUrl === 'none' || company.signatureUrl === 'none'
+            isSignatureRemoved
               ? 'text-slate-400 cursor-not-allowed'
               : 'text-slate-700 cursor-pointer'
           }`}>
             <input
               type="checkbox"
-              checked={Boolean(showSignature && settings?.signatureUrl !== 'none' && company.signatureUrl !== 'none')}
+              checked={Boolean(showSignature && !isSignatureRemoved)}
               onChange={(e) => { setShowSignature(e.target.checked); setIsSaved(false); }}
-              disabled={settings?.signatureUrl === 'none' || company.signatureUrl === 'none'}
+              disabled={isSignatureRemoved}
               className="accent-navy-900 rounded"
             />
             <span>Include Authorized Signature</span>
-            {(settings?.signatureUrl === 'none' || company.signatureUrl === 'none') && (
+            {isSignatureRemoved && (
               <span className="text-[10px] text-rose-600 font-bold ml-1">(Removed in Settings)</span>
             )}
           </label>
@@ -748,9 +916,13 @@ export default function CorporateInvoiceModal({
         <div className="flex justify-between"><span className="text-slate-600">Line Items Total:</span><span className="font-bold">{fmtNum(computedTotals.lineTotal)}</span></div>
         <div className="flex justify-between"><span className="text-slate-600">Toll & Parking Total:</span><span className="font-bold text-amber-700">₹ {fmtNum(computedTotals.tollTotal)}</span></div>
         <hr className="border-slate-200" />
-        <div className="flex justify-between"><span className="text-slate-600">Taxable Value (Items + Toll):</span><span className="font-bold">{fmtNum(computedTotals.taxableValue)}</span></div>
-        <div className="flex justify-between"><span className="text-slate-600">CGST ({gstRate}%):</span><span className="font-semibold">{fmtNum(computedTotals.cgst)}</span></div>
-        <div className="flex justify-between"><span className="text-slate-600">SGST ({gstRate}%):</span><span className="font-semibold">{fmtNum(computedTotals.sgst)}</span></div>
+        <div className="flex justify-between"><span className="text-slate-600">{gstRate > 0 ? 'Taxable Value (Items + Toll):' : 'Total Amount (Items + Toll):'}</span><span className="font-bold">{fmtNum(computedTotals.taxableValue)}</span></div>
+        {gstRate > 0 && (
+          <>
+            <div className="flex justify-between"><span className="text-slate-600">CGST ({gstRate}%):</span><span className="font-semibold">{fmtNum(computedTotals.cgst)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-600">SGST ({gstRate}%):</span><span className="font-semibold">{fmtNum(computedTotals.sgst)}</span></div>
+          </>
+        )}
         <hr className="border-slate-300" />
         <div className="flex justify-between text-base"><span className="font-bold text-black">Grand Total:</span><span className="font-black text-black">₹ {fmtNum(computedTotals.grandTotal)}</span></div>
         <p className="text-[10px] text-slate-500 pt-1">INR : {numberToWordsIndian(computedTotals.grandTotal)}</p>
@@ -808,7 +980,7 @@ export default function CorporateInvoiceModal({
         <div ref={printRef} className="printable-area bg-white mx-auto shadow-lg" style={{ maxWidth: 820, padding: '28px 32px', fontFamily: "'Times New Roman', Times, serif", fontSize: 13, color: '#000', lineHeight: 1.4 }}>
           {/* Title */}
           <h1 style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 16, letterSpacing: 4 }}>
-            Tax &nbsp; Invoice
+            {invoiceTitle ? invoiceTitle.replace(/\s+/g, ' \u00a0 ') : (isNonGst ? 'INVOICE' : 'Tax \u00a0 Invoice')}
           </h1>
 
           {/* Top Grid: Company Info | Invoice Meta */}
@@ -966,26 +1138,36 @@ export default function CorporateInvoiceModal({
                 );
               })}
               {/* Totals */}
-              <tr style={{ fontSize: 12 }}>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(taxableValue)}</td>
-              </tr>
-              <tr style={{ fontSize: 12 }}>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>C GST {gstRate}%</td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(cgst)}</td>
-              </tr>
-              <tr style={{ fontSize: 12 }}>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>S GST {gstRate}%</td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(sgst)}</td>
-              </tr>
-              <tr style={{ fontSize: 13, fontWeight: 'bold' }}>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(grandTotal)}</td>
-              </tr>
+              {gstRate > 0 ? (
+                <>
+                  <tr style={{ fontSize: 12 }}>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(taxableValue)}</td>
+                  </tr>
+                  <tr style={{ fontSize: 12 }}>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>C GST {gstRate}%</td>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(cgst)}</td>
+                  </tr>
+                  <tr style={{ fontSize: 12 }}>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>S GST {gstRate}%</td>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(sgst)}</td>
+                  </tr>
+                  <tr style={{ fontSize: 13, fontWeight: 'bold' }}>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
+                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(grandTotal)}</td>
+                  </tr>
+                </>
+              ) : (
+                <tr style={{ fontSize: 13, fontWeight: 'bold' }}>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(grandTotal)}</td>
+                </tr>
+              )}
             </tbody>
           </table>
 
@@ -1001,33 +1183,6 @@ export default function CorporateInvoiceModal({
             </tbody>
           </table>
 
-          {/* HSN/SAC Breakdown */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', borderTop: 'none', fontSize: 11 }}>
-            <thead>
-              <tr>
-                <th style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }} rowSpan={2}>HSN/SAC code<br />996419</th>
-                <th style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }} rowSpan={2}>Taxable<br />Value</th>
-                <th style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }} colSpan={2}>Central Tax</th>
-                <th style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }} colSpan={2}>State Tax</th>
-              </tr>
-              <tr>
-                <th style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }}>Rate</th>
-                <th style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }}>Amount</th>
-                <th style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }}>Rate</th>
-                <th style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style={{ fontSize: 12 }}>
-                <td style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }}></td>
-                <td style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'right' }}>{fmtNum(taxableValue)}</td>
-                <td style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }}>{gstRate}%</td>
-                <td style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'right' }}>{fmtNum(cgst)}</td>
-                <td style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'center' }}>{gstRate}%</td>
-                <td style={{ border: '1.5px solid #000', padding: '3px 6px', textAlign: 'right' }}>{fmtNum(sgst)}</td>
-              </tr>
-            </tbody>
-          </table>
 
           {/* Footer: Certification + Signatory */}
           <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', borderTop: 'none', fontSize: 11 }}>
@@ -1037,56 +1192,56 @@ export default function CorporateInvoiceModal({
                   <div style={{ fontWeight: 'bold' }}>This certified that the particulars given are true and correct and the amount indicated represents the price actually charged , and all dispute are subjects to pune jurisdiction</div>
                 </td>
                 <td style={{ border: '1.5px solid #000', padding: '8px', verticalAlign: 'top', position: 'relative' }}>
-                  <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 13 }}>For {company.companyName}</div>
-                  <div style={{ minHeight: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-around', position: 'relative', padding: '4px 0' }}>
-                    {showStamp &&
-                      settings?.stampUrl !== 'none' &&
-                      company.stampUrl !== 'none' && (
+                  <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>For {company.companyName}</div>
+                  <div style={{ minHeight: 82, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', padding: '4px 14px 2px 8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 84 }}>
+                      {showStamp && !isStampRemoved && effectiveStampUrl && (
                         <img
-                          src={
-                            company.stampUrl && company.stampUrl !== 'none'
-                              ? company.stampUrl
-                              : settings?.stampUrl && settings?.stampUrl !== 'none'
-                              ? settings.stampUrl
-                              : '/stamp.jpg'
-                          }
+                          src={effectiveStampUrl}
                           alt="Official Stamp"
                           style={{
-                            height: 70,
-                            width: 70,
+                            height: 82,
+                            width: 82,
                             objectFit: 'contain',
                             mixBlendMode: 'multiply',
                             opacity: 0.95,
                           }}
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          onError={(e) => {
+                            if (!e.currentTarget.src.endsWith('/stamp.jpg')) {
+                              e.currentTarget.src = '/stamp.jpg';
+                            } else {
+                              e.currentTarget.style.display = 'none';
+                            }
+                          }}
                         />
                       )}
-                    {showSignature &&
-                      settings?.signatureUrl !== 'none' &&
-                      company.signatureUrl !== 'none' && (
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 150 }}>
+                      {showSignature && !isSignatureRemoved && effectiveSignatureUrl && (
                         <img
-                          src={
-                            company.signatureUrl && company.signatureUrl !== 'none'
-                              ? company.signatureUrl
-                              : settings?.signatureUrl && settings?.signatureUrl !== 'none'
-                              ? settings.signatureUrl
-                              : '/signature.jpg'
-                          }
+                          src={effectiveSignatureUrl}
                           alt="Authorized Signature"
                           style={{
-                            height: 52,
+                            height: 62,
                             width: 'auto',
-                            maxWidth: 150,
+                            maxWidth: 175,
                             objectFit: 'contain',
                             mixBlendMode: 'multiply',
                           }}
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          onError={(e) => {
+                            if (!e.currentTarget.src.endsWith('/signature.jpg')) {
+                              e.currentTarget.src = '/signature.jpg';
+                            } else {
+                              e.currentTarget.style.display = 'none';
+                            }
+                          }}
                         />
                       )}
+                    </div>
                   </div>
                   <div style={{ textAlign: 'center', fontSize: 11, display: 'flex', justifyContent: 'space-between', padding: '0 12px' }}>
                     <span>Received sign</span>
-                    <span style={{ fontWeight: 'bold', color: '#d00' }}>Authorized Signatory</span>
+                    <span style={{ fontWeight: 'bold', color: '#000' }}>Authorized Signatory</span>
                   </div>
                 </td>
               </tr>
@@ -1102,15 +1257,15 @@ export default function CorporateInvoiceModal({
       className="print-overlay fixed inset-0 z-50 bg-slate-900/70 overflow-hidden font-['Plus_Jakarta_Sans',sans-serif]"
       role="dialog"
       aria-modal="true"
-      aria-label="Corporate Tax Invoice"
+      aria-label={isNonGst ? 'Corporate Non-GST Invoice' : 'Corporate Tax Invoice'}
     >
       <div className="print-shell bg-white max-w-5xl mx-auto h-full flex flex-col shadow-2xl overflow-hidden">
         {/* Top Control Bar */}
         <div className="no-print flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-3.5 sm:p-4 bg-slate-900 text-white border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
-              <Receipt size={18} weight="bold" className="text-amber-400" />
-              Corporate Tax Invoice
+              <Receipt size={18} weight="bold" className={isNonGst ? 'text-teal-400' : 'text-amber-400'} />
+              {isNonGst ? 'Corporate Non-GST Invoice' : 'Corporate Tax Invoice'}
             </h2>
             {/* Tab Toggle */}
             <div className="flex bg-slate-800 rounded-md p-0.5">

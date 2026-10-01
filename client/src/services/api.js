@@ -127,8 +127,14 @@ export const api = {
     request('/corporate-contracts/' + id + '/monthly-summary' + (month ? `?month=${month}` : '')),
   generateCorporateBill: (id, month) =>
     send('/corporate-contracts/' + id + '/generate-bill', 'POST', { month }),
-  getSavedCorporateInvoice: (id, month) =>
-    request('/corporate-contracts/' + id + '/saved-invoice' + (month ? `?month=${month}` : '')),
+  getSavedCorporateInvoice: (id, month, isNonGst) =>
+    request(
+      '/corporate-contracts/' +
+        id +
+        '/saved-invoice' +
+        (month ? `?month=${month}` : '') +
+        (isNonGst !== undefined ? `${month ? '&' : '?'}isNonGst=${Boolean(isNonGst)}` : ''),
+    ),
   saveCorporateInvoice: (id, data) =>
     send('/corporate-contracts/' + id + '/saved-invoice', 'POST', data),
 

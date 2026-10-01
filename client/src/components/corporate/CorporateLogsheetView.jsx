@@ -186,19 +186,34 @@ export default function CorporateLogsheetView({
             ))}
           </ThemedSelect>
 
-          {/* Generate Tax Invoice Button */}
+          {/* Generate Tax Invoice (GST) Button */}
           <button
             type="button"
             onClick={() => {
               if (onGenerateInvoice) {
-                onGenerateInvoice(currentContract || contracts[0] || null, selectedMonth);
+                onGenerateInvoice(currentContract || contracts[0] || null, selectedMonth, { isNonGst: false });
               }
             }}
-            title="Generate Monthly Corporate Tax Invoice"
+            title="Generate Monthly Corporate Tax Invoice (GST 18%)"
             className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
           >
             <Receipt size={16} weight="bold" />
             <span>Generate Invoice</span>
+          </button>
+
+          {/* Generate Non-GST Invoice Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (onGenerateInvoice) {
+                onGenerateInvoice(currentContract || contracts[0] || null, selectedMonth, { isNonGst: true });
+              }
+            }}
+            title="Generate Monthly Corporate Non-GST Invoice (0% Tax)"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+          >
+            <Receipt size={16} weight="bold" className="text-amber-300" />
+            <span>Non-GST Invoice</span>
           </button>
 
           {/* Download PDF Button */}
