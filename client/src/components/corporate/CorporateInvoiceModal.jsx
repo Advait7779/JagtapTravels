@@ -71,7 +71,7 @@ export default function CorporateInvoiceModal({
 
   // Invoice format state
   const [isNonGst, setIsNonGst] = useState(Boolean(initialIsNonGst));
-  const [invoiceTitle, setInvoiceTitle] = useState(initialIsNonGst ? 'INVOICE' : 'TAX INVOICE');
+  const [invoiceTitle, setInvoiceTitle] = useState(initialIsNonGst ? 'INVOICE' : 'Tax Invoice');
 
   // Invoice header fields
   const [invoiceNo, setInvoiceNo] = useState('');
@@ -82,7 +82,7 @@ export default function CorporateInvoiceModal({
   // Synchronize format state whenever initialIsNonGst or modal opens
   useEffect(() => {
     setIsNonGst(Boolean(initialIsNonGst));
-    setInvoiceTitle(initialIsNonGst ? 'INVOICE' : 'TAX INVOICE');
+    setInvoiceTitle(initialIsNonGst ? 'INVOICE' : 'Tax Invoice');
   }, [initialIsNonGst, isOpen]);
 
   // Vehicle info
@@ -273,7 +273,7 @@ export default function CorporateInvoiceModal({
       setIsNonGst(true);
     } else {
       setGstRate(9);
-      setInvoiceTitle('TAX INVOICE');
+      setInvoiceTitle('Tax Invoice');
       setIsNonGst(false);
     }
   }, [contract, selectedMonth, tripLogs, customers, vehicles, settings, initialIsNonGst]);
@@ -285,9 +285,11 @@ export default function CorporateInvoiceModal({
       setIsNonGst(Boolean(data.isNonGst));
     }
     if (data.invoiceTitle !== undefined) {
-      setInvoiceTitle(data.invoiceTitle || (data.isNonGst ? 'INVOICE' : 'TAX INVOICE'));
+      setInvoiceTitle(data.invoiceTitle || (data.isNonGst ? 'INVOICE' : 'Tax Invoice'));
     } else if (data.isNonGst) {
       setInvoiceTitle('INVOICE');
+    } else {
+      setInvoiceTitle('Tax Invoice');
     }
     if (data.invoiceNo !== undefined) setInvoiceNo(data.invoiceNo || '');
     if (data.invoiceDate !== undefined) setInvoiceDate(data.invoiceDate || localDate());
@@ -585,62 +587,11 @@ export default function CorporateInvoiceModal({
   const renderEditor = () => (
     <div className="p-4 sm:p-6 space-y-5 overflow-y-auto max-h-[calc(100vh-180px)]">
       {/* Invoice Meta */}
-      <div className="space-y-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-            <Receipt size={16} weight="bold" /> Invoice Details
-          </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">Invoice Format:</span>
-            <div className="inline-flex rounded-md shadow-xs bg-slate-100 p-0.5 border border-slate-200">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNonGst(false);
-                  setInvoiceTitle('TAX INVOICE');
-                  if (gstRate === 0) setGstRate(9);
-                  setIsSaved(false);
-                }}
-                className={`px-2.5 py-1 text-xs font-bold rounded transition-colors cursor-pointer ${
-                  !isNonGst
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                GST Tax Invoice
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNonGst(true);
-                  setInvoiceTitle('INVOICE');
-                  setGstRate(0);
-                  setIsSaved(false);
-                }}
-                className={`px-2.5 py-1 text-xs font-bold rounded transition-colors cursor-pointer ${
-                  isNonGst
-                    ? 'bg-teal-700 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Non-GST Invoice
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
-          <label className="form-label">Invoice Title
-            <input
-              className="form-input font-bold"
-              value={invoiceTitle}
-              onChange={(e) => {
-                setInvoiceTitle(e.target.value);
-                setIsSaved(false);
-              }}
-              placeholder={isNonGst ? 'INVOICE' : 'TAX INVOICE'}
-            />
-          </label>
+      <div className="space-y-1">
+        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <Receipt size={16} weight="bold" /> Invoice Details
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <label className="form-label">Invoice No
             <input className="form-input" value={invoiceNo} onChange={(e) => { setInvoiceNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 390" />
           </label>
@@ -1190,15 +1141,15 @@ export default function CorporateInvoiceModal({
                 </td>
                 <td style={{ border: '1.5px solid #000', padding: '8px', verticalAlign: 'top', position: 'relative' }}>
                   <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>For {company.companyName}</div>
-                  <div style={{ minHeight: 82, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', padding: '4px 14px 2px 8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 84 }}>
+                  <div style={{ minHeight: 98, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', padding: '4px 6px 2px 8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 102 }}>
                       {showStamp && !isStampRemoved && effectiveStampUrl && (
                         <img
                           src={effectiveStampUrl}
                           alt="Official Stamp"
                           style={{
-                            height: 82,
-                            width: 82,
+                            height: 98,
+                            width: 98,
                             objectFit: 'contain',
                             mixBlendMode: 'multiply',
                             opacity: 0.95,
@@ -1213,15 +1164,15 @@ export default function CorporateInvoiceModal({
                         />
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 150 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: 160, paddingRight: 4 }}>
                       {showSignature && !isSignatureRemoved && effectiveSignatureUrl && (
                         <img
                           src={effectiveSignatureUrl}
                           alt="Authorized Signature"
                           style={{
-                            height: 62,
+                            height: 64,
                             width: 'auto',
-                            maxWidth: 175,
+                            maxWidth: 180,
                             objectFit: 'contain',
                             mixBlendMode: 'multiply',
                           }}
