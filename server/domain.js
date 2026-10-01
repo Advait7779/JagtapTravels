@@ -1135,6 +1135,7 @@ function createService(repo) {
           ((d.bills || []).some(
             (bill) => same(bill.corporateContractId, key) && !bill.voidedAt,
           ) ||
+            (d.corporateInvoices || []).some((invoice) => same(invoice.contractId, key)) ||
             (d.corporateTripLogs || []).some((log) => same(log.contractId, key)))
         )
           throw new HttpError(

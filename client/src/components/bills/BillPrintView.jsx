@@ -65,7 +65,12 @@ export default function BillPrintView({ bill, onClose, settings = {} }) {
             {/* Dedicated Print Button */}
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={() => {
+                const originalTitle = document.title;
+                document.title = '';
+                window.print();
+                setTimeout(() => { document.title = originalTitle; }, 500);
+              }}
               className="px-3.5 py-2 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded text-xs sm:text-sm shadow transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial cursor-pointer"
             >
               <Printer size={15} weight="bold" />

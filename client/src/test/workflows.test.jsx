@@ -18,6 +18,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import CorporateTripLogModal from '../components/corporate/CorporateTripLogModal';
 import CorporateLogsheetView from '../components/corporate/CorporateLogsheetView';
 import CorporateContractTable from '../components/corporate/CorporateContractTable';
+import CorporateInvoiceTable from '../components/corporate/CorporateInvoiceTable';
+import CorporateInvoiceModal from '../components/corporate/CorporateInvoiceModal';
 import CorporateLogsheetPrintView from '../components/corporate/CorporateLogsheetPrintView';
 import App from '../App';
 import { localDate, dateInput } from '../utils/formatters';
@@ -206,6 +208,79 @@ it('calendar dates remain date-only and India timestamp conversion is stable', (
   expect(dateInput('2026-09-11T18:30:00.000Z')).toBe('2026-09-12');
   expect(dateInput('2026-09-12')).toBe('2026-09-12');
   expect(localDate()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+});
+it('corporate invoice search accepts displayed, numeric and ISO dates', () => {
+  render(
+    <CorporateInvoiceTable
+      invoices={[
+        {
+          id: 'invoice-1',
+          invoiceNo: 'CORP-001',
+          invoiceDate: '2026-10-01',
+          month: '2026-10',
+          period: 'OCTOBER',
+          partyName: 'Alpha Industries',
+          partyGstin: '27ABCDE1234F1Z5',
+          vehicleNumbers: 'MH 12 AB 1234',
+          grandTotal: 1416,
+          lineItems: [{ particulars: 'Monthly corporate commute' }],
+        },
+        {
+          id: 'invoice-2',
+          invoiceNo: 'CORP-002',
+          invoiceDate: '2026-11-15',
+          month: '2026-11',
+          period: 'NOVEMBER',
+          partyName: 'Beta Industries',
+          grandTotal: 2000,
+          lineItems: [{ particulars: 'Airport transport' }],
+        },
+      ]}
+    />,
+  );
+  const search = screen.getByPlaceholderText(/Search by party name/);
+  fireEvent.change(search, { target: { value: '01 Oct 2026' } });
+  expect(screen.getByText('CORP-001')).toBeTruthy();
+  expect(screen.queryByText('CORP-002')).toBeNull();
+  fireEvent.change(search, { target: { value: '01/10/2026' } });
+  expect(screen.getByText('CORP-001')).toBeTruthy();
+  fireEvent.change(search, { target: { value: 'MH 12 AB 1234' } });
+  expect(screen.getByText('CORP-001')).toBeTruthy();
+  fireEvent.change(search, { target: { value: '' } });
+  fireEvent.change(screen.getByPlaceholderText('Filter Date (YYYY-MM)'), {
+    target: { value: '2026-11' },
+  });
+  expect(screen.getByText('CORP-002')).toBeTruthy();
+  expect(screen.queryByText('CORP-001')).toBeNull();
+});
+it('corporate invoice server failure remains unsaved and does not notify the register', async () => {
+  vi.spyOn(api, 'getSavedCorporateInvoice').mockResolvedValue(null);
+  vi.spyOn(api, 'saveCorporateInvoice').mockRejectedValue(new Error('Database unavailable'));
+  const onInvoiceSaved = vi.fn();
+  render(
+    <CorporateInvoiceModal
+      isOpen
+      onClose={() => {}}
+      contract={{
+        id: 'contract-1',
+        companyName: 'Alpha Industries',
+        vehicleName: 'Innova Crysta',
+        vehicleNumber: 'MH 12 AB 1234',
+        includedMonthlyKm: 3000,
+        monthlyBaseFare: 50000,
+        extraRatePerKm: 15,
+      }}
+      selectedMonth="2026-10"
+      onInvoiceSaved={onInvoiceSaved}
+    />,
+  );
+  const invoiceNumber = await screen.findByLabelText('Invoice No');
+  fireEvent.change(invoiceNumber, { target: { value: 'CORP-FAIL-001' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Invoice & View Preview' }));
+  await waitFor(() => expect(api.saveCorporateInvoice).toHaveBeenCalled());
+  expect(onInvoiceSaved).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Save Invoice & View Preview' })).toBeTruthy();
+  expect(screen.getByText(/Unsaved customizations/)).toBeTruthy();
 });
 it('renders QuotationTable with empty and populated data without runtime error', () => {
   const { rerender } = render(

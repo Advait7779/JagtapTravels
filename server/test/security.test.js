@@ -219,3 +219,133 @@ test('production configuration rejects missing or weak secrets', () => {
     /strong password/,
   );
 });
+
+test('corporate invoices are validated, recalculated, uniquely stored and safely deleted', async (t) => {
+  const { app, repo } = await environment(t);
+  const { agent, csrf } = await setupAdmin(app);
+  await repo.change((data) => {
+    data.corporateContracts.push(
+      { id: 'contract-a', companyName: 'Alpha Industries', status: 'Active' },
+      { id: 'contract-b', companyName: 'Beta Industries', status: 'Active' },
+    );
+  });
+  const payload = (overrides = {}) => ({
+    month: '2026-10',
+    isNonGst: false,
+    invoiceType: 'gst',
+    invoiceNo: 'CORP-2026-001',
+    invoiceDate: '2026-10-01',
+    period: 'OCTOBER',
+    partyName: 'Alpha Industries',
+    partyAddress: 'Pune',
+    partyGstin: '27ABCDE1234F1Z5',
+    company: { companyName: 'Jagtap Travels', accountNumber: '1234', ifsc: 'TEST0001' },
+    lineItems: [
+      {
+        particulars: 'MH 12 AB 1234 - Monthly package',
+        packageKm: 3000,
+        packageAmount: 1000,
+        extraKm: 10,
+        extraKmRate: 10,
+        extraAmount: 100,
+        amount: 1,
+      },
+    ],
+    tollItems: [{ vehicle: 'INNOVA', type: 'TOLL', amount: 100 }],
+    gstRate: 9,
+    lineTotal: 1,
+    tollTotal: 1,
+    taxableValue: 1,
+    cgst: 1,
+    sgst: 1,
+    grandTotal: 1,
+    totalAmount: 1,
+    showStamp: true,
+    showSignature: false,
+    ...overrides,
+  });
+
+  const created = await agent
+    .post('/api/corporate-contracts/contract-a/saved-invoice')
+    .set('X-CSRF-Token', csrf)
+    .send(payload())
+    .expect(201);
+  assert.match(created.body.id, /^[0-9a-f]{8}-[0-9a-f-]{27}$/i);
+  assert.equal(created.body.lineItems[0].amount, 1100);
+  assert.equal(created.body.lineTotal, 1100);
+  assert.equal(created.body.tollTotal, 100);
+  assert.equal(created.body.taxableValue, 1200);
+  assert.equal(created.body.cgst, 108);
+  assert.equal(created.body.sgst, 108);
+  assert.equal(created.body.grandTotal, 1416);
+
+  const loaded = await agent
+    .get('/api/corporate-contracts/contract-a/saved-invoice?month=2026-10&isNonGst=false')
+    .expect(200);
+  assert.equal(loaded.body.id, created.body.id);
+  assert.equal((await agent.get('/api/corporate-invoices').expect(200)).body.length, 1);
+  await agent.delete('/api/corporate-contracts/contract-a').set('X-CSRF-Token', csrf).expect(409);
+
+  await agent
+    .post('/api/corporate-contracts/contract-b/saved-invoice')
+    .set('X-CSRF-Token', csrf)
+    .send(payload({ month: '2026-11', partyName: 'Beta Industries' }))
+    .expect(409);
+  await agent
+    .post('/api/corporate-contracts/contract-a/saved-invoice')
+    .set('X-CSRF-Token', csrf)
+    .send(payload({ invoiceNo: 'CORP-2026-002' }))
+    .expect(409);
+
+  const updated = await agent
+    .post('/api/corporate-contracts/contract-a/saved-invoice')
+    .set('X-CSRF-Token', csrf)
+    .send(payload({ id: created.body.id, partyAddress: 'Updated Pune address' }))
+    .expect(200);
+  assert.equal(updated.body.id, created.body.id);
+  assert.equal(updated.body.partyAddress, 'Updated Pune address');
+
+  await repo.change((data) => {
+    data.corporateContracts.push({
+      id: created.body.id,
+      companyName: 'Contract ID Collision Test',
+      status: 'Active',
+    });
+  });
+  const second = await agent
+    .post(`/api/corporate-contracts/${created.body.id}/saved-invoice`)
+    .set('X-CSRF-Token', csrf)
+    .send(
+      payload({
+        month: '2026-12',
+        invoiceNo: 'CORP-2026-003',
+        partyName: 'Contract ID Collision Test',
+      }),
+    )
+    .expect(201);
+
+  await agent
+    .delete(`/api/corporate-invoices/${created.body.id}`)
+    .set('X-CSRF-Token', csrf)
+    .expect(200);
+  const remaining = (await agent.get('/api/corporate-invoices').expect(200)).body;
+  assert.deepEqual(remaining.map((invoice) => invoice.id), [second.body.id]);
+  await agent
+    .delete('/api/corporate-invoices/missing-invoice')
+    .set('X-CSRF-Token', csrf)
+    .expect(404);
+  await agent
+    .post('/api/corporate-contracts/contract-a/saved-invoice')
+    .set('X-CSRF-Token', csrf)
+    .send(payload({ id: created.body.id, invoiceNo: 'CORP-2026-005' }))
+    .expect(404);
+
+  await agent
+    .post('/api/corporate-contracts/contract-b/saved-invoice')
+    .set('X-CSRF-Token', csrf)
+    .send(payload({ invoiceNo: 'CORP-2026-004', lineItems: [{ particulars: 'Invalid', packageAmount: -1 }] }))
+    .expect(400);
+  await agent
+    .get('/api/corporate-contracts/contract-a/saved-invoice?month=October&isNonGst=false')
+    .expect(400);
+});

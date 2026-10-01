@@ -6,7 +6,8 @@ const crypto = require('node:crypto');
 const multer = require('multer');
 const { authRoutes } = require('./auth');
 const { auditMiddleware } = require('./audit');
-const { createService, text } = require('./domain');
+const { createService, HttpError, text } = require('./domain');
+const { identifier, invoiceMonth, validateCorporateInvoice } = require('./corporate-invoices');
 function createApp(repo, options = {}) {
   const app = express(),
     service = createService(repo);
@@ -282,17 +283,23 @@ function createApp(repo, options = {}) {
     '/api/corporate-contracts/:id/saved-invoice',
     wrap(async (req, res) => {
       const state = await repo.read();
-      const month = req.query.month || '';
+      const month = invoiceMonth(req.query.month);
       const isNonGstQuery = req.query.isNonGst;
+      if (!['true', 'false'].includes(isNonGstQuery))
+        throw new HttpError(400, 'isNonGst must be true or false.');
       const list = state.corporateInvoices || [];
-      const found = list.find((inv) => {
+      const found = [...list]
+        .sort(
+          (a, b) =>
+            Date.parse(b.updatedAt || b.createdAt || 0) -
+            Date.parse(a.updatedAt || a.createdAt || 0),
+        )
+        .find((inv) => {
         if (String(inv.contractId) !== String(req.params.id)) return false;
-        if (month && inv.month !== month) return false;
-        if (isNonGstQuery !== undefined) {
-          const wantNonGst = isNonGstQuery === 'true';
-          const invNonGst = Boolean(inv.isNonGst || inv.invoiceType === 'nongst');
-          if (invNonGst !== wantNonGst) return false;
-        }
+        if (inv.month !== month) return false;
+        const wantNonGst = isNonGstQuery === 'true';
+        const invNonGst = Boolean(inv.isNonGst || inv.invoiceType === 'nongst');
+        if (invNonGst !== wantNonGst) return false;
         return true;
       });
       res.json(found || null);
@@ -302,32 +309,87 @@ function createApp(repo, options = {}) {
   app.post(
     '/api/corporate-contracts/:id/saved-invoice',
     wrap(async (req, res) => {
+      const requestedId = identifier(req.body.id);
+      const validated = validateCorporateInvoice(req.body, req.params.id);
+      let created = false;
       const result = await repo.change((d) => {
         d.corporateInvoices = Array.isArray(d.corporateInvoices) ? d.corporateInvoices : [];
-        const contractId = String(req.params.id);
-        const month = req.body.month || req.body.selectedMonth || '';
-        const isNonGst = Boolean(req.body.isNonGst || req.body.invoiceType === 'nongst');
-        const idx = d.corporateInvoices.findIndex((inv) => {
-          if (String(inv.contractId) !== contractId) return false;
-          if (month && inv.month !== month) return false;
-          const invNonGst = Boolean(inv.isNonGst || inv.invoiceType === 'nongst');
-          return invNonGst === isNonGst;
+        if (!d.corporateContracts.some((contract) => String(contract.id) === validated.contractId))
+          throw new HttpError(404, 'Corporate contract not found.');
+        const idx = requestedId
+          ? d.corporateInvoices.findIndex((invoice) => String(invoice.id) === requestedId)
+          : -1;
+        if (requestedId && idx < 0)
+          throw new HttpError(404, 'Corporate invoice no longer exists. Refresh the list before saving.');
+        if (idx >= 0 && String(d.corporateInvoices[idx].contractId) !== validated.contractId)
+          throw new HttpError(409, 'Invoice does not belong to this corporate contract.');
+        const duplicateNumber = d.corporateInvoices.findIndex(
+          (invoice, invoiceIndex) =>
+            invoiceIndex !== idx &&
+            String(invoice.invoiceNo || '').toLowerCase() === validated.invoiceNo.toLowerCase(),
+        );
+        if (duplicateNumber >= 0)
+          throw new HttpError(409, 'Corporate invoice number already exists.');
+        const duplicatePeriod = d.corporateInvoices.findIndex((invoice, invoiceIndex) => {
+          if (invoiceIndex === idx) return false;
+          const invoiceNonGst = Boolean(invoice.isNonGst || invoice.invoiceType === 'nongst');
+          return (
+            String(invoice.contractId) === validated.contractId &&
+            invoice.month === validated.month &&
+            invoiceNonGst === validated.isNonGst
+          );
         });
+        if (duplicatePeriod >= 0)
+          throw new HttpError(
+            409,
+            'An invoice of this type already exists for this contract and month. Open it from Corporate Invoices to edit it.',
+          );
+        const existing = idx >= 0 ? d.corporateInvoices[idx] : null;
+        const now = new Date().toISOString();
         const record = {
-          ...req.body,
-          id: d.corporateInvoices[idx]?.id || Date.now(),
-          contractId,
-          month,
-          isNonGst,
-          invoiceType: isNonGst ? 'nongst' : 'gst',
-          updatedAt: new Date().toISOString(),
+          ...validated,
+          id: existing?.id || crypto.randomUUID(),
+          createdAt: existing?.createdAt || now,
+          updatedAt: now,
         };
         if (idx >= 0) {
           d.corporateInvoices[idx] = record;
         } else {
           d.corporateInvoices.unshift(record);
+          created = true;
         }
         return record;
+      });
+      res.status(created ? 201 : 200).json(result);
+    }),
+  );
+
+  // Corporate Invoices list & delete endpoints
+  app.get(
+    '/api/corporate-invoices',
+    wrap(async (req, res) => {
+      const state = await repo.read();
+      const list = Array.isArray(state.corporateInvoices) ? [...state.corporateInvoices] : [];
+      list.sort(
+        (a, b) =>
+          Date.parse(b.updatedAt || b.createdAt || 0) -
+          Date.parse(a.updatedAt || a.createdAt || 0),
+      );
+      res.json(list);
+    }),
+  );
+
+  app.delete(
+    '/api/corporate-invoices/:id',
+    wrap(async (req, res) => {
+      const targetId = String(req.params.id);
+      const result = await repo.change((d) => {
+        d.corporateInvoices = Array.isArray(d.corporateInvoices) ? d.corporateInvoices : [];
+        const initialLen = d.corporateInvoices.length;
+        d.corporateInvoices = d.corporateInvoices.filter((inv) => String(inv.id) !== targetId);
+        if (d.corporateInvoices.length === initialLen)
+          throw new HttpError(404, 'Corporate invoice not found.');
+        return { success: true };
       });
       res.json(result);
     }),

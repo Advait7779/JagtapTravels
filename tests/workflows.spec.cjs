@@ -34,7 +34,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await page.getByLabel('Company name').fill('Verified Test Travel');
   await page.getByLabel('Business phone').fill('9876543210');
   await page.getByLabel('UPI ID').fill('test-travel@bank');
-  await page.getByRole('button', { name: 'Save Business & Tariff Settings' }).click();
+  await page.getByRole('button', { name: 'Save Business Settings', exact: true }).click();
   await expect(page.getByText('Settings updated successfully.')).toBeVisible();
   await page.getByRole('button', { name: /^Customers/ }).click();
   await page.getByRole('button', { name: 'Add New Customer', exact: true }).click();

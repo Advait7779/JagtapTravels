@@ -121,15 +121,18 @@
 }
 @media print {
   @page {
-    size: A4;
-    margin: 12mm;
+    margin: 0mm;
+    size: auto;
   }
   html,
   body,
   #root {
     height: auto !important;
+    min-height: 100% !important;
     overflow: visible !important;
-    background: white !important;
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   #root > div {
     display: block !important;
@@ -150,28 +153,74 @@
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: white !important;
+    background: #ffffff !important;
     box-shadow: none !important;
     border: 0 !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .print-shell > div:not(.no-print),
+  .print-preview-container {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .print-overlay::-webkit-scrollbar,
+  .print-shell::-webkit-scrollbar,
+  .print-shell > div::-webkit-scrollbar,
+  .print-preview-container::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  .no-print,
+  .no-print *,
+  [class*="no-print"],
+  .print-shell .no-print,
+  .print-overlay .no-print {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
   }
   .printable-area {
-    padding: 0 !important;
+    box-sizing: border-box !important;
+    padding: 8mm 10mm !important;
     width: 100% !important;
-  }
-  .no-print {
-    display: none !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
   }
   .printable-area header,
   .printable-area footer,
   .printable-area tr {
     break-inside: avoid;
+    page-break-inside: avoid;
   }
   .printable-area thead {
     display: table-header-group;
   }
   .printable-area th,
   .printable-area td {
-    padding: 7px;
+    padding: 6px 7px;
   }
   .printable-area .sm\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -30,6 +30,7 @@ import CorporateContractTable from './components/corporate/CorporateContractTabl
 import CorporateContractModal from './components/corporate/CorporateContractModal';
 import CorporateTripLogModal from './components/corporate/CorporateTripLogModal';
 import CorporateInvoiceModal from './components/corporate/CorporateInvoiceModal';
+import CorporateInvoiceTable from './components/corporate/CorporateInvoiceTable';
 import FuelExpenseHub from './components/expenses/FuelExpenseHub';
 import FuelModal from './components/expenses/FuelModal';
 import TyreManagementHub from './components/expenses/TyreManagementHub';
@@ -68,6 +69,7 @@ export default function App() {
     bookings: [],
     inquiries: [],
     corporateContracts: [],
+    corporateInvoices: [],
     fuelLogs: [],
     tyreLogs: [],
     driverAdvances: [],
@@ -191,6 +193,7 @@ export default function App() {
       'bookings',
       'inquiries',
       'corporateContracts',
+      'corporateInvoices',
       'fuelLogs',
       'tyreLogs',
       'driverAdvances',
@@ -208,6 +211,7 @@ export default function App() {
       api.getBookings(),
       api.getInquiries(),
       api.getCorporateContracts(),
+      api.getCorporateInvoices(),
       api.getFuelLogs(),
       api.getTyreLogs(),
       api.getDriverAdvances(),
@@ -578,6 +582,7 @@ export default function App() {
     bookings = [],
     inquiries = [],
     corporateContracts = [],
+    corporateInvoices = [],
     fuelLogs = [],
     tyreLogs = [],
     driverAdvances = [],
@@ -596,6 +601,7 @@ export default function App() {
     bookings,
     inquiries,
     corporateContracts,
+    corporateInvoices,
     fuelLogs,
     tyreLogs,
     driverAdvances,
@@ -621,6 +627,7 @@ export default function App() {
           quotations: quotations.length,
           vehicles: vehicles.length,
           corporateContracts: corporateContracts.filter((c) => c.status === 'Active').length,
+          corporateInvoices: corporateInvoices.length,
           fuel: fuelLogs.length,
           tyres: tyreLogs.length,
           payroll: drivers.length,
@@ -745,6 +752,44 @@ export default function App() {
                 onGenerateInvoice={(contract, month, options = {}) =>
                   setCorporateInvoice({ contract, month, ...options })
                 }
+              />
+            )}
+
+            {/* Corporate Invoices */}
+            {tab === 'corporateInvoices' && (
+              <CorporateInvoiceTable
+                invoices={corporateInvoices}
+                contracts={corporateContracts}
+                onViewInvoice={(invoice) => {
+                  const matchedContract = corporateContracts.find(
+                    (c) => String(c.id) === String(invoice.contractId),
+                  ) || {
+                    id: invoice.contractId || Date.now(),
+                    companyName: invoice.partyName || 'Corporate Client',
+                    vehicleName: invoice.vehicleType || 'Vehicle',
+                    vehicleNumber: invoice.vehicleNumbers || '',
+                  };
+                  setCorporateInvoice({
+                    contract: matchedContract,
+                    month: invoice.month || '',
+                    isNonGst: Boolean(invoice.isNonGst || invoice.invoiceType === 'nongst'),
+                    invoiceData: invoice,
+                  });
+                }}
+                onDeleteInvoice={(invoice) => {
+                  remove(
+                    'deleteCorporateInvoice',
+                    invoice.id,
+                    invoice.invoiceNo || 'Corporate Invoice',
+                    `Delete corporate invoice ${invoice.invoiceNo || '#' + invoice.id}? This will remove it from saved corporate invoices.`,
+                    'Delete Invoice',
+                  );
+                }}
+                onGenerateNew={() => {
+                  navigate('corporateContracts');
+                  toast.info('Select a corporate contract and click "Tax Invoice" or "Non-GST Invoice" to create a new invoice.');
+                }}
+                onRefresh={refresh}
               />
             )}
 
@@ -1234,6 +1279,8 @@ export default function App() {
           selectedMonth={corporateInvoice.month || ''}
           settings={settings}
           initialIsNonGst={Boolean(corporateInvoice.isNonGst)}
+          initialInvoiceData={corporateInvoice.invoiceData || null}
+          onInvoiceSaved={refresh}
         />
       )}
 

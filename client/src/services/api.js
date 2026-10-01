@@ -137,6 +137,8 @@ export const api = {
     ),
   saveCorporateInvoice: (id, data) =>
     send('/corporate-contracts/' + id + '/saved-invoice', 'POST', data),
+  getCorporateInvoices: () => request('/corporate-invoices'),
+  deleteCorporateInvoice: (id) => send('/corporate-invoices/' + id, 'DELETE'),
 
   // Corporate Daily KM Trip Logs & Employee Commute
   getCorporateTripLogs: () => request('/corporate-trip-logs'),

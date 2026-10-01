@@ -15,11 +15,14 @@ import {
 import { formatINR, formatDate, localDate, numberToWordsIndian } from '../../utils/formatters';
 import { toast } from '../../context/ToastContext';
 import { api } from '../../services/api';
+import ThemedSelect from '../ThemedSelect';
 
 const MONTH_NAMES = [
   '', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
   'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
 ];
+const EMPTY_LIST = Object.freeze([]);
+const EMPTY_SETTINGS = Object.freeze({});
 
 const defaultCompany = {
   companyName: 'JAGTAP TRAVELS',
@@ -33,6 +36,16 @@ const defaultCompany = {
   bankAccountNo: '916020073533410',
   bankIfsc: 'UTIB0002985',
 };
+
+const mergeCompanySettings = (current, settings = {}) => ({
+  ...current,
+  ...settings,
+  gstin: settings.gstNumber || settings.gstin || current.gstin || '',
+  contact: settings.phone || settings.contact || current.contact || '',
+  hsnSac: settings.hsnSac || settings.hsnCode || current.hsnSac || '996419',
+  bankAccountNo: settings.accountNumber || settings.bankAccountNo || current.bankAccountNo || '',
+  bankIfsc: settings.ifsc || settings.bankIfsc || current.bankIfsc || '',
+});
 
 const emptyLineItem = () => ({
   id: Date.now() + Math.random(),
@@ -57,12 +70,14 @@ export default function CorporateInvoiceModal({
   isOpen,
   onClose,
   contract = null,
-  tripLogs = [],
-  customers = [],
-  vehicles = [],
+  tripLogs = EMPTY_LIST,
+  customers = EMPTY_LIST,
+  vehicles = EMPTY_LIST,
   selectedMonth = '',
-  settings = {},
+  settings = EMPTY_SETTINGS,
   initialIsNonGst = false,
+  initialInvoiceData = null,
+  onInvoiceSaved = null,
 }) {
   const printRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -131,9 +146,7 @@ export default function CorporateInvoiceModal({
   useEffect(() => {
     if (!settings || Object.keys(settings).length === 0) return;
     setCompany((prev) => ({
-      ...prev,
-      ...settings,
-      hsnSac: settings.hsnSac || settings.hsnCode || prev.hsnSac || '996419',
+      ...mergeCompanySettings(prev, settings),
       stampUrl: (settings.stampUrl !== undefined && settings.stampUrl !== 'none') ? settings.stampUrl : prev.stampUrl,
       signatureUrl: (settings.signatureUrl !== undefined && settings.signatureUrl !== 'none') ? settings.signatureUrl : prev.signatureUrl,
     }));
@@ -153,15 +166,7 @@ export default function CorporateInvoiceModal({
   const [saving, setSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
-
-  const getStorageKey = useCallback(
-    () => (contract?.id ? `jagtap_corp_invoice_${isNonGst ? 'nongst' : 'gst'}_${contract.id}_${selectedMonth || 'all'}` : null),
-    [contract?.id, selectedMonth, isNonGst],
-  );
-  const getFallbackStorageKey = useCallback(
-    () => (contract?.id ? (isNonGst ? `jagtap_corp_invoice_nongst_${contract.id}` : `jagtap_corp_invoice_${contract.id}`) : null),
-    [contract?.id, isNonGst],
-  );
+  const [savedInvoiceId, setSavedInvoiceId] = useState(null);
 
   // Populate from contract + trip logs (default initializer)
   const initializeFromContractAndLogs = useCallback(() => {
@@ -251,11 +256,7 @@ export default function CorporateInvoiceModal({
     }
 
     // Merge settings & synchronize stamp/signature toggles
-    setCompany((prev) => ({
-      ...prev,
-      ...settings,
-      hsnSac: settings?.hsnSac || settings?.hsnCode || prev.hsnSac || '996419',
-    }));
+    setCompany((prev) => mergeCompanySettings(prev, settings));
     if (settings?.stampUrl === 'none') {
       setShowStamp(false);
     } else if (settings?.stampUrl) {
@@ -301,18 +302,17 @@ export default function CorporateInvoiceModal({
     if (data.partyAddress !== undefined) setPartyAddress(data.partyAddress || '');
     if (data.partyGstin !== undefined) setPartyGstin(data.partyGstin || '');
     if (data.company && typeof data.company === 'object') {
-      setCompany((prev) => ({
-        ...prev,
-        ...data.company,
-        ...settings,
-        hsnSac: data.company.hsnSac || settings?.hsnSac || settings?.hsnCode || prev.hsnSac || '996419',
-        stampUrl: (settings?.stampUrl !== undefined && settings?.stampUrl !== 'none')
-          ? settings.stampUrl
-          : (data.company.stampUrl || prev.stampUrl),
-        signatureUrl: (settings?.signatureUrl !== undefined && settings?.signatureUrl !== 'none')
-          ? settings.signatureUrl
-          : (data.company.signatureUrl || prev.signatureUrl),
-      }));
+      setCompany((prev) =>
+        mergeCompanySettings(
+          {
+            ...prev,
+            ...data.company,
+            stampUrl: data.company.stampUrl || prev.stampUrl,
+            signatureUrl: data.company.signatureUrl || prev.signatureUrl,
+          },
+          settings,
+        ),
+      );
     }
     if (Array.isArray(data.lineItems) && data.lineItems.length > 0) {
       setLineItems(data.lineItems);
@@ -339,73 +339,85 @@ export default function CorporateInvoiceModal({
     }
 
     setIsSaved(true);
+    setSavedInvoiceId(data.id || null);
     setSavedAt(data.updatedAt || new Date().toISOString());
     return true;
   }, [settings]);
 
-  // Synchronous restore from localStorage on open, then background sync with server
+  // Computed totals
+  const computedTotals = useMemo(() => {
+    const lineTotal = lineItems.reduce((acc, item) => {
+      const pkgAmt = Number(item.packageAmount) || 0;
+      const extAmt = Number(item.extraAmount) || 0;
+      const amt = item.amount !== undefined && item.amount !== '' ? Number(item.amount) : pkgAmt + extAmt;
+      return acc + amt;
+    }, 0);
+    const tollTotal = tollItems.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+    const taxableValue = lineTotal + tollTotal;
+    const effectiveGstRate = isNonGst ? 0 : gstRate;
+    const cgst = Math.round(taxableValue * (effectiveGstRate / 100));
+    const sgst = Math.round(taxableValue * (effectiveGstRate / 100));
+    const grandTotal = taxableValue + cgst + sgst;
+    return { lineTotal, tollTotal, taxableValue, cgst, sgst, grandTotal };
+  }, [lineItems, tollItems, gstRate, isNonGst]);
+
+  // Load an explicitly selected invoice, or initialize from the contract and sync from the server.
   useEffect(() => {
     if (!contract || !isOpen) return;
 
-    let hasRestored = false;
-
-    // 1. Try local storage first (instant synchronous restore)
-    try {
-      const key = getStorageKey();
-      const fallbackKey = getFallbackStorageKey();
-      const legacyKey = !initialIsNonGst && contract?.id ? `jagtap_corp_invoice_${contract.id}_${selectedMonth || 'all'}` : null;
-      const rawSaved =
-        (key && localStorage.getItem(key)) ||
-        (legacyKey && localStorage.getItem(legacyKey)) ||
-        (fallbackKey && localStorage.getItem(fallbackKey));
-      if (rawSaved) {
-        const parsed = JSON.parse(rawSaved);
-        if (parsed && (Array.isArray(parsed.lineItems) ? parsed.lineItems.length > 0 : true)) {
-          applySavedInvoiceData(parsed);
-          hasRestored = true;
-          // Open directly in preview when an existing saved invoice is restored
-          setActiveView('preview');
-        }
-      }
-    } catch (e) {
-      console.warn('Could not parse saved corporate invoice from localStorage:', e);
+    // 0. If direct invoice record passed from Corporate Invoices table, apply immediately
+    if (initialInvoiceData) {
+      applySavedInvoiceData(initialInvoiceData);
+      setActiveView('preview');
+      return;
     }
 
-    // 2. If nothing in local storage, initialize from contract and logs
-    if (!hasRestored) {
-      initializeFromContractAndLogs();
-      setIsSaved(false);
-      setSavedAt(null);
-    }
+    setSavedInvoiceId(null);
+    initializeFromContractAndLogs();
+    setIsSaved(false);
+    setSavedAt(null);
 
-    // 3. Asynchronously fetch from server to sync if any newer saved invoice exists
+    // PostgreSQL/JSON repository is authoritative; browser storage is never treated as a save.
     let isCancelled = false;
     api.getSavedCorporateInvoice(contract.id, selectedMonth, initialIsNonGst)
       .then((serverData) => {
         if (!isCancelled && serverData && serverData.id) {
           applySavedInvoiceData(serverData);
-          try {
-            const key = getStorageKey();
-            if (key) localStorage.setItem(key, JSON.stringify(serverData));
-          } catch (_) {
-            // ignore localStorage quota or permission error
-          }
+          setActiveView('preview');
         }
       })
       .catch((err) => {
-        console.warn('Could not fetch saved corporate invoice from server:', err);
+        if (!isCancelled)
+          toast.error('Unable to load saved invoice', { description: err.message });
       });
 
     return () => {
       isCancelled = true;
     };
-  }, [contract, selectedMonth, isOpen, initialIsNonGst, getStorageKey, getFallbackStorageKey, applySavedInvoiceData, initializeFromContractAndLogs]);
+  }, [contract, selectedMonth, isOpen, initialIsNonGst, initialInvoiceData, applySavedInvoiceData, initializeFromContractAndLogs]);
 
-  // Save current invoice changes to localStorage & server database
+  // Save current invoice changes to the authoritative server repository.
   const handleSaveInvoice = async () => {
     if (!contract) return;
+    if (!invoiceNo.trim()) {
+      toast.error('Invoice number is required.');
+      return;
+    }
+    if (!invoiceDate) {
+      toast.error('Invoice date is required.');
+      return;
+    }
+    if (!partyName.trim()) {
+      toast.error('Party name is required.');
+      return;
+    }
+    if (!lineItems.length || lineItems.some((item) => !String(item.particulars || '').trim())) {
+      toast.error('Every invoice line requires particulars.');
+      return;
+    }
     setSaving(true);
     const invoicePayload = {
+      ...(savedInvoiceId ? { id: savedInvoiceId } : {}),
       contractId: String(contract.id),
       month: selectedMonth || '',
       isNonGst,
@@ -428,34 +440,26 @@ export default function CorporateInvoiceModal({
       lineItems,
       tollItems,
       gstRate,
+      lineTotal: computedTotals.lineTotal,
+      tollTotal: computedTotals.tollTotal,
+      taxableValue: computedTotals.taxableValue,
+      cgst: computedTotals.cgst,
+      sgst: computedTotals.sgst,
+      grandTotal: computedTotals.grandTotal,
+      totalAmount: computedTotals.grandTotal,
       showStamp,
       showSignature,
-      updatedAt: new Date().toISOString(),
     };
-
-    // 1. Save synchronously to localStorage
     try {
-      const key = getStorageKey();
-      const fallbackKey = getFallbackStorageKey();
-      if (key) localStorage.setItem(key, JSON.stringify(invoicePayload));
-      if (fallbackKey) localStorage.setItem(fallbackKey, JSON.stringify(invoicePayload));
-    } catch (e) {
-      console.warn('LocalStorage save failed:', e);
-    }
-
-    // 2. Save to backend database
-    try {
-      await api.saveCorporateInvoice(contract.id, invoicePayload);
-      setIsSaved(true);
-      setSavedAt(invoicePayload.updatedAt);
+      const savedResult = await api.saveCorporateInvoice(contract.id, invoicePayload);
+      applySavedInvoiceData(savedResult);
       toast.success(isNonGst ? 'Corporate Non-GST invoice saved successfully!' : 'Corporate Tax invoice saved successfully!');
       setActiveView('preview');
+      if (onInvoiceSaved) await onInvoiceSaved(savedResult);
     } catch (err) {
       console.error('Server save error:', err);
-      setIsSaved(true);
-      setSavedAt(invoicePayload.updatedAt);
-      toast.info('Invoice saved in browser storage.');
-      setActiveView('preview');
+      setIsSaved(false);
+      toast.error('Invoice was not saved', { description: err.message });
     } finally {
       setSaving(false);
     }
@@ -463,36 +467,12 @@ export default function CorporateInvoiceModal({
 
   // Reset to original contract defaults
   const handleResetToDefaults = () => {
-    try {
-      const key = getStorageKey();
-      const fallbackKey = getFallbackStorageKey();
-      if (key) localStorage.removeItem(key);
-      if (fallbackKey) localStorage.removeItem(fallbackKey);
-    } catch (_) {
-      // ignore localStorage quota or permission error
-    }
     initializeFromContractAndLogs();
     setIsSaved(false);
     setSavedAt(null);
     toast.info('Invoice reset to contract defaults.');
   };
 
-  // Computed totals
-  const computedTotals = useMemo(() => {
-    const lineTotal = lineItems.reduce((acc, item) => {
-      const pkgAmt = Number(item.packageAmount) || 0;
-      const extAmt = Number(item.extraAmount) || 0;
-      const amt = item.amount !== undefined && item.amount !== '' ? Number(item.amount) : pkgAmt + extAmt;
-      return acc + amt;
-    }, 0);
-    const tollTotal = tollItems.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
-    const taxableValue = lineTotal + tollTotal;
-    const effectiveGstRate = isNonGst ? 0 : gstRate;
-    const cgst = Math.round(taxableValue * (effectiveGstRate / 100));
-    const sgst = Math.round(taxableValue * (effectiveGstRate / 100));
-    const grandTotal = taxableValue + cgst + sgst;
-    return { lineTotal, tollTotal, taxableValue, cgst, sgst, grandTotal };
-  }, [lineItems, tollItems, gstRate, isNonGst]);
 
   // Line item handlers
   const updateLineItem = (id, field, value) => {
@@ -575,11 +555,49 @@ export default function CorporateInvoiceModal({
       setDownloaded(true);
     } catch (err) {
       console.error('PDF export failed:', err);
-      window.print();
+      handlePrint();
     } finally {
       setDownloading(false);
     }
   }, [partyName, period, selectedMonth, isNonGst]);
+
+  // Dedicated Print handler: switches to preview, temporarily silences document.title to eliminate browser print headers
+  const handlePrint = useCallback(() => {
+    setActiveView('preview');
+    setTimeout(() => {
+      const originalTitle = document.title;
+      document.title = '';
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 500);
+    }, 250);
+  }, []);
+
+  // Listen for Ctrl+P while invoice modal is open to switch to preview and suppress browser header artifacts
+  useEffect(() => {
+    if (!isOpen) return;
+    let savedTitle = '';
+    const handleBeforePrint = () => {
+      setActiveView('preview');
+      savedTitle = document.title;
+      document.title = '';
+    };
+    const handleAfterPrint = () => {
+      if (savedTitle) {
+        document.title = savedTitle;
+      }
+    };
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+      if (savedTitle) {
+        document.title = savedTitle;
+      }
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -593,13 +611,13 @@ export default function CorporateInvoiceModal({
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <label className="form-label">Invoice No
-            <input className="form-input" value={invoiceNo} onChange={(e) => { setInvoiceNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 390" />
+            <input className="form-input" required maxLength={100} value={invoiceNo} onChange={(e) => { setInvoiceNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 390" />
           </label>
           <label className="form-label">Date
-            <input className="form-input" type="date" value={invoiceDate} onChange={(e) => { setInvoiceDate(e.target.value); setIsSaved(false); }} />
+            <input className="form-input" required type="date" value={invoiceDate} onChange={(e) => { setInvoiceDate(e.target.value); setIsSaved(false); }} />
           </label>
           <label className="form-label">Period
-            <input className="form-input" value={period} onChange={(e) => { setPeriod(e.target.value); setIsSaved(false); }} placeholder="e.g. AUGUST" />
+            <input className="form-input" required maxLength={100} value={period} onChange={(e) => { setPeriod(e.target.value); setIsSaved(false); }} placeholder="e.g. AUGUST" />
           </label>
           <label className="form-label">PO No
             <input className="form-input" value={poNo} onChange={(e) => { setPoNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 4593518741" />
@@ -618,25 +636,13 @@ export default function CorporateInvoiceModal({
         </div>
       </div>
 
-      {/* Vehicle Info */}
-      <div className="space-y-1">
-        <h3 className="text-sm font-bold text-slate-800">Vehicle Info</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="form-label">Type of Vehicle
-            <input className="form-input" value={vehicleType} onChange={(e) => { setVehicleType(e.target.value); setIsSaved(false); }} placeholder="e.g. 45 SEATER & 32 SEATER" />
-          </label>
-          <label className="form-label">Vehicle No(s)
-            <input className="form-input" value={vehicleNumbers} onChange={(e) => { setVehicleNumbers(e.target.value); setIsSaved(false); }} placeholder="e.g. MH 12 XN 7220, MH 12 WX 7223" />
-          </label>
-        </div>
-      </div>
 
       {/* Party (Client) Info */}
       <div className="space-y-1">
         <h3 className="text-sm font-bold text-slate-800">Party (Client) Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label className="form-label">Company Name
-            <input className="form-input" value={partyName} onChange={(e) => { setPartyName(e.target.value); setIsSaved(false); }} placeholder="e.g. HENKEL ADHESIVE TECHNOLOGIES" />
+            <input className="form-input" required maxLength={200} value={partyName} onChange={(e) => { setPartyName(e.target.value); setIsSaved(false); }} placeholder="e.g. HENKEL ADHESIVE TECHNOLOGIES" />
           </label>
           <label className="form-label">Address
             <input className="form-input" value={partyAddress} onChange={(e) => { setPartyAddress(e.target.value); setIsSaved(false); }} placeholder="Full billing address" />
@@ -745,16 +751,16 @@ export default function CorporateInvoiceModal({
                       />
                     </td>
                     <td className="p-1.5">
-                      <select
-                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded font-bold text-slate-800 bg-white focus:border-navy-900 cursor-pointer"
+                      <ThemedSelect
                         value={t.type || 'TOLL'}
                         onChange={(e) => updateTollItem(t.id, 'type', e.target.value)}
+                        className="text-xs font-bold"
                       >
                         <option value="TOLL">TOLL</option>
                         <option value="TOLL & PARKING">TOLL & PARKING</option>
                         <option value="PARKING">PARKING</option>
                         <option value="FASTAG">FASTAG</option>
-                      </select>
+                      </ThemedSelect>
                     </td>
                     <td className="p-1.5">
                       <input
@@ -873,7 +879,9 @@ export default function CorporateInvoiceModal({
         ) : (
           <div className="flex justify-between text-base pt-1"><span className="font-bold text-black">Total Amount:</span><span className="font-black text-black">₹ {fmtNum(computedTotals.grandTotal)}</span></div>
         )}
-        <p className="text-[10px] text-slate-500 pt-1">INR : {numberToWordsIndian(computedTotals.grandTotal)}</p>
+        <p className="text-[11px] text-slate-600 pt-1" style={{ wordSpacing: '3.5px', letterSpacing: '0.2px' }}>
+          <span className="font-semibold text-slate-800">INR :</span> {numberToWordsIndian(computedTotals.grandTotal)}
+        </p>
       </div>
 
       {/* Save Action Strip */}
@@ -924,19 +932,23 @@ export default function CorporateInvoiceModal({
       : '';
 
     return (
-      <div className="overflow-y-auto max-h-[calc(100vh-180px)] bg-slate-100 p-3 sm:p-6">
-        <div ref={printRef} className="printable-area bg-white mx-auto shadow-lg" style={{ maxWidth: 820, padding: '28px 32px', fontFamily: "'Times New Roman', Times, serif", fontSize: 13, color: '#000', lineHeight: 1.4 }}>
+      <div className="print-preview-container overflow-y-auto max-h-[calc(100vh-180px)] bg-slate-100 p-3 sm:p-6 print:overflow-visible print:max-h-none print:h-auto print:bg-white print:p-0 print:m-0 print:shadow-none">
+        <div
+          ref={printRef}
+          className="printable-area bg-white mx-auto shadow-lg print:shadow-none print:m-0 print:max-w-none"
+          style={{ maxWidth: 820, padding: '28px 32px', fontFamily: "'Times New Roman', Times, serif", fontSize: 13, color: '#000', lineHeight: 1.4 }}
+        >
           {/* Title */}
           <h1 style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 16, letterSpacing: 4 }}>
             {invoiceTitle ? invoiceTitle.replace(/\s+/g, ' \u00a0 ') : (isNonGst ? 'INVOICE' : 'Tax \u00a0 Invoice')}
           </h1>
 
           {/* Top Grid: Company Info | Invoice Meta */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000' }}>
             <tbody>
               <tr>
                 {/* Left: Company Info & Official Logo */}
-                <td style={{ border: '1.5px solid #000', padding: '6px 8px', verticalAlign: 'top', width: '48%' }} rowSpan={3}>
+                <td style={{ border: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '48%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 'bold', color: '#000', fontSize: 14 }}>{company.companyName}</div>
@@ -957,39 +969,29 @@ export default function CorporateInvoiceModal({
                   </div>
                 </td>
                 {/* Right top: Invoice no */}
-                <td style={{ border: '1.5px solid #000', padding: '4px 8px', fontSize: 12 }}>
+                <td style={{ border: '1px solid #000', padding: '8px 10px', fontSize: 12, verticalAlign: 'top', width: '26%' }}>
                   <b>Invoice No :</b> &nbsp;&nbsp; {invoiceNo}
                 </td>
-                <td style={{ border: '1.5px solid #000', padding: '4px 8px', fontSize: 12 }}>
+                <td style={{ border: '1px solid #000', padding: '8px 10px', fontSize: 12, verticalAlign: 'top', lineHeight: 1.6, width: '26%' }}>
                   <b>Date :</b> &nbsp;&nbsp; {dateFormatted}<br />
                   <b>Period :</b> &nbsp;&nbsp; {period}<br />
                   <b>PO No :</b> &nbsp;&nbsp; {poNo}
-                </td>
-              </tr>
-              <tr>
-                <td colSpan={2} style={{ border: '1.5px solid #000', padding: '4px 8px', fontSize: 12 }}>
-                  <b>Type of Vehicle :</b> &nbsp;&nbsp; {vehicleType}
-                </td>
-              </tr>
-              <tr>
-                <td colSpan={2} style={{ border: '1.5px solid #000', padding: '4px 8px', fontSize: 12 }}>
-                  <b>Vehicle No :</b> &nbsp;&nbsp;&nbsp;&nbsp; {vehicleNumbers}
                 </td>
               </tr>
             </tbody>
           </table>
 
           {/* Party + Bank Details */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', borderTop: 'none' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', borderTop: 'none' }}>
             <tbody>
               <tr>
-                <td style={{ border: '1.5px solid #000', padding: '6px 8px', verticalAlign: 'top', width: '48%' }}>
+                <td style={{ border: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '48%' }}>
                   <div style={{ fontSize: 12 }}>Party Name :-</div>
                   <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>{partyName}</div>
                   <div style={{ fontSize: 11, whiteSpace: 'pre-line' }}>{partyAddress}</div>
                   {partyGstin && <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12 }}>GST – {partyGstin}</div>}
                 </td>
-                <td style={{ border: '1.5px solid #000', padding: '6px 8px', verticalAlign: 'top', fontSize: 12 }}>
+                <td style={{ border: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', fontSize: 12 }}>
                   <div style={{ fontWeight: 'bold', fontSize: 12 }}>{company.companyName} ACCOUNT DETAILS</div>
                   <div>BANK - &nbsp;&nbsp; {company.bankName}</div>
                   <div>BRANCH - &nbsp;&nbsp; {company.bankBranch}</div>
@@ -1001,44 +1003,44 @@ export default function CorporateInvoiceModal({
           </table>
 
           {/* Line Items Table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', borderTop: 'none' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', borderTop: 'none' }}>
             <thead>
-              <tr style={{ fontWeight: 'bold', fontSize: 11 }}>
-                <th style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', width: 30 }}>No</th>
-                <th style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'left' }}>Particulars</th>
-                <th style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center' }}>PACKAGE<br />KM</th>
-                <th style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center' }}>PACKAGE<br />AMOUNT</th>
-                <th style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center' }}>EXTRA<br />KM</th>
-                <th style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center' }}>EXTRA<br />KM RATE</th>
-                <th style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center' }}>EXTRA KM -<br />HOURS AMOUNT</th>
-                <th style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>Amount</th>
+              <tr style={{ fontWeight: 'bold', fontSize: 10.5, lineHeight: 1.25 }}>
+                <th style={{ border: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', width: 30 }}>No</th>
+                <th style={{ border: '1px solid #000', padding: '8px 6px', textAlign: 'left', verticalAlign: 'middle' }}>Particulars</th>
+                <th style={{ border: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>PACKAGE<br />KM</th>
+                <th style={{ border: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>PACKAGE<br />AMOUNT</th>
+                <th style={{ border: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA<br />KM</th>
+                <th style={{ border: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA<br />KM RATE</th>
+                <th style={{ border: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA KM -<br />HOURS AMOUNT</th>
+                <th style={{ border: '1px solid #000', padding: '8px 6px', textAlign: 'right', verticalAlign: 'middle' }}>Amount</th>
               </tr>
             </thead>
             <tbody>
               {lineItems.map((item, idx) => (
                 <tr key={item.id} style={{ fontSize: 12 }}>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center' }}>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
                     {item.particulars || item.packageKm ? idx + 1 : ''}
                   </td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', fontWeight: 'bold' }}>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', fontWeight: 'bold', verticalAlign: 'middle' }}>
                     {item.particulars}
                   </td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
                     {item.packageKm ? fmtNum(item.packageKm) : ''}
                   </td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
                     {item.packageAmount ? fmtNum(item.packageAmount) : ''}
                   </td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
                     {item.extraKm ? fmtNum(item.extraKm) : (item.packageKm ? '0' : '')}
                   </td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
                     {item.extraKmRate ? fmtNum(item.extraKmRate) : (item.packageKm ? '0' : '')}
                   </td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
                     {item.extraAmount ? fmtNum(item.extraAmount) : (item.packageKm ? '0' : '')}
                   </td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>
                     {fmtNum(item.amount)}
                   </td>
                 </tr>
@@ -1046,9 +1048,9 @@ export default function CorporateInvoiceModal({
               {/* Vehicle Subtotal row - visible before adding Toll & Parking */}
               {tollItems.length > 0 && (
                 <tr style={{ fontSize: 12 }}>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(lineTotal)}</td>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(lineTotal)}</td>
                 </tr>
               )}
               {/* Toll rows - Rendered directly above the final TOTAL row */}
@@ -1063,23 +1065,23 @@ export default function CorporateInvoiceModal({
                   <tr key={t.id} style={{ fontSize: 12 }}>
                     {vehicle ? (
                       <>
-                        <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={4}></td>
-                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }} colSpan={2}>
+                        <td style={{ border: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={4}></td>
+                        <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }} colSpan={2}>
                           {vehicle}
                         </td>
-                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
+                        <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
                           {tollType}
                         </td>
                       </>
                     ) : (
                       <>
-                        <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
+                        <td style={{ border: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
+                        <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
                           {tollType}
                         </td>
                       </>
                     )}
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>
                       {fmtNum(t.amount)}
                     </td>
                   </tr>
@@ -1089,43 +1091,46 @@ export default function CorporateInvoiceModal({
               {gstRate > 0 ? (
                 <>
                   <tr style={{ fontSize: 12 }}>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(taxableValue)}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(taxableValue)}</td>
                   </tr>
                   <tr style={{ fontSize: 12 }}>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>C GST {gstRate}%</td>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(cgst)}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>CGST {gstRate}%</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(cgst)}</td>
                   </tr>
                   <tr style={{ fontSize: 12 }}>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>S GST {gstRate}%</td>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(sgst)}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>SGST {gstRate}%</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(sgst)}</td>
                   </tr>
                   <tr style={{ fontSize: 13, fontWeight: 'bold' }}>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
-                    <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(grandTotal)}</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
+                    <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>{fmtNum(grandTotal)}</td>
                   </tr>
                 </>
               ) : (
                 <tr style={{ fontSize: 13, fontWeight: 'bold' }}>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
-                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right' }}>{fmtNum(grandTotal)}</td>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
+                  <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>{fmtNum(grandTotal)}</td>
                 </tr>
               )}
             </tbody>
           </table>
 
           {/* Amount in words */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', borderTop: 'none' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', borderTop: 'none' }}>
             <tbody>
               <tr>
-                <td style={{ border: '1.5px solid #000', padding: '6px 8px' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: 12 }}>Amount Chargeable (in words)</div>
-                  <div style={{ fontSize: 12 }}>INR : {numberToWordsIndian(grandTotal)}</div>
+                <td style={{ border: '1px solid #000', padding: '8px 10px' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: 12, marginBottom: 3 }}>Amount Chargeable (in words)</div>
+                  <div style={{ fontSize: 12, wordSpacing: '4.5px', letterSpacing: '0.3px', lineHeight: 1.5 }}>
+                    <span style={{ fontWeight: 'bold', marginRight: 4 }}>INR :</span>
+                    {numberToWordsIndian(grandTotal)}
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -1133,23 +1138,23 @@ export default function CorporateInvoiceModal({
 
 
           {/* Footer: Certification + Signatory */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', borderTop: 'none', fontSize: 11 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', borderTop: 'none', fontSize: 11 }}>
             <tbody>
               <tr>
-                <td style={{ border: '1.5px solid #000', padding: '8px', verticalAlign: 'top', width: '55%' }}>
+                <td style={{ border: '1px solid #000', padding: '10px', verticalAlign: 'top', width: '55%' }}>
                   <div style={{ fontWeight: 'bold' }}>This certified that the particulars given are true and correct and the amount indicated represents the price actually charged , and all dispute are subjects to pune jurisdiction</div>
                 </td>
                 <td style={{ border: '1.5px solid #000', padding: '8px', verticalAlign: 'top', position: 'relative' }}>
                   <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>For {company.companyName}</div>
-                  <div style={{ minHeight: 98, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', padding: '4px 6px 2px 8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 102 }}>
+                  <div style={{ minHeight: 125, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', padding: '4px 6px 2px 8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 128, flexShrink: 0 }}>
                       {showStamp && !isStampRemoved && effectiveStampUrl && (
                         <img
                           src={effectiveStampUrl}
                           alt="Official Stamp"
                           style={{
-                            height: 98,
-                            width: 98,
+                            height: 125,
+                            width: 125,
                             objectFit: 'contain',
                             mixBlendMode: 'multiply',
                             opacity: 0.95,
@@ -1164,13 +1169,13 @@ export default function CorporateInvoiceModal({
                         />
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: 160, paddingRight: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: 160, flexShrink: 0, paddingRight: 4 }}>
                       {showSignature && !isSignatureRemoved && effectiveSignatureUrl && (
                         <img
                           src={effectiveSignatureUrl}
                           alt="Authorized Signature"
                           style={{
-                            height: 64,
+                            height: 68,
                             width: 'auto',
                             maxWidth: 180,
                             objectFit: 'contain',
@@ -1209,7 +1214,7 @@ export default function CorporateInvoiceModal({
     >
       <div className="print-shell bg-white max-w-5xl mx-auto h-full flex flex-col shadow-2xl overflow-hidden">
         {/* Top Control Bar */}
-        <div className="no-print flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-3.5 sm:p-4 bg-slate-900 text-white border-b border-slate-800 shrink-0">
+        <div className="no-print print:hidden flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between p-3.5 sm:p-4 bg-slate-900 text-white border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
               <Receipt size={18} weight="bold" className={isNonGst ? 'text-teal-400' : 'text-amber-400'} />
@@ -1257,7 +1262,7 @@ export default function CorporateInvoiceModal({
             </button>
             <button
               type="button"
-              onClick={() => { setActiveView('preview'); setTimeout(() => window.print(), 300); }}
+              onClick={handlePrint}
               className="px-3.5 py-2 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded text-xs shadow transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial cursor-pointer"
             >
               <Printer size={15} weight="bold" />

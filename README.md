@@ -48,6 +48,7 @@ The public booking form prepares an email to `bookings@jagtaptravels.com`; it do
 - Fuel entries support Diesel, Petrol and CNG, require an odometer, and calculate cost from quantity × rate on the server. Consecutive fills show per-vehicle efficiency as KM/L or KM/kg.
 - Tyre records track vehicle, position, quantity, brand, cost and replacement odometer. Create, edit and delete operations keep the vehicle tyre history synchronized.
 - Driver licenses and vehicle RCs support authenticated image/PDF uploads. Removing a directly uploaded document also removes its stored binary; RC, PUC, insurance, fitness, permit and road-tax dates produce expiry reminders.
+- Corporate invoices have a dedicated searchable register with GST/non-GST filters, date search, pagination, view/print/edit and protected deletion. The server validates invoice fields, assigns UUIDs, prevents duplicate invoice numbers and recalculates line totals, taxable value, CGST, SGST and grand total before saving.
 
 ## Storage selection
 

@@ -17,6 +17,7 @@ import {
   GasPump,
   CircleNotch,
   Coins,
+  Scroll,
 } from '@phosphor-icons/react';
 
 export default function Sidebar({
@@ -38,6 +39,7 @@ export default function Sidebar({
         { id: 'dashboard', label: 'Dashboard', icon: SquaresFour },
         { id: 'bookings', label: 'Bookings & Dispatch', icon: CalendarCheck },
         { id: 'corporateContracts', label: 'Corporate Contracts', icon: Buildings },
+        { id: 'corporateInvoices', label: 'Corporate Invoices', icon: Scroll },
         { id: 'inquiries', label: 'Leads & Enquiries', icon: ChatCircleDots },
         { id: 'meterReadings', label: 'Meter Readings', icon: Gauge },
         { id: 'quotations', label: 'Quotations', icon: FileText },
