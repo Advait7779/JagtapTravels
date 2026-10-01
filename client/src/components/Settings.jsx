@@ -30,7 +30,8 @@ export default function Settings({ settings, onSave, onSignedOut }) {
     phone2: 'Business phone 2 (Below 1st number)',
     email: 'Business email',
     gstNumber: 'GSTIN',
-    bankName: 'Bank / branch',
+    bankName: 'Bank name',
+    bankBranch: 'Branch',
     accountName: 'Account holder',
     accountNumber: 'Account number',
     ifsc: 'IFSC',
@@ -177,6 +178,10 @@ export default function Settings({ settings, onSave, onSignedOut }) {
                       ? '9011507220 (Default 1st number)'
                       : key === 'phone2'
                       ? 'e.g. 8888094770 (Adds below 1st number)'
+                      : key === 'bankName'
+                      ? 'e.g. AXIS BANK'
+                      : key === 'bankBranch'
+                      ? 'e.g. SASWAD'
                       : ''
                   }
                   value={form[key] || ''}

@@ -51,6 +51,18 @@ const mergeCompanySettings = (current, settings = {}) => {
     }
   }
 
+  let bankName = settings.bankName || current.bankName || 'AXIS BANK';
+  let bankBranch = settings.bankBranch || current.bankBranch || 'SASWAD';
+
+  // If bankBranch was not explicitly entered, and bankName contains branch info (e.g. 'AXIS Bank Saswad Branch.')
+  if (!settings.bankBranch && bankName && /saswad/i.test(bankName)) {
+    const cleaned = bankName.replace(/[\s,-]+saswad(\s+branch\.?)?/i, '').replace(/\s+branch\.?$/i, '').trim();
+    if (cleaned) {
+      bankName = cleaned;
+      bankBranch = 'SASWAD';
+    }
+  }
+
   return {
     ...current,
     ...settings,
@@ -58,6 +70,8 @@ const mergeCompanySettings = (current, settings = {}) => {
     contact: c1,
     contact2: c2,
     hsnSac: settings.hsnSac || settings.hsnCode || current.hsnSac || '996419',
+    bankName,
+    bankBranch,
     bankAccountNo: settings.accountNumber || settings.bankAccountNo || current.bankAccountNo || '',
     bankIfsc: settings.ifsc || settings.bankIfsc || current.bankIfsc || '',
   };
@@ -687,6 +701,57 @@ export default function CorporateInvoiceModal({
           </label>
           <label className="form-label">Client GSTIN
             <input className="form-input" value={partyGstin} onChange={(e) => { setPartyGstin(e.target.value); setIsSaved(false); }} placeholder="e.g. 27AAACL1954B1ZW" />
+          </label>
+        </div>
+      </div>
+
+      {/* Company Bank Account Details */}
+      <div className="space-y-1">
+        <h3 className="text-sm font-bold text-slate-800">Bank Account Details (Printed on Invoice)</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <label className="form-label">Bank Name
+            <input
+              className="form-input"
+              value={company.bankName || ''}
+              onChange={(e) => {
+                setCompany((prev) => ({ ...prev, bankName: e.target.value }));
+                setIsSaved(false);
+              }}
+              placeholder="AXIS BANK"
+            />
+          </label>
+          <label className="form-label">Branch
+            <input
+              className="form-input"
+              value={company.bankBranch || ''}
+              onChange={(e) => {
+                setCompany((prev) => ({ ...prev, bankBranch: e.target.value }));
+                setIsSaved(false);
+              }}
+              placeholder="SASWAD"
+            />
+          </label>
+          <label className="form-label">Account Number
+            <input
+              className="form-input"
+              value={company.bankAccountNo || ''}
+              onChange={(e) => {
+                setCompany((prev) => ({ ...prev, bankAccountNo: e.target.value }));
+                setIsSaved(false);
+              }}
+              placeholder="916020073533410"
+            />
+          </label>
+          <label className="form-label">IFSC
+            <input
+              className="form-input"
+              value={company.bankIfsc || ''}
+              onChange={(e) => {
+                setCompany((prev) => ({ ...prev, bankIfsc: e.target.value }));
+                setIsSaved(false);
+              }}
+              placeholder="UTIB0002985"
+            />
           </label>
         </div>
       </div>

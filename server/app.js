@@ -542,6 +542,7 @@ function createApp(repo, options = {}) {
         'email',
         'gstNumber',
         'bankName',
+        'bankBranch',
         'accountName',
         'accountNumber',
         'ifsc',
