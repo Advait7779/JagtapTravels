@@ -9,8 +9,12 @@ import {
   PencilSimple,
   Receipt,
   Eye,
+  FloppyDisk,
+  ArrowCounterClockwise,
 } from '@phosphor-icons/react';
 import { formatINR, formatDate, localDate, numberToWordsIndian } from '../../utils/formatters';
+import { toast } from '../../context/ToastContext';
+import { api } from '../../services/api';
 
 const MONTH_NAMES = [
   '', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
@@ -95,8 +99,22 @@ export default function CorporateInvoiceModal({
   const [showStamp, setShowStamp] = useState(settings?.stampUrl !== 'none');
   const [showSignature, setShowSignature] = useState(settings?.signatureUrl !== 'none');
 
-  // Populate from contract + trip logs
-  useEffect(() => {
+  // Persistence state
+  const [saving, setSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savedAt, setSavedAt] = useState(null);
+
+  const getStorageKey = useCallback(
+    () => (contract?.id ? `jagtap_corp_invoice_${contract.id}_${selectedMonth || 'all'}` : null),
+    [contract?.id, selectedMonth],
+  );
+  const getFallbackStorageKey = useCallback(
+    () => (contract?.id ? `jagtap_corp_invoice_${contract.id}` : null),
+    [contract?.id],
+  );
+
+  // Populate from contract + trip logs (default initializer)
+  const initializeFromContractAndLogs = useCallback(() => {
     if (!contract) return;
 
     // Period
@@ -126,7 +144,7 @@ export default function CorporateInvoiceModal({
     setVehicleNumbers(contract.vehicleNumber || matchedVehicle?.vehicleNumber || '');
 
     // Line item from contract
-    const monthStart = selectedMonth + '-01';
+    const monthStart = selectedMonth ? `${selectedMonth}-01` : `${localDate().slice(0, 7)}-01`;
     const monthEnd = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
     const monthLogs = tripLogs.filter(
       (log) =>
@@ -197,6 +215,159 @@ export default function CorporateInvoiceModal({
     }
   }, [contract, selectedMonth, tripLogs, customers, vehicles, settings]);
 
+  // Apply saved invoice payload into state
+  const applySavedInvoiceData = useCallback((data) => {
+    if (!data) return false;
+    if (data.invoiceNo !== undefined) setInvoiceNo(data.invoiceNo || '');
+    if (data.invoiceDate !== undefined) setInvoiceDate(data.invoiceDate || localDate());
+    if (data.period !== undefined) setPeriod(data.period || '');
+    if (data.poNo !== undefined) setPoNo(data.poNo || '');
+    if (data.vehicleType !== undefined) setVehicleType(data.vehicleType || '');
+    if (data.vehicleNumbers !== undefined) setVehicleNumbers(data.vehicleNumbers || '');
+    if (data.partyName !== undefined) setPartyName(data.partyName || '');
+    if (data.partyAddress !== undefined) setPartyAddress(data.partyAddress || '');
+    if (data.partyGstin !== undefined) setPartyGstin(data.partyGstin || '');
+    if (data.company && typeof data.company === 'object') {
+      setCompany((prev) => ({ ...prev, ...data.company }));
+    }
+    if (Array.isArray(data.lineItems) && data.lineItems.length > 0) {
+      setLineItems(data.lineItems);
+    }
+    if (Array.isArray(data.tollItems)) {
+      setTollItems(data.tollItems);
+    }
+    if (data.gstRate !== undefined) setGstRate(Number(data.gstRate) || 9);
+    if (data.showStamp !== undefined) setShowStamp(Boolean(data.showStamp));
+    if (data.showSignature !== undefined) setShowSignature(Boolean(data.showSignature));
+
+    setIsSaved(true);
+    setSavedAt(data.updatedAt || new Date().toISOString());
+    return true;
+  }, []);
+
+  // Synchronous restore from localStorage on open, then background sync with server
+  useEffect(() => {
+    if (!contract || !isOpen) return;
+
+    let hasRestored = false;
+
+    // 1. Try local storage first (instant synchronous restore)
+    try {
+      const key = getStorageKey();
+      const fallbackKey = getFallbackStorageKey();
+      const rawSaved = (key && localStorage.getItem(key)) || (fallbackKey && localStorage.getItem(fallbackKey));
+      if (rawSaved) {
+        const parsed = JSON.parse(rawSaved);
+        if (parsed && (Array.isArray(parsed.lineItems) ? parsed.lineItems.length > 0 : true)) {
+          applySavedInvoiceData(parsed);
+          hasRestored = true;
+          // Open directly in preview when an existing saved invoice is restored
+          setActiveView('preview');
+        }
+      }
+    } catch (e) {
+      console.warn('Could not parse saved corporate invoice from localStorage:', e);
+    }
+
+    // 2. If nothing in local storage, initialize from contract and logs
+    if (!hasRestored) {
+      initializeFromContractAndLogs();
+      setIsSaved(false);
+      setSavedAt(null);
+    }
+
+    // 3. Asynchronously fetch from server to sync if any newer saved invoice exists
+    let isCancelled = false;
+    api.getSavedCorporateInvoice(contract.id, selectedMonth)
+      .then((serverData) => {
+        if (!isCancelled && serverData && serverData.id) {
+          applySavedInvoiceData(serverData);
+          try {
+            const key = getStorageKey();
+            if (key) localStorage.setItem(key, JSON.stringify(serverData));
+          } catch (_) {
+            // ignore localStorage quota or permission error
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch saved corporate invoice from server:', err);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [contract, selectedMonth, isOpen, getStorageKey, getFallbackStorageKey, applySavedInvoiceData, initializeFromContractAndLogs]);
+
+  // Save current invoice changes to localStorage & server database
+  const handleSaveInvoice = async () => {
+    if (!contract) return;
+    setSaving(true);
+    const invoicePayload = {
+      contractId: String(contract.id),
+      month: selectedMonth || '',
+      invoiceNo,
+      invoiceDate,
+      period,
+      poNo,
+      vehicleType,
+      vehicleNumbers,
+      partyName,
+      partyAddress,
+      partyGstin,
+      company,
+      lineItems,
+      tollItems,
+      gstRate,
+      showStamp,
+      showSignature,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 1. Save synchronously to localStorage
+    try {
+      const key = getStorageKey();
+      const fallbackKey = getFallbackStorageKey();
+      if (key) localStorage.setItem(key, JSON.stringify(invoicePayload));
+      if (fallbackKey) localStorage.setItem(fallbackKey, JSON.stringify(invoicePayload));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
+
+    // 2. Save to backend database
+    try {
+      await api.saveCorporateInvoice(contract.id, invoicePayload);
+      setIsSaved(true);
+      setSavedAt(invoicePayload.updatedAt);
+      toast.success('Corporate invoice saved successfully!');
+      setActiveView('preview');
+    } catch (err) {
+      console.error('Server save error:', err);
+      setIsSaved(true);
+      setSavedAt(invoicePayload.updatedAt);
+      toast.info('Invoice saved in browser storage.');
+      setActiveView('preview');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Reset to original contract defaults
+  const handleResetToDefaults = () => {
+    try {
+      const key = getStorageKey();
+      const fallbackKey = getFallbackStorageKey();
+      if (key) localStorage.removeItem(key);
+      if (fallbackKey) localStorage.removeItem(fallbackKey);
+    } catch (_) {
+      // ignore localStorage quota or permission error
+    }
+    initializeFromContractAndLogs();
+    setIsSaved(false);
+    setSavedAt(null);
+    toast.info('Invoice reset to contract defaults.');
+  };
+
   // Computed totals
   const computedTotals = useMemo(() => {
     const lineTotal = lineItems.reduce((acc, item) => {
@@ -215,6 +386,7 @@ export default function CorporateInvoiceModal({
 
   // Line item handlers
   const updateLineItem = (id, field, value) => {
+    setIsSaved(false);
     setLineItems((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item;
@@ -231,14 +403,22 @@ export default function CorporateInvoiceModal({
       }),
     );
   };
-  const addLineItem = () => setLineItems((prev) => [...prev, emptyLineItem()]);
-  const removeLineItem = (id) => setLineItems((prev) => prev.filter((i) => i.id !== id));
+  const addLineItem = () => {
+    setIsSaved(false);
+    setLineItems((prev) => [...prev, emptyLineItem()]);
+  };
+  const removeLineItem = (id) => {
+    setIsSaved(false);
+    setLineItems((prev) => prev.filter((i) => i.id !== id));
+  };
 
   // Toll handlers
   const updateTollItem = (id, field, value) => {
+    setIsSaved(false);
     setTollItems((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
   };
   const addTollItem = () => {
+    setIsSaved(false);
     const rawVehicle = vehicleType || contract?.vehicleName || 'INNOVA';
     const shortVeh = rawVehicle
       .replace(/Toyota /i, '')
@@ -254,7 +434,10 @@ export default function CorporateInvoiceModal({
       emptyTollItem(shortVeh, prev.length === 0 ? '24 X 7' : 'PUNE'),
     ]);
   };
-  const removeTollItem = (id) => setTollItems((prev) => prev.filter((t) => t.id !== id));
+  const removeTollItem = (id) => {
+    setIsSaved(false);
+    setTollItems((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Format number Indian style (without currency symbol)
   const fmtNum = (v) =>
@@ -299,16 +482,16 @@ export default function CorporateInvoiceModal({
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <label className="form-label">Invoice No
-            <input className="form-input" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="e.g. 390" />
+            <input className="form-input" value={invoiceNo} onChange={(e) => { setInvoiceNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 390" />
           </label>
           <label className="form-label">Date
-            <input className="form-input" type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
+            <input className="form-input" type="date" value={invoiceDate} onChange={(e) => { setInvoiceDate(e.target.value); setIsSaved(false); }} />
           </label>
           <label className="form-label">Period
-            <input className="form-input" value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="e.g. AUGUST" />
+            <input className="form-input" value={period} onChange={(e) => { setPeriod(e.target.value); setIsSaved(false); }} placeholder="e.g. AUGUST" />
           </label>
           <label className="form-label">PO No
-            <input className="form-input" value={poNo} onChange={(e) => setPoNo(e.target.value)} placeholder="e.g. 4593518741" />
+            <input className="form-input" value={poNo} onChange={(e) => { setPoNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 4593518741" />
           </label>
         </div>
       </div>
@@ -318,10 +501,10 @@ export default function CorporateInvoiceModal({
         <h3 className="text-sm font-bold text-slate-800">Vehicle Info</h3>
         <div className="grid grid-cols-2 gap-3">
           <label className="form-label">Type of Vehicle
-            <input className="form-input" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} placeholder="e.g. 45 SEATER & 32 SEATER" />
+            <input className="form-input" value={vehicleType} onChange={(e) => { setVehicleType(e.target.value); setIsSaved(false); }} placeholder="e.g. 45 SEATER & 32 SEATER" />
           </label>
           <label className="form-label">Vehicle No(s)
-            <input className="form-input" value={vehicleNumbers} onChange={(e) => setVehicleNumbers(e.target.value)} placeholder="e.g. MH 12 XN 7220, MH 12 WX 7223" />
+            <input className="form-input" value={vehicleNumbers} onChange={(e) => { setVehicleNumbers(e.target.value); setIsSaved(false); }} placeholder="e.g. MH 12 XN 7220, MH 12 WX 7223" />
           </label>
         </div>
       </div>
@@ -331,13 +514,13 @@ export default function CorporateInvoiceModal({
         <h3 className="text-sm font-bold text-slate-800">Party (Client) Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label className="form-label">Company Name
-            <input className="form-input" value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder="e.g. HENKEL ADHESIVE TECHNOLOGIES" />
+            <input className="form-input" value={partyName} onChange={(e) => { setPartyName(e.target.value); setIsSaved(false); }} placeholder="e.g. HENKEL ADHESIVE TECHNOLOGIES" />
           </label>
           <label className="form-label">Address
-            <input className="form-input" value={partyAddress} onChange={(e) => setPartyAddress(e.target.value)} placeholder="Full billing address" />
+            <input className="form-input" value={partyAddress} onChange={(e) => { setPartyAddress(e.target.value); setIsSaved(false); }} placeholder="Full billing address" />
           </label>
           <label className="form-label">Client GSTIN
-            <input className="form-input" value={partyGstin} onChange={(e) => setPartyGstin(e.target.value)} placeholder="e.g. 27AAACL1954B1ZW" />
+            <input className="form-input" value={partyGstin} onChange={(e) => { setPartyGstin(e.target.value); setIsSaved(false); }} placeholder="e.g. 27AAACL1954B1ZW" />
           </label>
         </div>
       </div>
@@ -503,7 +686,7 @@ export default function CorporateInvoiceModal({
             { label: '0% (Exempt)', value: 0 },
           ].map((opt) => (
             <label key={opt.value} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
-              <input type="radio" name="gstRate" checked={gstRate === opt.value} onChange={() => setGstRate(opt.value)} className="accent-navy-900" />
+              <input type="radio" name="gstRate" checked={gstRate === opt.value} onChange={() => { setGstRate(opt.value); setIsSaved(false); }} className="accent-navy-900" />
               {opt.label}
             </label>
           ))}
@@ -522,7 +705,7 @@ export default function CorporateInvoiceModal({
             <input
               type="checkbox"
               checked={Boolean(showStamp && settings?.stampUrl !== 'none' && company.stampUrl !== 'none')}
-              onChange={(e) => setShowStamp(e.target.checked)}
+              onChange={(e) => { setShowStamp(e.target.checked); setIsSaved(false); }}
               disabled={settings?.stampUrl === 'none' || company.stampUrl === 'none'}
               className="accent-navy-900 rounded"
             />
@@ -539,7 +722,7 @@ export default function CorporateInvoiceModal({
             <input
               type="checkbox"
               checked={Boolean(showSignature && settings?.signatureUrl !== 'none' && company.signatureUrl !== 'none')}
-              onChange={(e) => setShowSignature(e.target.checked)}
+              onChange={(e) => { setShowSignature(e.target.checked); setIsSaved(false); }}
               disabled={settings?.signatureUrl === 'none' || company.signatureUrl === 'none'}
               className="accent-navy-900 rounded"
             />
@@ -563,12 +746,48 @@ export default function CorporateInvoiceModal({
         <div className="flex justify-between text-base"><span className="font-bold text-black">Grand Total:</span><span className="font-black text-black">₹ {fmtNum(computedTotals.grandTotal)}</span></div>
         <p className="text-[10px] text-slate-500 pt-1">INR : {numberToWordsIndian(computedTotals.grandTotal)}</p>
       </div>
+
+      {/* Save Action Strip */}
+      <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-white shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className={`w-2.5 h-2.5 rounded-full ${isSaved ? 'bg-emerald-400 ring-2 ring-emerald-400/30' : 'bg-amber-400 ring-2 ring-amber-400/30'}`} />
+          <div className="text-xs">
+            {isSaved ? (
+              <span className="text-emerald-400 font-semibold">
+                Invoice Saved {savedAt ? `(${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : '✓'}
+              </span>
+            ) : (
+              <span className="text-amber-300 font-medium">Unsaved customizations & vehicle rows</span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={handleResetToDefaults}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer flex-1 sm:flex-initial"
+            title="Reset all rows and rates back to contract defaults"
+          >
+            <ArrowCounterClockwise size={14} weight="bold" />
+            <span>Reset to Defaults</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveInvoice}
+            disabled={saving}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-xs shadow flex items-center justify-center gap-1.5 transition-colors cursor-pointer flex-1 sm:flex-initial disabled:opacity-50"
+          >
+            <FloppyDisk size={15} weight="bold" />
+            <span>{saving ? 'Saving…' : 'Save Invoice & View Preview'}</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 
   // ──────── INVOICE PREVIEW (Pixel-perfect match) ────────
   const renderPreview = () => {
-    const { taxableValue, cgst, sgst, grandTotal } = computedTotals;
+    const { lineTotal, taxableValue, cgst, sgst, grandTotal } = computedTotals;
     const dateFormatted = invoiceDate
       ? new Date(invoiceDate + 'T12:00:00Z').toLocaleDateString('en-IN', {
           day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata',
@@ -587,14 +806,25 @@ export default function CorporateInvoiceModal({
           <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000' }}>
             <tbody>
               <tr>
-                {/* Left: Company Info */}
+                {/* Left: Company Info & Official Logo */}
                 <td style={{ border: '1.5px solid #000', padding: '6px 8px', verticalAlign: 'top', width: '48%' }} rowSpan={3}>
-                  <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 14 }}>{company.companyName}</div>
-                  <div style={{ whiteSpace: 'pre-line', fontSize: 12 }}>{company.address}</div>
-                  <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 12 }}>GSTIN/UIN: {company.gstin}</div>
-                  <div style={{ fontSize: 11 }}>E-Mail :</div>
-                  <div style={{ fontSize: 11 }}>{company.email}</div>
-                  <div style={{ fontSize: 11 }}>Contact : {company.contact}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 14 }}>{company.companyName}</div>
+                      <div style={{ whiteSpace: 'pre-line', fontSize: 12 }}>{company.address}</div>
+                      <div style={{ fontWeight: 'bold', color: '#d00', fontSize: 12 }}>GSTIN/UIN: {company.gstin}</div>
+                      <div style={{ fontSize: 11 }}>E-Mail :</div>
+                      <div style={{ fontSize: 11 }}>{company.email}</div>
+                      <div style={{ fontSize: 11 }}>Contact : {company.contact}</div>
+                    </div>
+                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: 4, marginTop: 12 }}>
+                      <img
+                        src="/jagtap-logo.png"
+                        alt="Jagtap Travels Logo"
+                        style={{ height: 92, maxHeight: 100, maxWidth: 180, objectFit: 'contain' }}
+                      />
+                    </div>
+                  </div>
                 </td>
                 {/* Right top: Invoice no */}
                 <td style={{ border: '1.5px solid #000', padding: '4px 8px', fontSize: 12 }}>
@@ -683,7 +913,15 @@ export default function CorporateInvoiceModal({
                   </td>
                 </tr>
               ))}
-              {/* Toll rows - Rendered directly above the TOTAL row */}
+              {/* Vehicle Subtotal row - visible before adding Toll & Parking */}
+              {tollItems.length > 0 && (
+                <tr style={{ fontSize: 12 }}>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={6}></td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>TOTAL</td>
+                  <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{fmtNum(lineTotal)}</td>
+                </tr>
+              )}
+              {/* Toll rows - Rendered directly above the final TOTAL row */}
               {tollItems.map((t) => {
                 const vehicle = (t.vehicle || '').trim();
                 const duty = (t.duty || '').trim();
@@ -899,6 +1137,16 @@ export default function CorporateInvoiceModal({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleSaveInvoice}
+              disabled={saving}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-xs shadow transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial cursor-pointer disabled:opacity-50"
+              title="Save current invoice changes, vehicle rows, and preview"
+            >
+              <FloppyDisk size={15} weight="bold" />
+              <span>{saving ? 'Saving…' : isSaved ? 'Invoice Saved ✓' : 'Save Invoice'}</span>
+            </button>
             <button
               type="button"
               onClick={() => { setActiveView('preview'); setTimeout(() => window.print(), 300); }}

@@ -35,6 +35,7 @@ const emptyState = () => ({
     driverAllowanceNight: '700',
     defaultDueDays: '15',
   },
+  corporateInvoices: [],
   ...Object.fromEntries(collections.map((k) => [k, []])),
 });
 const camel = (key) => key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
@@ -42,6 +43,7 @@ function normalize(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw))
     throw Error('Invalid CRM data. Restore a verified backup.');
   const data = { ...emptyState(), ...raw };
+  data.corporateInvoices = Array.isArray(raw.corporateInvoices) ? raw.corporateInvoices : [];
   for (const name of collections) {
     if (raw[name] !== undefined && !Array.isArray(raw[name]))
       throw Error('Invalid collection: ' + name);

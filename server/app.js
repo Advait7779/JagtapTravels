@@ -277,6 +277,48 @@ function createApp(repo, options = {}) {
     }),
   );
 
+  // Corporate Saved Invoice Drafts / Customizations
+  app.get(
+    '/api/corporate-contracts/:id/saved-invoice',
+    wrap(async (req, res) => {
+      const state = await repo.read();
+      const month = req.query.month || '';
+      const list = state.corporateInvoices || [];
+      const found = list.find(
+        (inv) => String(inv.contractId) === String(req.params.id) && (!month || inv.month === month),
+      );
+      res.json(found || null);
+    }),
+  );
+
+  app.post(
+    '/api/corporate-contracts/:id/saved-invoice',
+    wrap(async (req, res) => {
+      const result = await repo.change((d) => {
+        d.corporateInvoices = Array.isArray(d.corporateInvoices) ? d.corporateInvoices : [];
+        const contractId = String(req.params.id);
+        const month = req.body.month || req.body.selectedMonth || '';
+        const idx = d.corporateInvoices.findIndex(
+          (inv) => String(inv.contractId) === contractId && (!month || inv.month === month),
+        );
+        const record = {
+          ...req.body,
+          id: d.corporateInvoices[idx]?.id || Date.now(),
+          contractId,
+          month,
+          updatedAt: new Date().toISOString(),
+        };
+        if (idx >= 0) {
+          d.corporateInvoices[idx] = record;
+        } else {
+          d.corporateInvoices.unshift(record);
+        }
+        return record;
+      });
+      res.json(result);
+    }),
+  );
+
   // Driver Payroll & Advance summary
   app.get(
     '/api/payroll',

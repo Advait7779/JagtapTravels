@@ -127,6 +127,10 @@ export const api = {
     request('/corporate-contracts/' + id + '/monthly-summary' + (month ? `?month=${month}` : '')),
   generateCorporateBill: (id, month) =>
     send('/corporate-contracts/' + id + '/generate-bill', 'POST', { month }),
+  getSavedCorporateInvoice: (id, month) =>
+    request('/corporate-contracts/' + id + '/saved-invoice' + (month ? `?month=${month}` : '')),
+  saveCorporateInvoice: (id, data) =>
+    send('/corporate-contracts/' + id + '/saved-invoice', 'POST', data),
 
   // Corporate Daily KM Trip Logs & Employee Commute
   getCorporateTripLogs: () => request('/corporate-trip-logs'),
