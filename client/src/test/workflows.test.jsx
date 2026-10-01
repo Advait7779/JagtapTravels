@@ -282,6 +282,37 @@ it('corporate invoice server failure remains unsaved and does not notify the reg
   expect(screen.getByRole('button', { name: 'Save Invoice & View Preview' })).toBeTruthy();
   expect(screen.getByText(/Unsaved customizations/)).toBeTruthy();
 });
+
+it('corporate invoice renders bank name and branch dynamically from settings', async () => {
+  vi.spyOn(api, 'getSavedCorporateInvoice').mockResolvedValue(null);
+  render(
+    <CorporateInvoiceModal
+      isOpen
+      onClose={() => {}}
+      contract={{
+        id: 'contract-1',
+        companyName: 'Alpha Industries',
+        vehicleName: 'Innova Crysta',
+        vehicleNumber: 'MH 12 AB 1234',
+        includedMonthlyKm: 3000,
+        monthlyBaseFare: 50000,
+        extraRatePerKm: 15,
+      }}
+      selectedMonth="2026-10"
+      settings={{
+        bankName: 'AXIS Bank',
+        bankBranch: 'Saswad Branch',
+        phone: '9011507220',
+        phone2: '8888094770',
+      }}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  expect(screen.getByText(/BANK -\s+AXIS Bank/)).toBeTruthy();
+  expect(screen.getByText(/BRANCH -\s+Saswad Branch/)).toBeTruthy();
+  expect(screen.getByText('9011507220')).toBeTruthy();
+  expect(screen.getByText('8888094770')).toBeTruthy();
+});
 it('renders QuotationTable with empty and populated data without runtime error', () => {
   const { rerender } = render(
     <QuotationTable

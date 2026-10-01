@@ -266,6 +266,7 @@ export default function BillPrintView({ bill, onClose, settings = {} }) {
                 </h4>
                 <div className="text-slate-800 space-y-0.5 text-xs">
                   {company.bankName && <p><span className="font-medium text-slate-600">Bank:</span> {company.bankName}</p>}
+                  {company.bankBranch && <p><span className="font-medium text-slate-600">Branch:</span> {company.bankBranch}</p>}
                   {company.accountName && <p><span className="font-medium text-slate-600">Account holder:</span> {company.accountName}</p>}
                   {company.accountNumber && <p><span className="font-medium text-slate-600">Account number:</span> <strong className="font-mono">{company.accountNumber}</strong></p>}
                   {company.ifsc && <p><span className="font-medium text-slate-600">IFSC:</span> <strong className="font-mono">{company.ifsc}</strong></p>}

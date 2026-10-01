@@ -140,7 +140,7 @@ export default function CorporateInvoiceModal({
   const [partyGstin, setPartyGstin] = useState('');
 
   // Company (self) info
-  const [company, setCompany] = useState({ ...defaultCompany });
+  const [company, setCompany] = useState(() => mergeCompanySettings(defaultCompany, settings));
 
   // Line items
   const [lineItems, setLineItems] = useState([emptyLineItem()]);
