@@ -27,6 +27,7 @@ const defaultCompany = {
   gstin: '27AKGPJ1825N1ZX',
   email: 'jagtap.travels1985@gmail.com',
   contact: '9011507220',
+  hsnSac: '996419',
   bankName: 'AXIS BANK',
   bankBranch: 'SASWAD',
   bankAccountNo: '916020073533410',
@@ -44,10 +45,9 @@ const emptyLineItem = () => ({
   amount: 0,
 });
 
-const emptyTollItem = (defaultVehicle = '', defaultDuty = '') => ({
+const emptyTollItem = (defaultVehicle = '') => ({
   id: Date.now() + Math.random(),
   vehicle: defaultVehicle,
-  duty: defaultDuty,
   type: 'TOLL',
   label: '',
   amount: '',
@@ -192,7 +192,6 @@ export default function CorporateInvoiceModal({
       setTollItems([{
         id: Date.now() + 1,
         vehicle: shortVeh,
-        duty: (contract.dutyType || '24 X 7').toUpperCase(),
         type: 'TOLL & PARKING',
         label: `${contract.vehicleNumber || 'Vehicle'} TOLL & PARKING`,
         amount: totalToll,
@@ -202,7 +201,11 @@ export default function CorporateInvoiceModal({
     }
 
     // Merge settings & synchronize stamp/signature toggles
-    setCompany((prev) => ({ ...prev, ...settings }));
+    setCompany((prev) => ({
+      ...prev,
+      ...settings,
+      hsnSac: settings?.hsnSac || settings?.hsnCode || prev.hsnSac || '996419',
+    }));
     if (settings?.stampUrl === 'none') {
       setShowStamp(false);
     } else if (settings?.stampUrl) {
@@ -228,7 +231,11 @@ export default function CorporateInvoiceModal({
     if (data.partyAddress !== undefined) setPartyAddress(data.partyAddress || '');
     if (data.partyGstin !== undefined) setPartyGstin(data.partyGstin || '');
     if (data.company && typeof data.company === 'object') {
-      setCompany((prev) => ({ ...prev, ...data.company }));
+      setCompany((prev) => ({
+        ...prev,
+        ...data.company,
+        hsnSac: data.company.hsnSac || prev.hsnSac || '996419',
+      }));
     }
     if (Array.isArray(data.lineItems) && data.lineItems.length > 0) {
       setLineItems(data.lineItems);
@@ -431,7 +438,7 @@ export default function CorporateInvoiceModal({
 
     setTollItems((prev) => [
       ...prev,
-      emptyTollItem(shortVeh, prev.length === 0 ? '24 X 7' : 'PUNE'),
+      emptyTollItem(shortVeh),
     ]);
   };
   const removeTollItem = (id) => {
@@ -590,7 +597,7 @@ export default function CorporateInvoiceModal({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-slate-800">Toll & Parking Charges</h3>
-            <p className="text-[11px] text-slate-500">Each entry appears as its own line above the TOTAL row on the invoice (Vehicle, Duty, Toll Type, Amount)</p>
+            <p className="text-[11px] text-slate-500">Each entry appears as its own line above the TOTAL row on the invoice (Vehicle, Toll Type, Amount)</p>
           </div>
           <button
             type="button"
@@ -605,10 +612,9 @@ export default function CorporateInvoiceModal({
             <table className="w-full text-xs">
               <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
-                  <th className="p-2 text-left w-36">Vehicle</th>
-                  <th className="p-2 text-left w-40">Duty / Route</th>
-                  <th className="p-2 text-left w-44">Toll Type</th>
-                  <th className="p-2 text-right w-36">Amount (₹)</th>
+                  <th className="p-2 text-left w-48">Vehicle</th>
+                  <th className="p-2 text-left w-52">Toll Type</th>
+                  <th className="p-2 text-right w-40">Amount (₹)</th>
                   <th className="p-2 text-center w-12">Action</th>
                 </tr>
               </thead>
@@ -621,14 +627,6 @@ export default function CorporateInvoiceModal({
                         value={t.vehicle || ''}
                         onChange={(e) => updateTollItem(t.id, 'vehicle', e.target.value.toUpperCase())}
                         placeholder="e.g. INNOVA"
-                      />
-                    </td>
-                    <td className="p-1.5">
-                      <input
-                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded uppercase focus:border-navy-900"
-                        value={t.duty || ''}
-                        onChange={(e) => updateTollItem(t.id, 'duty', e.target.value.toUpperCase())}
-                        placeholder="e.g. 24 X 7 or PUNE"
                       />
                     </td>
                     <td className="p-1.5">
@@ -924,23 +922,18 @@ export default function CorporateInvoiceModal({
               {/* Toll rows - Rendered directly above the final TOTAL row */}
               {tollItems.map((t) => {
                 const vehicle = (t.vehicle || '').trim();
-                const duty = (t.duty || '').trim();
                 const tollType = (
                   t.type ||
                   (t.label && t.label.toUpperCase().includes('PARKING') ? 'TOLL & PARKING' : t.label ? t.label.toUpperCase() : 'TOLL')
                 ).trim();
-                const hasVehicleOrDuty = Boolean(vehicle || duty);
 
                 return (
                   <tr key={t.id} style={{ fontSize: 12 }}>
-                    {hasVehicleOrDuty ? (
+                    {vehicle ? (
                       <>
                         <td style={{ border: '1.5px solid #000', padding: '4px 6px' }} colSpan={4}></td>
-                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
+                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }} colSpan={2}>
                           {vehicle}
-                        </td>
-                        <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
-                          {duty}
                         </td>
                         <td style={{ border: '1.5px solid #000', padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
                           {tollType}
