@@ -485,11 +485,12 @@ export default function CorporateInvoiceModal({
     }, 0);
     const tollTotal = tollItems.reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
     const taxableValue = lineTotal + tollTotal;
-    const cgst = Math.round(taxableValue * (gstRate / 100));
-    const sgst = Math.round(taxableValue * (gstRate / 100));
+    const effectiveGstRate = isNonGst ? 0 : gstRate;
+    const cgst = Math.round(taxableValue * (effectiveGstRate / 100));
+    const sgst = Math.round(taxableValue * (effectiveGstRate / 100));
     const grandTotal = taxableValue + cgst + sgst;
     return { lineTotal, tollTotal, taxableValue, cgst, sgst, grandTotal };
-  }, [lineItems, tollItems, gstRate]);
+  }, [lineItems, tollItems, gstRate, isNonGst]);
 
   // Line item handlers
   const updateLineItem = (id, field, value) => {
@@ -837,38 +838,32 @@ export default function CorporateInvoiceModal({
         )}
       </div>
 
-      {/* Tax Rate */}
-      <div className="space-y-1">
-        <h3 className="text-sm font-bold text-slate-800">GST Rate</h3>
-        <div className="flex items-center gap-3">
-          {[
-            { label: '18% (9% + 9%)', value: 9 },
-            { label: '5% (2.5% + 2.5%)', value: 2.5 },
-            { label: '0% (Non-GST / Exempt)', value: 0 },
-          ].map((opt) => (
-            <label key={opt.value} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
-              <input
-                type="radio"
-                name="gstRate"
-                checked={gstRate === opt.value}
-                onChange={() => {
-                  setGstRate(opt.value);
-                  if (opt.value === 0) {
-                    setIsNonGst(true);
-                    if (invoiceTitle === 'TAX INVOICE') setInvoiceTitle('INVOICE');
-                  } else {
-                    setIsNonGst(false);
-                    if (invoiceTitle === 'INVOICE') setInvoiceTitle('TAX INVOICE');
-                  }
-                  setIsSaved(false);
-                }}
-                className="accent-navy-900"
-              />
-              {opt.label}
-            </label>
-          ))}
+      {/* Tax Rate (Only shown for GST Tax Invoice) */}
+      {!isNonGst && (
+        <div className="space-y-1">
+          <h3 className="text-sm font-bold text-slate-800">GST Rate</h3>
+          <div className="flex items-center gap-3">
+            {[
+              { label: '18% (9% + 9%)', value: 9 },
+              { label: '5% (2.5% + 2.5%)', value: 2.5 },
+            ].map((opt) => (
+              <label key={opt.value} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="gstRate"
+                  checked={gstRate === opt.value}
+                  onChange={() => {
+                    setGstRate(opt.value);
+                    setIsSaved(false);
+                  }}
+                  className="accent-navy-900"
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Official Stamp & Signature Options */}
       <div className="space-y-1">
@@ -916,15 +911,17 @@ export default function CorporateInvoiceModal({
         <div className="flex justify-between"><span className="text-slate-600">Line Items Total:</span><span className="font-bold">{fmtNum(computedTotals.lineTotal)}</span></div>
         <div className="flex justify-between"><span className="text-slate-600">Toll & Parking Total:</span><span className="font-bold text-amber-700">₹ {fmtNum(computedTotals.tollTotal)}</span></div>
         <hr className="border-slate-200" />
-        <div className="flex justify-between"><span className="text-slate-600">{gstRate > 0 ? 'Taxable Value (Items + Toll):' : 'Total Amount (Items + Toll):'}</span><span className="font-bold">{fmtNum(computedTotals.taxableValue)}</span></div>
-        {gstRate > 0 && (
+        {!isNonGst ? (
           <>
+            <div className="flex justify-between"><span className="text-slate-600">Taxable Value (Items + Toll):</span><span className="font-bold">{fmtNum(computedTotals.taxableValue)}</span></div>
             <div className="flex justify-between"><span className="text-slate-600">CGST ({gstRate}%):</span><span className="font-semibold">{fmtNum(computedTotals.cgst)}</span></div>
             <div className="flex justify-between"><span className="text-slate-600">SGST ({gstRate}%):</span><span className="font-semibold">{fmtNum(computedTotals.sgst)}</span></div>
+            <hr className="border-slate-300" />
+            <div className="flex justify-between text-base"><span className="font-bold text-black">Grand Total:</span><span className="font-black text-black">₹ {fmtNum(computedTotals.grandTotal)}</span></div>
           </>
+        ) : (
+          <div className="flex justify-between text-base pt-1"><span className="font-bold text-black">Total Amount:</span><span className="font-black text-black">₹ {fmtNum(computedTotals.grandTotal)}</span></div>
         )}
-        <hr className="border-slate-300" />
-        <div className="flex justify-between text-base"><span className="font-bold text-black">Grand Total:</span><span className="font-black text-black">₹ {fmtNum(computedTotals.grandTotal)}</span></div>
         <p className="text-[10px] text-slate-500 pt-1">INR : {numberToWordsIndian(computedTotals.grandTotal)}</p>
       </div>
 
