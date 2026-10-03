@@ -14,7 +14,6 @@ import {
   CalendarCheck,
   ChatCircleDots,
   Clock,
-  WhatsappLogo,
   ShieldWarning,
   TrendUp,
   CheckCircle,
@@ -99,12 +98,6 @@ export default function Dashboard({
 
   const allDocAlerts = [...vehicleDocAlerts, ...driverDocAlerts];
 
-  // Dispatches / Bookings for today or upcoming
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const upcomingBookings = bookings
-    .filter((b) => b.status !== 'Cancelled')
-    .slice(0, 5);
-
   // New Inquiries from website
   const newInquiries = inquiries.filter((i) => i.status === 'New').slice(0, 4);
 
@@ -117,7 +110,7 @@ export default function Dashboard({
       <div className="relative overflow-hidden bg-navy-950 text-white p-4 sm:p-6 rounded-md shadow-lg border border-navy-850 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="relative z-10">
           <h2 className="text-lg sm:text-xl font-black tracking-tight">
-            Welcome back, {user?.fullName || 'Admin'}
+            Welcome back, {user?.fullName || 'Yashwant Jagtap'}
           </h2>
           <p className="text-xs text-slate-300 mt-0.5 sm:mt-1 font-normal">
             Fleet operations, trip dispatches, website inquiries, and financial tracking.
@@ -311,159 +304,6 @@ export default function Dashboard({
           icon={Users}
           color="blue"
         />
-      </div>
-
-      {/* Interactive Middle Row: Today's Bookings & Website Inquiries */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Today's & Upcoming Bookings */}
-        <div className="bg-white rounded-md border border-slate-200 shadow-sm p-4 sm:p-5 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <CalendarCheck size={18} weight="bold" className="text-navy-900" />
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Upcoming Dispatches & Bookings</h3>
-                <p className="text-2xs text-slate-500">Scheduled passenger pickups and tours</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setActiveTab('bookings')}
-              className="text-xs font-bold text-navy-800 hover:text-red-700 flex items-center gap-1"
-            >
-              <span>View All</span>
-              <ArrowUpRight size={14} weight="bold" />
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {upcomingBookings.length === 0 ? (
-              <div className="py-6 text-center text-slate-400 text-xs">
-                No active bookings scheduled. Click below to add one.
-              </div>
-            ) : (
-              upcomingBookings.map((b) => (
-                <div
-                  key={b.id}
-                  className="p-3 rounded-md bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-navy-950 text-2xs">
-                        {b.bookingNumber}
-                      </span>
-                      <span className="font-bold text-slate-900">{b.customerName}</span>
-                      <span className="text-2xs text-slate-500">• {b.customerPhone}</span>
-                    </div>
-                    <div className="text-2xs text-slate-600 mt-0.5">
-                      <span className="font-semibold text-slate-800">{b.pickupLocation}</span> ➔{' '}
-                      <span className="font-semibold text-amber-800">{b.dropLocation}</span> |{' '}
-                      <span>{formatDate(b.startDate)}</span> {b.pickupTime ? `at ${b.pickupTime}` : ''}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`text-2xs font-bold px-2 py-0.5 rounded ${
-                        b.status === 'Dispatched'
-                          ? 'bg-amber-100 text-amber-800'
-                          : b.status === 'Completed'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {b.status}
-                    </span>
-                    <button
-                      onClick={() => onStartTripFromBooking?.(b)}
-                      title="Create Duty Slip"
-                      className="px-2 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-2xs font-bold text-slate-800"
-                    >
-                      Duty Slip
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          {onOpenAddBooking && (
-            <button
-              onClick={onOpenAddBooking}
-              className="w-full py-2 bg-navy-900 hover:bg-navy-800 text-white rounded-md text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <Plus size={14} weight="bold" />
-              <span>Create New Booking</span>
-            </button>
-          )}
-        </div>
-
-        {/* Real-time Website Leads */}
-        <div className="bg-white rounded-md border border-slate-200 shadow-sm p-4 sm:p-5 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <ChatCircleDots size={18} weight="bold" className="text-blue-600" />
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Website Enquiries (Leads Inbox)</h3>
-                <p className="text-2xs text-slate-500">Instant inquiries from the public booking form</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setActiveTab('inquiries')}
-              className="text-xs font-bold text-navy-800 hover:text-red-700 flex items-center gap-1"
-            >
-              <span>View Table</span>
-              <ArrowUpRight size={14} weight="bold" />
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {newInquiries.length === 0 ? (
-              <div className="py-6 text-center text-slate-400 text-xs">
-                No new unhandled leads. All customer enquiries have been contacted!
-              </div>
-            ) : (
-              newInquiries.map((inq) => {
-                const phoneDigits = (inq.phone || '').replace(/[^0-9]/g, '');
-                const waNum = phoneDigits.startsWith('91') ? phoneDigits : `91${phoneDigits}`;
-                return (
-                  <div
-                    key={inq.id}
-                    className="p-3 rounded-md bg-blue-50/50 border border-blue-200 flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900">{inq.name}</p>
-                        <span className="font-mono text-2xs text-slate-500 font-medium">
-                          {inq.phone}
-                        </span>
-                      </div>
-                      <p className="text-2xs text-slate-600 mt-0.5">
-                        <span className="font-semibold text-slate-800">{inq.tripType}</span> •{' '}
-                        <span>{inq.vehicle || 'Fleet Car'}</span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <a
-                        href={`https://wa.me/${waNum}?text=${encodeURIComponent(
-                          `Namaste ${inq.name}, thank you for contacting Jagtap Travels Pune regarding your ${inq.tripType}. How can we assist you?`,
-                        )}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
-                        title="Chat on WhatsApp"
-                      >
-                        <WhatsappLogo size={15} weight="fill" />
-                      </a>
-                      <button
-                        onClick={() => setActiveTab('inquiries')}
-                        className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 text-2xs font-bold rounded-lg"
-                      >
-                        Open
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Grid: Recent Bills and Driver Readiness */}

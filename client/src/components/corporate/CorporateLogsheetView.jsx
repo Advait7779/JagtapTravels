@@ -5,9 +5,6 @@ import {
   User,
   Plus,
   MagnifyingGlass,
-  Gauge,
-  Clock,
-  CurrencyInr,
   Users,
   Printer,
   FilePdf,
@@ -256,68 +253,7 @@ export default function CorporateLogsheetView({
         </div>
       </div>
 
-      {/* KPI Stats Ribbon */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 print:hidden">
-        {/* Total Trips */}
-        <div className="bg-white p-3.5 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total Trips</span>
-            <FileText size={16} className="text-navy-900" />
-          </div>
-          <div className="text-xl font-black text-slate-900">{totals.trips}</div>
-          <p className="text-[10px] text-slate-500 mt-0.5">Recorded in {selectedMonth}</p>
-        </div>
 
-        {/* Total KM */}
-        <div className="bg-white p-3.5 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total KM Run</span>
-            <Gauge size={16} className="text-blue-600" />
-          </div>
-          <div className="text-xl font-black text-blue-700">
-            {totals.totalKm.toLocaleString()} KM
-          </div>
-          <p className="text-[10px] text-slate-500 mt-0.5">From daily odometer logs</p>
-        </div>
-
-        {/* Total Operating Hours */}
-        <div className="bg-white p-3.5 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total Hours</span>
-            <Clock size={16} className="text-amber-600" />
-          </div>
-          <div className="text-xl font-black text-amber-700">
-            {Math.round(totals.totalHours * 10) / 10} hrs
-          </div>
-          <p className="text-[10px] text-slate-500 mt-0.5">
-            {totals.extraHours > 0 ? `+${totals.extraHours} extra hrs` : 'Shift time duration'}
-          </p>
-        </div>
-
-        {/* Toll & Parking */}
-        <div className="bg-white p-3.5 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Toll & Parking</span>
-            <CurrencyInr size={16} className="text-rose-600" />
-          </div>
-          <div className="text-xl font-black text-rose-700">{formatINR(totals.tollParking)}</div>
-          <p className="text-[10px] text-slate-500 mt-0.5">Reimbursable expenses</p>
-        </div>
-
-        {/* Total Employees */}
-        <div className="bg-white p-3.5 rounded-md border border-slate-200 shadow-xs col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">
-              Total Employees
-            </span>
-            <Users size={16} className="text-slate-700" />
-          </div>
-          <div className="text-xl font-black text-slate-900">{totals.employeeCount}</div>
-          <p className="text-[10px] text-slate-500 mt-0.5">
-            Headcount in {selectedMonth}
-          </p>
-        </div>
-      </div>
 
       {/* Filter & Search Bar */}
       <div className="bg-white p-3 rounded-md shadow-xs border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden">

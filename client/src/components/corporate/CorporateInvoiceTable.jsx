@@ -7,10 +7,7 @@ import {
   CalendarBlank,
   Eye,
   Plus,
-  Buildings,
   ArrowsClockwise,
-  CheckCircle,
-  FileText,
   X,
 } from '@phosphor-icons/react';
 import { formatINR, formatDate } from '../../utils/formatters';
@@ -35,28 +32,6 @@ export default function CorporateInvoiceTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL'); // 'ALL' | 'GST' | 'NONGST'
-
-  // Normalize and calculate summary statistics
-  const stats = useMemo(() => {
-    let totalAmount = 0;
-    let gstCount = 0;
-    let nonGstCount = 0;
-
-    for (const inv of invoices) {
-      const isNonGst = Boolean(inv.isNonGst || inv.invoiceType === 'nongst');
-      const amt = Number(inv.grandTotal ?? inv.totalAmount ?? 0);
-      totalAmount += amt;
-      if (isNonGst) nonGstCount++;
-      else gstCount++;
-    }
-
-    return {
-      totalCount: invoices.length,
-      totalAmount,
-      gstCount,
-      nonGstCount,
-    };
-  }, [invoices]);
 
   // Comprehensive filter supporting date, party name, invoice #, vehicle, period
   const filteredInvoices = useMemo(() => {
@@ -137,65 +112,6 @@ export default function CorporateInvoiceTable({
 
   return (
     <div className="space-y-4 font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* Top Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-4 rounded-md border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-navy-50 text-navy-900 flex items-center justify-center shrink-0">
-            <Receipt size={22} weight="bold" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">
-              Corporate Invoices
-            </p>
-            <p className="text-lg sm:text-xl font-extrabold text-navy-950 mt-0.5">
-              {stats.totalCount}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-4 rounded-md border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <CheckCircle size={22} weight="bold" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">
-              Total Invoiced
-            </p>
-            <p className="text-lg sm:text-xl font-extrabold text-emerald-700 mt-0.5 truncate">
-              {formatINR(stats.totalAmount)}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-4 rounded-md border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <FileText size={22} weight="bold" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">
-              GST Tax Invoices
-            </p>
-            <p className="text-lg sm:text-xl font-extrabold text-slate-900 mt-0.5">
-              {stats.gstCount}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-4 rounded-md border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
-            <Buildings size={22} weight="bold" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">
-              Non-GST Invoices
-            </p>
-            <p className="text-lg sm:text-xl font-extrabold text-slate-900 mt-0.5">
-              {stats.nonGstCount}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Header Search & Filter Bar */}
       <div className="bg-white p-3.5 sm:p-4 rounded-md border border-slate-200 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         {/* Search & Date Filter Controls */}

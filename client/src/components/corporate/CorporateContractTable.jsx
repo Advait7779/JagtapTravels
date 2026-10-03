@@ -5,16 +5,13 @@ import {
   User,
   Plus,
   MagnifyingGlass,
-  Gauge,
   Receipt,
   PencilSimple,
   Trash,
   CheckCircle,
   Warning,
-  TrendUp,
   Clock,
   ArrowRight,
-  CurrencyInr,
   FileText,
   Users,
 } from '@phosphor-icons/react';
@@ -46,13 +43,6 @@ export default function CorporateContractTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedMonth, setSelectedMonth] = useState(() => localDate().slice(0, 7));
-
-  // Calculate monthly stats
-  const activeContracts = contracts.filter((c) => c.status === 'Active');
-  const totalMonthlyBase = activeContracts.reduce(
-    (acc, c) => acc + (Number(c.monthlyBaseFare) || 0),
-    0,
-  );
 
   // Compute month-to-date KM and excess for each contract
   const enrichedContracts = contracts.map((contract) => {
@@ -114,9 +104,6 @@ export default function CorporateContractTable({
       estimatedTotalBill: (Number(contract.monthlyBaseFare) || 0) + excessCharge,
     };
   });
-
-  const totalExcessKm = enrichedContracts.reduce((acc, c) => acc + c.excessKm, 0);
-  const totalExcessRevenue = enrichedContracts.reduce((acc, c) => acc + c.excessCharge, 0);
 
   // Filter
   const filteredContracts = enrichedContracts.filter((c) => {
@@ -261,45 +248,6 @@ export default function CorporateContractTable({
               <span className="hidden sm:inline">New Company Contract</span>
             </span>
           </button>
-        </div>
-      </div>
-
-      {/* KPI Ribbon */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Active Contracts</span>
-            <Buildings size={18} className="text-navy-900" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{activeContracts.length}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Vehicles deployed in corporate fleets</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Monthly Base Revenue</span>
-            <CurrencyInr size={18} className="text-emerald-600" />
-          </div>
-          <div className="text-2xl font-black text-emerald-700">{formatINR(totalMonthlyBase)}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Fixed monthly contracted billing</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Excess KM</span>
-            <Gauge size={18} className="text-amber-600" />
-          </div>
-          <div className="text-2xl font-black text-amber-700">{totalExcessKm.toLocaleString()} KM</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Beyond monthly packages in {selectedMonth}</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Excess KM Billable</span>
-            <TrendUp size={18} className="text-blue-600" />
-          </div>
-          <div className="text-2xl font-black text-blue-700">+{formatINR(totalExcessRevenue)}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Extra revenue to bill this month</p>
         </div>
       </div>
 

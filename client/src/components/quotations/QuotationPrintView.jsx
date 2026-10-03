@@ -39,7 +39,33 @@ export function shareQuote(quote, settings = {}) {
 export default function QuotationPrintView({ quote, onClose, settings = {} }) {
   if (!quote) return null;
   const [downloading, setDownloading] = useState(false);
-  const company = quote.company || settings;
+  const defaultCompany = {
+    companyName: 'Jagtap Travels',
+    address: 'SIDDHI NIWAS, PURANDHAR COLONY, BHEKRAI NAGAR , PUNE - 412308',
+    phone: '9011507220',
+    phone2: '8888094770',
+    email: 'jagtap.travels1985@gmail.com',
+  };
+
+  const pickFirst = (...vals) => {
+    for (const v of vals) {
+      if (typeof v === 'string' && v.trim()) return v.trim();
+      if (v != null && v !== '') return v;
+    }
+    return '';
+  };
+
+  const qComp = quote.company || {};
+  const company = {
+    ...defaultCompany,
+    ...settings,
+    ...qComp,
+    companyName: pickFirst(qComp.companyName, settings.companyName, defaultCompany.companyName),
+    address: pickFirst(qComp.address, settings.address, defaultCompany.address),
+    phone: pickFirst(qComp.phone, settings.phone, defaultCompany.phone),
+    phone2: pickFirst(qComp.phone2, settings.phone2, defaultCompany.phone2),
+    email: pickFirst(qComp.email, settings.email, defaultCompany.email),
+  };
 
   const handleSavePdf = async () => {
     const element = document.querySelector('.printable-area');
@@ -52,7 +78,20 @@ export default function QuotationPrintView({ quote, onClose, settings = {} }) {
         margin: [8, 8, 8, 8],
         filename: `Quotation-${quote.quotationNumber || 'JTT'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          onclone: (clonedDoc) => {
+            const el = clonedDoc.querySelector('.printable-area');
+            if (el) {
+              el.style.margin = '0';
+              el.style.boxShadow = 'none';
+            }
+          },
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       };
       await html2pdf().set(opt).from(element).save();

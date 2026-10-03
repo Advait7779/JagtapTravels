@@ -6,18 +6,46 @@ export default function BillPrintView({ bill, onClose, settings = {} }) {
   if (!bill) return null;
   const [downloading, setDownloading] = useState(false);
 
-  const company = {
+  const defaultCompany = {
     companyName: 'Jagtap Travels',
-    address: 'Pune, Maharashtra, India',
-    phone: '+91 98230 11223',
-    email: 'contact@jagtaptravels.com',
-    bankName: 'HDFC Bank',
+    address: 'SIDDHI NIWAS, PURANDHAR COLONY,\nBHEKRAI NAGAR , PUNE - 412308',
+    phone: '9011507220',
+    phone2: '8888094770',
+    email: 'jagtap.travels1985@gmail.com',
+    gstNumber: '27AKGPJ1825N1ZX',
+    bankName: 'AXIS Bank',
+    bankBranch: 'Saswad Branch',
     accountName: 'Jagtap Travels',
-    accountNumber: '50200012345678',
-    ifsc: 'HDFC0001234',
-    upi: 'jagtaptravels@upi',
+    accountNumber: '916020073533410',
+    ifsc: 'UTIB0002985',
+    upi: '',
+  };
+
+  const pickFirst = (...vals) => {
+    for (const v of vals) {
+      if (typeof v === 'string' && v.trim()) return v.trim();
+      if (v != null && v !== '') return v;
+    }
+    return '';
+  };
+
+  const billCompany = bill.company || {};
+  const company = {
+    ...defaultCompany,
     ...settings,
-    ...(bill.company || {}),
+    ...billCompany,
+    companyName: pickFirst(billCompany.companyName, settings.companyName, defaultCompany.companyName),
+    address: pickFirst(billCompany.address, settings.address, defaultCompany.address),
+    phone: pickFirst(billCompany.phone, settings.phone, defaultCompany.phone),
+    phone2: pickFirst(billCompany.phone2, settings.phone2, defaultCompany.phone2),
+    email: pickFirst(billCompany.email, settings.email, defaultCompany.email),
+    gstNumber: pickFirst(billCompany.gstNumber, billCompany.gstin, settings.gstNumber, defaultCompany.gstNumber),
+    bankName: pickFirst(billCompany.bankName, settings.bankName, defaultCompany.bankName),
+    bankBranch: pickFirst(billCompany.bankBranch, settings.bankBranch, defaultCompany.bankBranch),
+    accountName: pickFirst(billCompany.accountName, settings.accountName, defaultCompany.accountName),
+    accountNumber: pickFirst(billCompany.accountNumber, billCompany.bankAccountNo, settings.accountNumber, defaultCompany.accountNumber),
+    ifsc: pickFirst(billCompany.ifsc, billCompany.bankIfsc, settings.ifsc, defaultCompany.ifsc),
+    upi: pickFirst(billCompany.upi, settings.upi, defaultCompany.upi),
   };
   const totalPaid = bill.totalPaid ?? bill.advancePaid ?? 0;
 
@@ -32,7 +60,35 @@ export default function BillPrintView({ bill, onClose, settings = {} }) {
         margin: [8, 8, 8, 8],
         filename: `Invoice-${bill.billNumber || 'JTT'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          onclone: (clonedDoc) => {
+            const el = clonedDoc.querySelector('.printable-area');
+            if (el) {
+              el.style.margin = '0';
+              el.style.boxShadow = 'none';
+            }
+            const clonedStamp = clonedDoc.querySelector('img[alt="Company Stamp"]');
+            if (clonedStamp) {
+              const nw = clonedStamp.naturalWidth;
+              const nh = clonedStamp.naturalHeight;
+              const maxDim = 56;
+              if (nw && nh) {
+                if (nw > nh) {
+                  clonedStamp.style.width = `${maxDim}px`;
+                  clonedStamp.style.height = `${Math.round(maxDim * (nh / nw))}px`;
+                } else {
+                  clonedStamp.style.height = `${maxDim}px`;
+                  clonedStamp.style.width = `${Math.round(maxDim * (nw / nh))}px`;
+                }
+              }
+            }
+          },
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       };
       await html2pdf().set(opt).from(element).save();
@@ -396,7 +452,7 @@ export default function BillPrintView({ bill, onClose, settings = {} }) {
                         : '/stamp.jpg'
                     }
                     alt="Company Stamp"
-                    className="h-14 w-14 object-contain"
+                    className="h-14 w-auto max-w-[3.5rem] object-contain"
                     style={{ mixBlendMode: 'multiply', opacity: 0.9 }}
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />

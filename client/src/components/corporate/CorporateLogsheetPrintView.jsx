@@ -24,12 +24,30 @@ export default function CorporateLogsheetPrintView({
   const printableAreaRef = useRef(null);
   const hasAutoDownloadedRef = useRef(false);
 
-  const company = {
+  const defaultCompany = {
     companyName: 'Jagtap Travels',
-    address: 'Saswad / Pune, Maharashtra, India',
-    phone: '+91 98230 11223',
-    email: 'contact@jagtaptravels.com',
+    address: 'SIDDHI NIWAS, PURANDHAR COLONY, BHEKRAI NAGAR , PUNE - 412308',
+    phone: '9011507220',
+    phone2: '8888094770',
+    email: 'jagtap.travels1985@gmail.com',
+  };
+
+  const pickFirst = (...vals) => {
+    for (const v of vals) {
+      if (typeof v === 'string' && v.trim()) return v.trim();
+      if (v != null && v !== '') return v;
+    }
+    return '';
+  };
+
+  const company = {
+    ...defaultCompany,
     ...settings,
+    companyName: pickFirst(settings.companyName, defaultCompany.companyName),
+    address: pickFirst(settings.address, defaultCompany.address),
+    phone: pickFirst(settings.phone, defaultCompany.phone),
+    phone2: pickFirst(settings.phone2, defaultCompany.phone2),
+    email: pickFirst(settings.email, defaultCompany.email),
   };
 
   const handleSavePdf = useCallback(async () => {
@@ -45,7 +63,20 @@ export default function CorporateLogsheetPrintView({
         margin: [8, 8, 8, 8],
         filename: `Logsheet-${clientName}-${selectedMonth || localDate().slice(0, 7)}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          onclone: (clonedDoc) => {
+            const el = clonedDoc.querySelector('.printable-area');
+            if (el) {
+              el.style.margin = '0';
+              el.style.boxShadow = 'none';
+            }
+          },
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
       };
       await html2pdf().set(opt).from(element).save();

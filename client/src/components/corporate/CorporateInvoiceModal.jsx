@@ -25,22 +25,30 @@ const EMPTY_LIST = Object.freeze([]);
 const EMPTY_SETTINGS = Object.freeze({});
 
 const defaultCompany = {
-  companyName: 'JAGTAP TRAVELS',
+  companyName: 'Jagtap Travels',
   address: 'SIDDHI NIWAS, PURANDHAR COLONY,\nBHEKRAI NAGAR , PUNE - 412308',
   gstin: '27AKGPJ1825N1ZX',
   email: 'jagtap.travels1985@gmail.com',
   contact: '9011507220',
-  contact2: '',
+  contact2: '8888094770',
   hsnSac: '996419',
-  bankName: 'AXIS BANK',
-  bankBranch: 'SASWAD',
+  bankName: 'AXIS Bank',
+  bankBranch: 'Saswad Branch',
   bankAccountNo: '916020073533410',
   bankIfsc: 'UTIB0002985',
 };
 
-const mergeCompanySettings = (current, settings = {}) => {
-  let c1 = settings.phone || settings.contact || current.contact || '9011507220';
-  let c2 = settings.phone2 || settings.contact2 || current.contact2 || '';
+const pickFirstNonEmpty = (...candidates) => {
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim()) return c.trim();
+    if (c != null && c !== '') return c;
+  }
+  return '';
+};
+
+const mergeCompanySettings = (current = {}, settings = {}) => {
+  let c1 = pickFirstNonEmpty(settings.phone, settings.contact, current.contact, defaultCompany.contact);
+  let c2 = pickFirstNonEmpty(settings.phone2, settings.contact2, current.contact2, defaultCompany.contact2);
 
   // If user entered both numbers in a single field separated by comma, slash, or newline
   if (!c2 && c1 && /[,/\n]/.test(c1)) {
@@ -51,29 +59,33 @@ const mergeCompanySettings = (current, settings = {}) => {
     }
   }
 
-  let bankName = settings.bankName || current.bankName || 'AXIS BANK';
-  let bankBranch = settings.bankBranch || current.bankBranch || 'SASWAD';
+  let bankName = pickFirstNonEmpty(settings.bankName, current.bankName, defaultCompany.bankName);
+  let bankBranch = pickFirstNonEmpty(settings.bankBranch, current.bankBranch, defaultCompany.bankBranch);
 
   // If bankBranch was not explicitly entered, and bankName contains branch info (e.g. 'AXIS Bank Saswad Branch.')
   if (!settings.bankBranch && bankName && /saswad/i.test(bankName)) {
     const cleaned = bankName.replace(/[\s,-]+saswad(\s+branch\.?)?/i, '').replace(/\s+branch\.?$/i, '').trim();
     if (cleaned) {
       bankName = cleaned;
-      bankBranch = 'SASWAD';
+      if (!bankBranch || bankBranch === 'SASWAD') bankBranch = 'Saswad Branch';
     }
   }
 
   return {
+    ...defaultCompany,
     ...current,
     ...settings,
-    gstin: settings.gstNumber || settings.gstin || current.gstin || '',
+    companyName: pickFirstNonEmpty(settings.companyName, current.companyName, defaultCompany.companyName),
+    address: pickFirstNonEmpty(settings.address, current.address, defaultCompany.address),
+    gstin: pickFirstNonEmpty(settings.gstNumber, settings.gstin, current.gstin, defaultCompany.gstin),
+    email: pickFirstNonEmpty(settings.email, current.email, defaultCompany.email),
     contact: c1,
     contact2: c2,
-    hsnSac: settings.hsnSac || settings.hsnCode || current.hsnSac || '996419',
+    hsnSac: pickFirstNonEmpty(settings.hsnSac, settings.hsnCode, current.hsnSac, defaultCompany.hsnSac),
     bankName,
     bankBranch,
-    bankAccountNo: settings.accountNumber || settings.bankAccountNo || current.bankAccountNo || '',
-    bankIfsc: settings.ifsc || settings.bankIfsc || current.bankIfsc || '',
+    bankAccountNo: pickFirstNonEmpty(settings.accountNumber, settings.bankAccountNo, current.bankAccountNo, defaultCompany.bankAccountNo),
+    bankIfsc: pickFirstNonEmpty(settings.ifsc, settings.bankIfsc, current.bankIfsc, defaultCompany.bankIfsc),
   };
 };
 
@@ -464,6 +476,19 @@ export default function CorporateInvoiceModal({
       partyGstin,
       company: {
         ...company,
+        companyName: company.companyName || defaultCompany.companyName,
+        address: company.address || defaultCompany.address,
+        email: company.email || defaultCompany.email,
+        contact: company.contact || defaultCompany.contact,
+        contact2: company.contact2 || defaultCompany.contact2,
+        phone: company.contact || defaultCompany.contact,
+        phone2: company.contact2 || defaultCompany.contact2,
+        bankName: company.bankName || defaultCompany.bankName,
+        bankBranch: company.bankBranch || defaultCompany.bankBranch,
+        gstin: company.gstin || defaultCompany.gstin,
+        hsnSac: company.hsnSac || defaultCompany.hsnSac,
+        bankAccountNo: company.bankAccountNo || defaultCompany.bankAccountNo,
+        bankIfsc: company.bankIfsc || defaultCompany.bankIfsc,
         stampUrl: effectiveStampUrl || company.stampUrl,
         signatureUrl: effectiveSignatureUrl || company.signatureUrl,
       },
@@ -574,11 +599,56 @@ export default function CorporateInvoiceModal({
       const html2pdf = html2pdfModule.default || html2pdfModule;
       const clientName = (partyName || 'Corporate').replace(/[^a-zA-Z0-9_-]/g, '_');
       const prefix = isNonGst ? 'Corporate-NonGST-Invoice' : 'Corporate-Tax-Invoice';
+
+      // Measure original stamp natural dimensions so html2canvas never distorts/stretches it
+      const origStamp = element.querySelector('img[alt="Official Stamp"]');
+      const stampNw = origStamp?.naturalWidth;
+      const stampNh = origStamp?.naturalHeight;
+
       const opt = {
-        margin: [6, 6, 6, 6],
+        margin: [8, 8, 8, 8],
         filename: `${prefix}-${clientName}-${period || selectedMonth}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1024 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          onclone: (clonedDoc) => {
+            const el = clonedDoc.querySelector('.printable-area');
+            if (el) {
+              el.style.width = '100%';
+              el.style.maxWidth = '100%';
+              el.style.minWidth = '0';
+              el.style.margin = '0 auto';
+              el.style.padding = '12px 14px';
+              el.style.boxShadow = 'none';
+              el.style.boxSizing = 'border-box';
+            }
+            // Preserve exact natural circular proportions of the official stamp in html2canvas
+            const clonedStamp = clonedDoc.querySelector('img[alt="Official Stamp"]');
+            if (clonedStamp) {
+              const nw = stampNw || clonedStamp.naturalWidth;
+              const nh = stampNh || clonedStamp.naturalHeight;
+              const maxDim = 125;
+              if (nw && nh) {
+                if (nw > nh) {
+                  clonedStamp.style.width = `${maxDim}px`;
+                  clonedStamp.style.height = `${Math.round(maxDim * (nh / nw))}px`;
+                } else {
+                  clonedStamp.style.height = `${maxDim}px`;
+                  clonedStamp.style.width = `${Math.round(maxDim * (nw / nh))}px`;
+                }
+              } else {
+                clonedStamp.style.height = `${maxDim}px`;
+                clonedStamp.style.width = 'auto';
+              }
+              clonedStamp.style.maxWidth = 'none';
+              clonedStamp.style.maxHeight = 'none';
+            }
+          },
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       };
       await html2pdf().set(opt).from(element).save();
@@ -640,19 +710,24 @@ export default function CorporateInvoiceModal({
           <Receipt size={16} weight="bold" /> Invoice Details
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          <label className="form-label">Invoice No
+          <label className="form-label flex flex-col justify-between h-full">
+            <span>Invoice No</span>
             <input className="form-input" required maxLength={100} value={invoiceNo} onChange={(e) => { setInvoiceNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 390" />
           </label>
-          <label className="form-label">Date
+          <label className="form-label flex flex-col justify-between h-full">
+            <span>Date</span>
             <input className="form-input" required type="date" value={invoiceDate} onChange={(e) => { setInvoiceDate(e.target.value); setIsSaved(false); }} />
           </label>
-          <label className="form-label">Period
+          <label className="form-label flex flex-col justify-between h-full">
+            <span>Period</span>
             <input className="form-input" required maxLength={100} value={period} onChange={(e) => { setPeriod(e.target.value); setIsSaved(false); }} placeholder="e.g. AUGUST" />
           </label>
-          <label className="form-label">PO No
+          <label className="form-label flex flex-col justify-between h-full">
+            <span>PO No</span>
             <input className="form-input" value={poNo} onChange={(e) => { setPoNo(e.target.value); setIsSaved(false); }} placeholder="e.g. 4593518741" />
           </label>
-          <label className="form-label">HSN/SAC Code
+          <label className="form-label flex flex-col justify-between h-full">
+            <span>HSN/SAC Code</span>
             <input
               className="form-input"
               value={company.hsnSac || '996419'}
@@ -663,7 +738,8 @@ export default function CorporateInvoiceModal({
               placeholder="996419"
             />
           </label>
-          <label className="form-label">Contact 1
+          <label className="form-label flex flex-col justify-between h-full">
+            <span>Contact 1</span>
             <input
               className="form-input"
               value={company.contact || ''}
@@ -674,7 +750,8 @@ export default function CorporateInvoiceModal({
               placeholder="9011507220"
             />
           </label>
-          <label className="form-label">Contact 2 (Below 1st)
+          <label className="form-label flex flex-col justify-between h-full">
+            <span>Contact 2</span>
             <input
               className="form-input"
               value={company.contact2 || ''}
@@ -1039,51 +1116,53 @@ export default function CorporateInvoiceModal({
         <div
           ref={printRef}
           className="printable-area bg-white mx-auto shadow-lg print:shadow-none print:m-0 print:max-w-none"
-          style={{ width: '100%', maxWidth: 820, minWidth: 760, padding: '28px 32px', fontFamily: "'Times New Roman', Times, serif", fontSize: 13, color: '#000', lineHeight: 1.4, boxSizing: 'border-box' }}
+          style={{ width: '100%', maxWidth: 780, padding: '16px 20px', fontFamily: "'Times New Roman', Times, serif", fontSize: 12.5, color: '#000', lineHeight: 1.35, boxSizing: 'border-box' }}
         >
           {/* Title */}
-          <h1 style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 16, letterSpacing: 4 }}>
+          <h1 style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 14, letterSpacing: 4 }}>
             {invoiceTitle ? invoiceTitle.replace(/\s+/g, ' \u00a0 ') : (isNonGst ? 'INVOICE' : 'Tax \u00a0 Invoice')}
           </h1>
 
           {/* Unified Invoice Structure with uniform 1px borders */}
           <div style={{ width: '100%', border: '1px solid #000', boxSizing: 'border-box' }}>
             {/* Top Grid: Company Info | Invoice Meta */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: 0 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: 0, tableLayout: 'fixed' }}>
               <tbody>
                 <tr>
                   {/* Left: Company Info & Official Logo */}
-                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '54%' }}>
+                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '56%' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: 4 }}>
-                        <div style={{ fontWeight: 'bold', color: '#000', fontSize: 14 }}>{company.companyName}</div>
-                        <div style={{ whiteSpace: 'pre-line', fontSize: 12 }}>{company.address}</div>
-                        <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12, whiteSpace: 'nowrap' }}>GSTIN/UIN: {company.gstin}</div>
-                        <div style={{ fontSize: 11 }}>E-Mail :</div>
-                        <div style={{ fontSize: 11, whiteSpace: 'nowrap', wordBreak: 'keep-all' }}>{company.email}</div>
-                        <div style={{ fontSize: 11, display: 'flex', gap: '4px', alignItems: 'flex-start', whiteSpace: 'nowrap' }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: 6 }}>
+                        <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13.5 }}>{company.companyName || defaultCompany.companyName}</div>
+                        <div style={{ whiteSpace: 'pre-line', fontSize: 11.5 }}>{company.address || defaultCompany.address}</div>
+                        <div style={{ fontWeight: 'bold', color: '#000', fontSize: 11.5, whiteSpace: 'nowrap' }}>GSTIN/UIN: {company.gstin || defaultCompany.gstin}</div>
+                        <div style={{ fontSize: 10.5, display: 'flex', gap: '4px', alignItems: 'center', whiteSpace: 'nowrap', flexWrap: 'nowrap' }}>
+                          <span>E-Mail :</span>
+                          <span>{company.email || defaultCompany.email}</span>
+                        </div>
+                        <div style={{ fontSize: 10.5, display: 'flex', gap: '4px', alignItems: 'flex-start', whiteSpace: 'nowrap' }}>
                           <span>Contact :</span>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span>{company.contact || '9011507220'}</span>
-                            {company.contact2 && <span>{company.contact2}</span>}
+                            <span>{company.contact || defaultCompany.contact}</span>
+                            {(company.contact2 || defaultCompany.contact2) && <span>{company.contact2 || defaultCompany.contact2}</span>}
                           </div>
                         </div>
-                        <div style={{ fontSize: 11, whiteSpace: 'nowrap' }}>HSN/SAC code : {company.hsnSac || '996419'}</div>
+                        <div style={{ fontSize: 10.5, whiteSpace: 'nowrap' }}>HSN/SAC code : {company.hsnSac || defaultCompany.hsnSac || '996419'}</div>
                       </div>
-                      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: 6, marginTop: 4 }}>
+                      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: 4, marginTop: 2 }}>
                         <img
                           src="/jagtap-logo.png"
                           alt="Jagtap Travels Logo"
-                          style={{ height: 74, maxHeight: 80, maxWidth: 120, objectFit: 'contain' }}
+                          style={{ height: 96, maxHeight: 102, maxWidth: 155, objectFit: 'contain' }}
                         />
                       </div>
                     </div>
                   </td>
                   {/* Right top: Invoice no */}
-                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', fontSize: 12, verticalAlign: 'top', width: '23%' }}>
+                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', fontSize: 11.5, verticalAlign: 'top', width: '18%' }}>
                     <b>Invoice No :</b> &nbsp;&nbsp; {invoiceNo}
                   </td>
-                  <td style={{ borderBottom: '1px solid #000', padding: '8px 10px', fontSize: 12, verticalAlign: 'top', lineHeight: 1.6, width: '23%' }}>
+                  <td style={{ borderBottom: '1px solid #000', padding: '8px 10px', fontSize: 11.5, verticalAlign: 'top', lineHeight: 1.6, width: '26%' }}>
                     <b>Date :</b> &nbsp;&nbsp; {dateFormatted}<br />
                     <b>Period :</b> &nbsp;&nbsp; {period}<br />
                     <b>PO No :</b> &nbsp;&nbsp; {poNo}
@@ -1093,75 +1172,85 @@ export default function CorporateInvoiceModal({
             </table>
 
             {/* Party + Bank Details */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: 0 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: 0, tableLayout: 'fixed' }}>
               <tbody>
                 <tr>
-                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '54%' }}>
-                    <div style={{ fontSize: 12 }}>Party Name :-</div>
-                    <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>{partyName}</div>
+                  <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', width: '56%' }}>
+                    <div style={{ fontSize: 11.5 }}>Party Name :-</div>
+                    <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12.5 }}>{partyName}</div>
                     <div style={{ fontSize: 11, whiteSpace: 'pre-line' }}>{partyAddress}</div>
-                    {partyGstin && <div style={{ fontWeight: 'bold', color: '#000', fontSize: 12, whiteSpace: 'nowrap' }}>GST – {partyGstin}</div>}
+                    {partyGstin && <div style={{ fontWeight: 'bold', color: '#000', fontSize: 11.5, whiteSpace: 'nowrap' }}>GST – {partyGstin}</div>}
                   </td>
-                  <td style={{ borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', fontSize: 12, width: '46%' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: 12 }}>{company.companyName} ACCOUNT DETAILS</div>
-                    <div>BANK - &nbsp;&nbsp; {company.bankName}</div>
-                    <div>BRANCH - &nbsp;&nbsp; {company.bankBranch}</div>
-                    <div>AC NO - &nbsp;&nbsp; {company.bankAccountNo}</div>
-                    <div>IFSC - &nbsp;&nbsp;&nbsp;&nbsp; {company.bankIfsc}</div>
+                  <td style={{ borderBottom: '1px solid #000', padding: '8px 10px', verticalAlign: 'top', fontSize: 11.5, width: '44%' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: 11.5 }}>{company.companyName || defaultCompany.companyName} ACCOUNT DETAILS</div>
+                    <div>BANK - &nbsp;&nbsp; {company.bankName || defaultCompany.bankName}</div>
+                    <div>BRANCH - &nbsp;&nbsp; {company.bankBranch || defaultCompany.bankBranch}</div>
+                    <div>AC NO - &nbsp;&nbsp; {company.bankAccountNo || defaultCompany.bankAccountNo}</div>
+                    <div>IFSC - &nbsp;&nbsp;&nbsp;&nbsp; {company.bankIfsc || defaultCompany.bankIfsc}</div>
                   </td>
                 </tr>
               </tbody>
             </table>
 
             {/* Line Items Table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: 0 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', margin: 0, tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '32px' }} />
+                <col style={{ width: 'auto' }} />
+                <col style={{ width: '68px' }} />
+                <col style={{ width: '70px' }} />
+                <col style={{ width: '52px' }} />
+                <col style={{ width: '56px' }} />
+                <col style={{ width: '80px' }} />
+                <col style={{ width: '82px' }} />
+              </colgroup>
               <thead>
-                <tr style={{ fontWeight: 'bold', fontSize: 10.5, lineHeight: 1.25 }}>
-                  <th style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', width: 30 }}>No</th>
-                  <th style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 6px', textAlign: 'left', verticalAlign: 'middle' }}>Particulars</th>
-                  <th style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>PACKAGE<br />KM</th>
-                  <th style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>PACKAGE<br />AMOUNT</th>
-                  <th style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA<br />KM</th>
-                  <th style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA<br />KM RATE</th>
-                  <th style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA KM -<br />HOURS AMOUNT</th>
-                  <th style={{ borderBottom: '1px solid #000', padding: '8px 6px', textAlign: 'right', verticalAlign: 'middle' }}>Amount</th>
+                <tr style={{ fontWeight: 'bold', fontSize: 10, lineHeight: 1.25 }}>
+                  <th style={{ width: '32px', borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 3px', textAlign: 'center', verticalAlign: 'middle' }}>No</th>
+                  <th style={{ width: 'auto', borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 6px', textAlign: 'left', verticalAlign: 'middle' }}>Particulars</th>
+                  <th style={{ width: '68px', borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 3px', textAlign: 'center', verticalAlign: 'middle' }}>PACKAGE<br />KM</th>
+                  <th style={{ width: '70px', borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 3px', textAlign: 'center', verticalAlign: 'middle' }}>PACKAGE<br />AMOUNT</th>
+                  <th style={{ width: '52px', borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 3px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA<br />KM</th>
+                  <th style={{ width: '56px', borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 3px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA<br />KM RATE</th>
+                  <th style={{ width: '80px', borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '8px 3px', textAlign: 'center', verticalAlign: 'middle' }}>EXTRA KM -<br />HOURS AMOUNT</th>
+                  <th style={{ width: '82px', borderBottom: '1px solid #000', padding: '8px 8px', textAlign: 'right', verticalAlign: 'middle' }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {lineItems.map((item, idx) => (
-                  <tr key={item.id} style={{ fontSize: 12 }}>
-                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
+                  <tr key={item.id} style={{ fontSize: 11.5 }}>
+                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 3px', textAlign: 'center', verticalAlign: 'middle' }}>
                       {item.particulars || item.packageKm ? idx + 1 : ''}
                     </td>
                     <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', fontWeight: 'bold', verticalAlign: 'middle' }}>
                       {item.particulars}
                     </td>
-                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
+                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle' }}>
                       {item.packageKm ? fmtNum(item.packageKm) : ''}
                     </td>
-                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
+                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle' }}>
                       {item.packageAmount ? fmtNum(item.packageAmount) : ''}
                     </td>
-                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
+                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle' }}>
                       {item.extraKm ? fmtNum(item.extraKm) : (item.packageKm ? '0' : '')}
                     </td>
-                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
+                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle' }}>
                       {item.extraKmRate ? fmtNum(item.extraKmRate) : (item.packageKm ? '0' : '')}
                     </td>
-                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
+                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle' }}>
                       {item.extraAmount ? fmtNum(item.extraAmount) : (item.packageKm ? '0' : '')}
                     </td>
-                    <td style={{ borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>
+                    <td style={{ borderBottom: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>
                       {fmtNum(item.amount)}
                     </td>
                   </tr>
                 ))}
                 {/* Vehicle Subtotal row - visible before adding Toll & Parking */}
                 {tollItems.length > 0 && (
-                  <tr style={{ fontSize: 12 }}>
+                  <tr style={{ fontSize: 11.5 }}>
                     <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
-                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
-                    <td style={{ borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(lineTotal)}</td>
+                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
+                    <td style={{ borderBottom: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(lineTotal)}</td>
                   </tr>
                 )}
                 {/* Toll rows - Rendered directly above the final TOTAL row */}
@@ -1173,26 +1262,26 @@ export default function CorporateInvoiceModal({
                   ).trim();
 
                   return (
-                    <tr key={t.id} style={{ fontSize: 12 }}>
+                    <tr key={t.id} style={{ fontSize: 11.5 }}>
                       {vehicle ? (
                         <>
                           <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={4}></td>
-                          <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }} colSpan={2}>
+                          <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }} colSpan={2}>
                             {vehicle}
                           </td>
-                          <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
+                          <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
                             {tollType}
                           </td>
                         </>
                       ) : (
                         <>
                           <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
-                          <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
+                          <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
                             {tollType}
                           </td>
                         </>
                       )}
-                      <td style={{ borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>
+                      <td style={{ borderBottom: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>
                         {fmtNum(t.amount)}
                       </td>
                     </tr>
@@ -1201,32 +1290,32 @@ export default function CorporateInvoiceModal({
                 {/* Totals */}
                 {gstRate > 0 ? (
                   <>
-                    <tr style={{ fontSize: 12 }}>
+                    <tr style={{ fontSize: 11.5 }}>
                       <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
-                      <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
-                      <td style={{ borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(taxableValue)}</td>
+                      <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
+                      <td style={{ borderBottom: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(taxableValue)}</td>
                     </tr>
-                    <tr style={{ fontSize: 12 }}>
+                    <tr style={{ fontSize: 11.5 }}>
                       <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
-                      <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>CGST {gstRate}%</td>
-                      <td style={{ borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(cgst)}</td>
+                      <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>CGST {gstRate}%</td>
+                      <td style={{ borderBottom: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(cgst)}</td>
                     </tr>
-                    <tr style={{ fontSize: 12 }}>
+                    <tr style={{ fontSize: 11.5 }}>
                       <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
-                      <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>SGST {gstRate}%</td>
-                      <td style={{ borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(sgst)}</td>
+                      <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>SGST {gstRate}%</td>
+                      <td style={{ borderBottom: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', verticalAlign: 'middle' }}>{fmtNum(sgst)}</td>
                     </tr>
-                    <tr style={{ fontSize: 13, fontWeight: 'bold' }}>
+                    <tr style={{ fontSize: 12.5, fontWeight: 'bold' }}>
                       <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
-                      <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
-                      <td style={{ borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>{fmtNum(grandTotal)}</td>
+                      <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
+                      <td style={{ borderBottom: '1px solid #000', padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>{fmtNum(grandTotal)}</td>
                     </tr>
                   </>
                 ) : (
-                  <tr style={{ fontSize: 13, fontWeight: 'bold' }}>
+                  <tr style={{ fontSize: 12.5, fontWeight: 'bold' }}>
                     <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', verticalAlign: 'middle' }} colSpan={6}></td>
-                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
-                    <td style={{ borderBottom: '1px solid #000', padding: '6px 6px', textAlign: 'right', verticalAlign: 'middle' }}>{fmtNum(grandTotal)}</td>
+                    <td style={{ borderRight: '1px solid #000', borderBottom: '1px solid #000', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TOTAL</td>
+                    <td style={{ borderBottom: '1px solid #000', padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>{fmtNum(grandTotal)}</td>
                   </tr>
                 )}
               </tbody>
@@ -1255,7 +1344,7 @@ export default function CorporateInvoiceModal({
                     <div style={{ fontWeight: 'bold' }}>This certified that the particulars given are true and correct and the amount indicated represents the price actually charged , and all dispute are subjects to pune jurisdiction</div>
                   </td>
                   <td style={{ padding: '8px', verticalAlign: 'top', position: 'relative' }}>
-                    <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>For {company.companyName}</div>
+                    <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>For {company.companyName || defaultCompany.companyName}</div>
                     <div style={{ minHeight: 125, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', padding: '4px 6px 2px 8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 128, flexShrink: 0 }}>
                         {showStamp && !isStampRemoved && effectiveStampUrl && (
@@ -1264,7 +1353,9 @@ export default function CorporateInvoiceModal({
                             alt="Official Stamp"
                             style={{
                               height: 125,
-                              width: 125,
+                              width: 'auto',
+                              maxHeight: 125,
+                              maxWidth: 125,
                               objectFit: 'contain',
                               mixBlendMode: 'multiply',
                               opacity: 0.95,
