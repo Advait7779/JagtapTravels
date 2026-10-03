@@ -32,7 +32,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(page.getByText('Welcome back, Test Operator')).toBeVisible();
   await page.getByRole('button', { name: 'Business Settings', exact: true }).click();
   await page.getByLabel('Company name').fill('Verified Test Travel');
-  await page.getByLabel('Business phone').fill('9876543210');
+  await page.getByLabel('Business phone 1').fill('9876543210');
   await page.getByLabel('UPI ID').fill('test-travel@bank');
   await page.getByRole('button', { name: 'Save Business Settings', exact: true }).click();
   await expect(page.getByText('Settings updated successfully.')).toBeVisible();

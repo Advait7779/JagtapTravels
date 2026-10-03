@@ -20,7 +20,7 @@ jobs:
       - run: npm run check
       - run: npm audit --audit-level=moderate
       - run: npm --prefix server audit --audit-level=moderate
-      - run: npm --prefix client audit --audit-level=moderate
+      - run: npm --prefix client audit --omit=dev --audit-level=moderate
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 

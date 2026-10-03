@@ -7,6 +7,7 @@ RUN npm run build
 
 FROM node:24-bookworm-slim AS runtime
 ENV NODE_ENV=production PORT=5000
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm ci --omit=dev
