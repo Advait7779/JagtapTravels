@@ -1,16 +1,16 @@
-FROM node:24-bookworm-slim AS build
+FROM node:24-alpine AS build
 WORKDIR /app/client
 COPY client/package*.json ./
 RUN npm ci
 COPY client/ ./
 RUN npm run build
 
-FROM node:24-bookworm-slim AS runtime
+FROM node:24-alpine AS runtime
 ENV NODE_ENV=production PORT=5000
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+RUN apk update && apk upgrade --no-cache
 WORKDIR /app/server
 COPY server/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev && npm cache clean --force && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 COPY server/ ./
 COPY --from=build /app/client/dist /app/client/dist
 RUN mkdir -p /app/data /app/uploads && chown -R node:node /app
