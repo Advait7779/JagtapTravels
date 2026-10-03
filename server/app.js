@@ -8,6 +8,7 @@ const { authRoutes } = require('./auth');
 const { auditMiddleware } = require('./audit');
 const { createService, HttpError, text } = require('./domain');
 const { identifier, invoiceMonth, validateCorporateInvoice } = require('./corporate-invoices');
+const { isAdministrator, quotationCompany, staffCanAccess, redactStaffRecord } = require('./access');
 function createApp(repo, options = {}) {
   const app = express(),
     service = createService(repo);
@@ -62,6 +63,23 @@ function createApp(repo, options = {}) {
     }
   });
   authRoutes(app, repo, options);
+  app.use('/api', (req, res, next) => Promise.resolve().then(async () => {
+    if (req.path.startsWith('/public/')) return next();
+    if (isAdministrator(req.user)) return next();
+    if (req.user?.role !== 'Staff' || !staffCanAccess(req.method, req.path))
+      return next(new HttpError(403, 'Administrator access required for this section.'));
+    if (req.path === '/drivers' && req.method === 'POST') {
+      req.body.baseSalary = 20000;
+      req.body.licenseDocumentUrl = '';
+      req.body.driverPhotoUrl = '';
+    }
+    if (req.path === '/vehicles' && req.method === 'POST') req.body.rcDocumentUrl = '';
+    if (req.path.startsWith('/meter-readings') && ['POST', 'PUT'].includes(req.method))
+      delete req.body.documents;
+    const originalJson = res.json.bind(res);
+    res.json = (body) => originalJson(redactStaffRecord(body));
+    next();
+  }).catch(next));
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res)).catch(next);
   for (const [route, collection] of [
     ['customers', 'customers'],
@@ -108,7 +126,9 @@ function createApp(repo, options = {}) {
       app.put(
         '/api/' + route + '/:id',
         wrap(async (req, res) =>
-          res.json(await service.update(collection, req.params.id, req.body)),
+          res.json(await service.update(collection, req.params.id, req.body, {
+            staff: !isAdministrator(req.user),
+          })),
         ),
       );
     if (['drivers', 'quotations', 'bookings', 'inquiries', 'corporateContracts'].includes(collection))
@@ -503,7 +523,10 @@ function createApp(repo, options = {}) {
 
   app.get(
     '/api/settings',
-    wrap(async (req, res) => res.json((await repo.read()).settings)),
+    wrap(async (req, res) => {
+      const settings = (await repo.read()).settings;
+      res.json(isAdministrator(req.user) ? settings : quotationCompany(settings));
+    }),
   );
   app.post(
     '/api/settings/asset',

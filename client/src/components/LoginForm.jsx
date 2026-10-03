@@ -37,7 +37,7 @@ export default function LoginForm({ onLoginSuccess, onBackToWebsite }) {
             password: form.password,
             rememberMe: form.rememberMe,
           });
-      toast.success('Welcome, Admin!');
+      toast.success(`Welcome, ${result.user.fullName}!`);
       onLoginSuccess(result.user);
     } catch (err) {
       const msg = err.message || 'Unable to sign in. Please check your credentials.';
@@ -86,7 +86,7 @@ export default function LoginForm({ onLoginSuccess, onBackToWebsite }) {
             </button>
           </form>
         )}
-        <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-500"><ShieldCheck size={16} /> Protected administrator access</div>
+        <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-500"><ShieldCheck size={16} /> Protected CRM access</div>
       </section>
     </main>
   );

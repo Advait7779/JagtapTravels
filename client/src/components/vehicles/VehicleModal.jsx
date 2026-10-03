@@ -21,6 +21,7 @@ export default function VehicleModal({
   onSave,
   vehicleToEdit = null,
   drivers = [],
+  canManageDocuments = true,
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -467,7 +468,7 @@ export default function VehicleModal({
           </div>
 
           {/* Vehicle RC Document Upload & Management */}
-          <div className="bg-slate-50 p-3.5 rounded-md border border-slate-200 space-y-2.5">
+          {canManageDocuments && <div className="bg-slate-50 p-3.5 rounded-md border border-slate-200 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-navy-900" />
@@ -549,7 +550,7 @@ export default function VehicleModal({
                 No RC document attached yet. Click "Upload RC from System" above to select a PDF or image scan from your computer.
               </p>
             ) : null}
-          </div>
+          </div>}
 
           {/* Notes */}
           <div>

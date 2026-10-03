@@ -19,6 +19,7 @@ import {
   Coins,
   Scroll,
 } from '@phosphor-icons/react';
+import { canAccessTab } from '../utils/access';
 
 export default function Sidebar({
   activeTab,
@@ -103,13 +104,15 @@ export default function Sidebar({
 
       {/* Navigation Sections */}
       <div className="flex-1 py-4 px-3 space-y-4 overflow-y-auto">
-        {navSections.map((sec, secIdx) => (
-          <div key={secIdx} className="space-y-1">
+        {navSections.map((sec, secIdx) => {
+          const visibleItems = sec.items.filter((item) => canAccessTab(user, item.id));
+          if (!visibleItems.length) return null;
+          return <div key={secIdx} className="space-y-1">
             <div className="px-3 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               {sec.title}
             </div>
 
-            {sec.items.map((item) => {
+            {visibleItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               const count = counts?.[item.id];
@@ -145,8 +148,8 @@ export default function Sidebar({
                 </button>
               );
             })}
-          </div>
-        ))}
+          </div>;
+        })}
       </div>
 
       {/* Website & Logout Buttons */}

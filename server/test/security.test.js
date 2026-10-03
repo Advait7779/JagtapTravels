@@ -45,6 +45,25 @@ test('plaintext credentials are never accepted', async () => {
   assert.equal(await verifyPassword('anything', ''), false);
 });
 
+test('staff passwords accept six characters while administrator setup still requires twelve', async (t) => {
+  const { app } = await environment(t);
+  await request(app).post('/api/auth/setup').send({
+    setupToken: SETUP, email: EMAIL, password: 'S3cret', fullName: 'Security Admin',
+  }).expect(400);
+
+  const admin = await setupAdmin(app);
+  await admin.agent.post('/api/users').set('X-CSRF-Token', admin.csrf).send({
+    fullName: 'Short Password', email: 'short@example.invalid', password: 'S3cre',
+  }).expect(400);
+  const created = await admin.agent.post('/api/users').set('X-CSRF-Token', admin.csrf).send({
+    fullName: 'Operations User', email: 'operations@example.invalid', password: 'S3cret',
+  }).expect(201);
+  assert.equal(created.body.role, 'Staff');
+  await request(app).post('/api/auth/login').send({
+    email: 'operations@example.invalid', password: 'S3cret',
+  }).expect(200);
+});
+
 test('environment bootstrap creates the first administrator once without overwriting it', async (t) => {
   const { app, repo } = await environment(t);
   const first = await bootstrapAdminFromEnv(repo, {
@@ -119,27 +138,15 @@ test('sessions expire after inactivity and can be individually or globally revok
   assert.ok(secondLogin.body.csrfToken);
 });
 
-test('password change requires the old password and revokes every session', async (t) => {
+test('password-change endpoint is unavailable', async (t) => {
   const { app } = await environment(t);
-  const first = await setupAdmin(app);
-  const second = request.agent(app);
-  await second.post('/api/auth/login').send({ email: EMAIL, password: PASSWORD }).expect(200);
-  await first.agent
+  const { agent, csrf } = await setupAdmin(app);
+  await agent
     .post('/api/auth/change-password')
-    .set('X-CSRF-Token', first.csrf)
-    .send({ currentPassword: 'wrong-password', newPassword: 'New-Security-Password-2026' })
-    .expect(401);
-  await first.agent
-    .post('/api/auth/change-password')
-    .set('X-CSRF-Token', first.csrf)
+    .set('X-CSRF-Token', csrf)
     .send({ currentPassword: PASSWORD, newPassword: 'New-Security-Password-2026' })
-    .expect(200);
-  await second.get('/api/auth/me').expect(401);
-  await request(app).post('/api/auth/login').send({ email: EMAIL, password: PASSWORD }).expect(401);
-  await request(app)
-    .post('/api/auth/login')
-    .send({ email: EMAIL, password: 'New-Security-Password-2026' })
-    .expect(200);
+    .expect(404);
+  await agent.get('/api/auth/me').expect(200);
 });
 
 test('audit trail records successes and failures without request secrets and verifies its chain', async (t) => {
@@ -164,6 +171,102 @@ test('audit trail records successes and failures without request secrets and ver
   assert.equal(serialized.includes(csrf), false);
   const visible = await agent.get('/api/security/audit-logs').expect(200);
   assert.ok(visible.body.length >= 3);
+});
+
+test('staff accounts can edit operations but cannot read company billing, settings or security', async (t) => {
+  const { app, repo } = await environment(t);
+  const admin = await setupAdmin(app);
+  await admin.agent.put('/api/settings').set('X-CSRF-Token', admin.csrf).send({
+    companyName: 'Private Travel Company', accountNumber: 'private-account-123',
+    bankName: 'Private Bank', phone: '9876543210',
+  }).expect(200);
+  const created = await admin.agent.post('/api/users').set('X-CSRF-Token', admin.csrf).send({
+    fullName: 'Operations User', email: 'operations@example.invalid',
+    password: 'Staff-Strong-Password-2026', role: 'Administrator',
+  }).expect(201);
+  assert.equal(created.body.role, 'Staff');
+  assert.equal(created.body.passwordHash, undefined);
+  await admin.agent.post('/api/users').set('X-CSRF-Token', admin.csrf).send({
+    fullName: 'Duplicate', email: 'operations@example.invalid',
+    password: 'Another-Strong-Password-2026',
+  }).expect(409);
+  const staffAgent = request.agent(app);
+  const login = await staffAgent.post('/api/auth/login').send({
+    email: 'operations@example.invalid', password: 'Staff-Strong-Password-2026',
+  }).expect(200);
+  const csrf = login.body.csrfToken;
+  const forbiddenGet = [
+    '/api/bills', '/api/corporate-contracts', '/api/corporate-invoices',
+    '/api/corporate-trip-logs', '/api/driver-advances', '/api/payroll',
+    '/api/security/audit-logs', '/api/users',
+  ];
+  for (const route of forbiddenGet) await staffAgent.get(route).expect(403);
+  await staffAgent.put('/api/settings').set('X-CSRF-Token', csrf)
+    .send({ companyName: 'Changed by staff' }).expect(403);
+  await staffAgent.post('/api/bills').set('X-CSRF-Token', csrf).send({}).expect(403);
+  await staffAgent.post('/api/users').set('X-CSRF-Token', csrf).send({}).expect(403);
+  await staffAgent.get('/api/uploads/00000000-0000-0000-0000-000000000000.pdf').expect(403);
+  const settings = await staffAgent.get('/api/settings').expect(200);
+  assert.equal(settings.body.companyName, 'Private Travel Company');
+  assert.equal(settings.body.phone, '9876543210');
+  assert.equal(settings.body.accountNumber, undefined);
+  assert.equal(settings.body.bankName, undefined);
+  const customer = await staffAgent.post('/api/customers').set('X-CSRF-Token', csrf)
+    .send({ name: 'Daily Customer', phone: '9876543211' }).expect(201);
+  assert.ok(customer.body.id);
+  const quotation = await staffAgent.post('/api/quotations').set('X-CSRF-Token', csrf).send({
+    customerName: 'Daily Customer', tourTitle: 'Pune Trip', pickupLocation: 'Pune',
+    dropLocation: 'Mumbai', vehicleType: 'Innova', baseAmount: 5000,
+  }).expect(201);
+  assert.equal(quotation.body.company.accountNumber, undefined);
+  assert.equal((await staffAgent.get('/api/quotations').expect(200)).body[0].company.bankName, undefined);
+  await repo.change((data) => {
+    data.drivers.push({
+      id: 'staff-driver-1', name: 'Driver One', phone: '9876543212',
+      licenseNumber: 'LIC-123', baseSalary: 42000,
+      documents: [{ id: 'secret-document', fileUrl: '/api/uploads/private.pdf' }],
+    });
+  });
+  const driver = (await staffAgent.get('/api/drivers').expect(200)).body[0];
+  assert.equal(driver.baseSalary, undefined);
+  assert.equal(driver.documents, undefined);
+  await staffAgent.put('/api/drivers/staff-driver-1').set('X-CSRF-Token', csrf).send({
+    name: 'Driver Updated', phone: '9876543212', licenseNumber: 'LIC-123',
+    baseSalary: 999999, licenseDocumentUrl: '/api/uploads/forged.pdf',
+  }).expect(200);
+  const persisted = (await repo.read()).drivers.find((item) => item.id === 'staff-driver-1');
+  assert.equal(persisted.baseSalary, 42000);
+  assert.equal(persisted.licenseDocumentUrl, '');
+  assert.equal(persisted.documents.length, 1);
+
+  await admin.agent.put('/api/users/' + created.body.id).set('X-CSRF-Token', admin.csrf).send({
+    fullName: 'Operations User', email: 'operations@example.invalid', active: false,
+  }).expect(200);
+  await staffAgent.get('/api/quotations').expect(401);
+  await request(app).post('/api/auth/login').send({
+    email: 'operations@example.invalid', password: 'Staff-Strong-Password-2026',
+  }).expect(401);
+  await admin.agent.delete('/api/users/' + admin.user.id)
+    .set('X-CSRF-Token', admin.csrf).expect(403);
+  await admin.agent.put('/api/users/' + created.body.id).set('X-CSRF-Token', admin.csrf).send({
+    fullName: 'Operations User', email: 'operations@example.invalid', active: true,
+    password: 'Replacement-Staff-Password-2026',
+  }).expect(400);
+  await admin.agent.put('/api/users/' + created.body.id).set('X-CSRF-Token', admin.csrf).send({
+    fullName: 'Operations User', email: 'operations@example.invalid', active: true,
+  }).expect(200);
+  await request(app).post('/api/auth/login').send({
+    email: 'operations@example.invalid', password: 'Replacement-Staff-Password-2026',
+  }).expect(401);
+  const relogin = await request.agent(app).post('/api/auth/login').send({
+    email: 'operations@example.invalid', password: 'Staff-Strong-Password-2026',
+  }).expect(200);
+  assert.ok(relogin.body.csrfToken);
+  await admin.agent.delete('/api/users/' + created.body.id)
+    .set('X-CSRF-Token', admin.csrf).expect(200);
+  await request(app).post('/api/auth/login').send({
+    email: 'operations@example.invalid', password: 'Staff-Strong-Password-2026',
+  }).expect(401);
 });
 
 test('production configuration rejects missing or weak secrets', () => {

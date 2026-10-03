@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const { promisify } = require('node:util');
 const { rateLimit } = require('express-rate-limit');
 const { HttpError, text } = require('./domain');
+const { isAdministrator } = require('./access');
 const safeEqual = (left, right) => {
   const a = Buffer.from(String(left));
   const b = Buffer.from(String(right));
@@ -16,6 +17,7 @@ const publicUser = (user) => ({
   email: user.email,
   fullName: user.fullName,
   role: user.role,
+  active: user.active !== false,
 });
 
 async function hashPassword(password) {
@@ -32,10 +34,10 @@ async function verifyPassword(password, stored) {
   return crypto.timingSafeEqual(expected, actual);
 }
 
-function validPassword(value) {
+function validPassword(value, minimumLength = 12) {
   const password = text(value, 'Password', true, 128);
-  if (password.length < 12)
-    throw new HttpError(400, 'Password must contain at least 12 characters.');
+  if (password.length < minimumLength)
+    throw new HttpError(400, `Password must contain at least ${minimumLength} characters.`);
   const normalized = password.toLowerCase().replace(/[^a-z0-9]/g, '');
   if (['admin123', 'password123', 'jagtaptours', 'adminpassword'].includes(normalized))
     throw new HttpError(400, 'Choose a stronger password that is not a common or demo password.');
@@ -173,7 +175,8 @@ function authRoutes(
       const snapshot = await repo.read();
       const user = snapshot.users.find((candidate) => candidate.email?.toLowerCase() === email);
       const authenticated = await verifyPassword(password, user?.passwordHash || (await dummyPasswordHash));
-      if (!user || !authenticated) throw new HttpError(401, 'Invalid email or password.');
+      if (!user || !authenticated || user.active === false)
+        throw new HttpError(401, 'Invalid email or password.');
       req.auditActor = user;
       const result = await repo.change((data) => {
         const current = data.users.find((candidate) => candidate.id === user.id);
@@ -196,7 +199,9 @@ function authRoutes(
       const lastSeen = Date.parse(session?.lastSeenAt || session?.createdAt || 0);
       const expired =
         !session || session.expiresAt <= Date.now() || !lastSeen || Date.now() - lastSeen > idleMs;
-      const user = !expired && data.users.find((candidate) => candidate.id === session.userId);
+      const user = !expired && data.users.find(
+        (candidate) => candidate.id === session.userId && candidate.active !== false,
+      );
       if (!user) {
         if (session)
           await repo.change((state) => {
@@ -227,6 +232,66 @@ function authRoutes(
   app.get('/api/auth/me', (req, res) =>
     res.json({ user: publicUser(req.user), csrfToken: req.session.csrfToken }),
   );
+
+  const requireAdministrator = (req, res, next) => {
+    if (!isAdministrator(req.user)) return next(new HttpError(403, 'Administrator access required.'));
+    next();
+  };
+
+  app.get('/api/users', requireAdministrator, wrap(async (req, res) => {
+    res.json((await repo.read()).users.map(publicUser));
+  }));
+
+  app.post('/api/users', requireAdministrator, wrap(async (req, res) => {
+    const email = validEmail(req.body.email);
+    const fullName = text(req.body.fullName, 'Full name', true, 200);
+    const passwordHash = await hashPassword(validPassword(req.body.password, 6));
+    const created = await repo.change((data) => {
+      if (data.users.some((user) => user.email?.toLowerCase() === email))
+        throw new HttpError(409, 'An account with this email already exists.');
+      const user = {
+        id: crypto.randomUUID(), email, fullName, role: 'Staff', active: true,
+        passwordHash, createdAt: new Date().toISOString(),
+      };
+      data.users.push(user);
+      return publicUser(user);
+    });
+    res.status(201).json(created);
+  }));
+
+  app.put('/api/users/:id', requireAdministrator, wrap(async (req, res) => {
+    const email = validEmail(req.body.email);
+    const fullName = text(req.body.fullName, 'Full name', true, 200);
+    if (Object.hasOwn(req.body, 'password'))
+      throw new HttpError(400, 'Password changes are not available.');
+    if (req.body.active !== undefined && typeof req.body.active !== 'boolean')
+      throw new HttpError(400, 'Active must be true or false.');
+    const updated = await repo.change((data) => {
+      const user = data.users.find((candidate) => candidate.id === req.params.id);
+      if (!user) throw new HttpError(404, 'User not found.');
+      if (isAdministrator(user)) throw new HttpError(403, 'Administrator accounts cannot be changed here.');
+      if (data.users.some((candidate) => candidate.id !== user.id && candidate.email?.toLowerCase() === email))
+        throw new HttpError(409, 'An account with this email already exists.');
+      user.email = email;
+      user.fullName = fullName;
+      if (req.body.active !== undefined) user.active = req.body.active;
+      if (user.active === false)
+        data.sessions = data.sessions.filter((session) => session.userId !== user.id);
+      return publicUser(user);
+    });
+    res.json(updated);
+  }));
+
+  app.delete('/api/users/:id', requireAdministrator, wrap(async (req, res) => {
+    await repo.change((data) => {
+      const user = data.users.find((candidate) => candidate.id === req.params.id);
+      if (!user) throw new HttpError(404, 'User not found.');
+      if (isAdministrator(user)) throw new HttpError(403, 'Administrator accounts cannot be removed here.');
+      data.users = data.users.filter((candidate) => candidate.id !== user.id);
+      data.sessions = data.sessions.filter((session) => session.userId !== user.id);
+    });
+    res.json({ success: true });
+  }));
 
   app.get(
     '/api/auth/sessions',
@@ -275,29 +340,9 @@ function authRoutes(
     }),
   );
 
-  app.post(
-    '/api/auth/change-password',
-    wrap(async (req, res) => {
-      const currentPassword = text(req.body.currentPassword, 'Current password', true, 128);
-      const newPassword = validPassword(req.body.newPassword);
-      if (!(await verifyPassword(currentPassword, req.user.passwordHash)))
-        throw new HttpError(401, 'Current password is incorrect.');
-      if (await verifyPassword(newPassword, req.user.passwordHash))
-        throw new HttpError(400, 'New password must be different from the current password.');
-      const passwordHash = await hashPassword(newPassword);
-      await repo.change((data) => {
-        const user = data.users.find((candidate) => candidate.id === req.user.id);
-        user.passwordHash = passwordHash;
-        user.passwordChangedAt = new Date().toISOString();
-        data.sessions = data.sessions.filter((session) => session.userId !== req.user.id);
-      });
-      res.clearCookie(COOKIE, cookieOptions);
-      res.json({ success: true, signedOut: true });
-    }),
-  );
-
   app.get(
     '/api/security/audit-logs',
+    requireAdministrator,
     wrap(async (req, res) => {
       const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 100));
       res.json((await repo.read()).auditLogs.slice(-limit).reverse());

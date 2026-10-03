@@ -10,9 +10,9 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { api } from '../services/api';
-import SecuritySettings from './SecuritySettings';
+import TeamUsers from './TeamUsers';
 
-export default function Settings({ settings, onSave, onSignedOut }) {
+export default function Settings({ settings, onSave }) {
   const [form, setForm] = useState(settings || {});
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -451,7 +451,7 @@ export default function Settings({ settings, onSave, onSignedOut }) {
         </form>
       </section>
 
-      <SecuritySettings onSignedOut={onSignedOut} />
+      <TeamUsers />
     </div>
   );
 }

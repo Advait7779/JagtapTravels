@@ -212,13 +212,13 @@ export default function CustomerTable({
                     <td className="py-3 px-4 text-center">
                       <div className="inline-flex items-center justify-center gap-1">
                         {/* Generate Bill */}
-                        <button
+                        {onGenerateBillForCustomer && <button
                           onClick={() => onGenerateBillForCustomer(customer)}
                           title="Generate Bill for this customer"
                           className="p-1.5 rounded-lg text-navy-800 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition-colors"
                         >
                           <Receipt size={14} weight="bold" />
-                        </button>
+                        </button>}
 
                         {/* Send Quotation */}
                         <button

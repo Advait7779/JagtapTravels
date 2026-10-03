@@ -356,14 +356,14 @@ export default function BookingTable({
                           </button>
 
                           {/* Convert to Bill */}
-                          <button
+                          {onGenerateBill && <button
                             onClick={() => onGenerateBill(b)}
                             title="Generate Invoice"
                             className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center gap-1 text-2xs font-bold"
                           >
                             <Receipt size={14} weight="bold" />
                             <span className="hidden sm:inline">Bill</span>
-                          </button>
+                          </button>}
 
                           {/* Edit */}
                           <button
@@ -474,12 +474,12 @@ export default function BookingTable({
                         >
                           Duty Slip
                         </button>
-                        <button
+                        {onGenerateBill && <button
                           onClick={() => onGenerateBill(b)}
                           className="flex-1 py-1 text-center text-2xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg"
                         >
                           Bill
-                        </button>
+                        </button>}
                         <button
                           onClick={() => onEditBooking(b)}
                           className="p-1 text-slate-400 hover:text-slate-600"

@@ -12,8 +12,8 @@ export default function Navbar({
   onToggleMenu,
   activeTab,
 }) {
-  const displayName = 'Admin';
-  const initial = 'A';
+  const displayName = user?.fullName || 'CRM User';
+  const initial = displayName.charAt(0).toUpperCase();
 
   const getTabTitle = () => {
     switch (activeTab) {

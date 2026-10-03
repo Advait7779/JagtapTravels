@@ -43,6 +43,13 @@ import ToursWebsite from './website/ToursWebsite';
 import { api } from './services/api';
 import { localDate } from './utils/formatters';
 import { toast } from './context/ToastContext';
+import { isAdministrator, canAccessTab } from './utils/access';
+
+const emptyData = {
+  customers: [], drivers: [], meterReadings: [], bills: [], quotations: [], vehicles: [],
+  bookings: [], inquiries: [], corporateContracts: [], corporateInvoices: [], fuelLogs: [],
+  tyreLogs: [], driverAdvances: [], corporateTripLogs: [], settings: {}, health: {},
+};
 
 export default function App() {
   const [viewMode, setViewMode] = useState(() => {
@@ -59,24 +66,8 @@ export default function App() {
     [authError, setAuthError] = useState('');
   const [tab, setTab] = useState('dashboard'),
     [mobileOpen, setMobileOpen] = useState(false);
-  const [data, setData] = useState({
-    customers: [],
-    drivers: [],
-    meterReadings: [],
-    bills: [],
-    quotations: [],
-    vehicles: [],
-    bookings: [],
-    inquiries: [],
-    corporateContracts: [],
-    corporateInvoices: [],
-    fuelLogs: [],
-    tyreLogs: [],
-    driverAdvances: [],
-    corporateTripLogs: [],
-    settings: {},
-    health: {},
-  });
+  const [data, setData] = useState(emptyData);
+  const isAdmin = isAdministrator(user);
 
   const [selectedPayrollMonth, setSelectedPayrollMonth] = useState(() =>
     localDate().slice(0, 7),
@@ -111,6 +102,7 @@ export default function App() {
     sessionStorage.removeItem('jagtap_crm_user');
     const expire = () => {
       setUser(null);
+      setData(emptyData);
       setModal(null);
       setViewBill(null);
       setViewQuote(null);
@@ -183,53 +175,35 @@ export default function App() {
 
   const refresh = async () => {
     setLoading(true);
-    const keys = [
-      'customers',
-      'drivers',
-      'meterReadings',
-      'bills',
-      'quotations',
-      'vehicles',
-      'bookings',
-      'inquiries',
-      'corporateContracts',
-      'corporateInvoices',
-      'fuelLogs',
-      'tyreLogs',
-      'driverAdvances',
-      'corporateTripLogs',
-      'settings',
-      'health',
-    ];
-    const results = await Promise.allSettled([
-      api.getCustomers(),
-      api.getDrivers(),
-      api.getMeterReadings(),
-      api.getBills(),
-      api.getQuotations(),
-      api.getVehicles(),
-      api.getBookings(),
-      api.getInquiries(),
-      api.getCorporateContracts(),
-      api.getCorporateInvoices(),
-      api.getFuelLogs(),
-      api.getTyreLogs(),
-      api.getDriverAdvances(),
-      api.getCorporateTripLogs(),
-      api.getSettings(),
-      api.getHealth(),
-    ]);
+    const requests = [
+      ['customers', api.getCustomers], ['drivers', api.getDrivers],
+      ['meterReadings', api.getMeterReadings], ['bills', api.getBills],
+      ['quotations', api.getQuotations], ['vehicles', api.getVehicles],
+      ['bookings', api.getBookings], ['inquiries', api.getInquiries],
+      ['corporateContracts', api.getCorporateContracts],
+      ['corporateInvoices', api.getCorporateInvoices],
+      ['fuelLogs', api.getFuelLogs], ['tyreLogs', api.getTyreLogs],
+      ['driverAdvances', api.getDriverAdvances],
+      ['corporateTripLogs', api.getCorporateTripLogs],
+      ['settings', api.getSettings], ['health', api.getHealth],
+    ].filter(([key]) => isAdmin || ![
+      'bills', 'corporateContracts', 'corporateInvoices', 'driverAdvances',
+      'corporateTripLogs', 'health',
+    ].includes(key));
+    const keys = requests.map(([key]) => key);
+    const results = await Promise.allSettled(requests.map(([, get]) => get()));
     const failed = keys.filter((_, i) => results[i].status === 'rejected');
-    setData((prev) => ({
-      ...prev,
+    setData({
+      ...emptyData,
       ...Object.fromEntries(
         keys.flatMap((key, i) =>
           results[i].status === 'fulfilled' ? [[key, results[i].value]] : [],
         ),
       ),
-    }));
+    });
 
-    await refreshPayroll(selectedPayrollMonth);
+    if (isAdmin) await refreshPayroll(selectedPayrollMonth);
+    else setPayrollData([]);
 
     setError(
       failed.length
@@ -246,15 +220,23 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
-    if (user) refreshPayroll(selectedPayrollMonth);
+    if (user && !canAccessTab(user, tab)) setTab('bookings');
+  }, [user, tab]);
+
+  useEffect(() => {
+    if (user && isAdmin) refreshPayroll(selectedPayrollMonth);
   }, [selectedPayrollMonth, user, refreshPayroll]);
 
   const navigate = (next) => {
+    if (!canAccessTab(user, next)) return;
     setTab(next);
     setMobileOpen(false);
   };
 
-  const open = (type) => setModal({ type });
+  const open = (type) => {
+    if (!isAdmin && ['bill', 'corporateContract', 'corporateTripLog', 'advance'].includes(type)) return;
+    setModal({ type });
+  };
 
   const actions = {
     onOpenAddCustomer: () => open('customer'),
@@ -510,6 +492,7 @@ export default function App() {
     try {
       await api.logout();
       setUser(null);
+      setData(emptyData);
       setModal(null);
       setViewBill(null);
       setViewQuote(null);
@@ -518,14 +501,6 @@ export default function App() {
       setError(err.message);
       toast.error('Sign out error', { description: err.message });
     }
-  };
-
-  const signedOut = () => {
-    setUser(null);
-    setModal(null);
-    setViewBill(null);
-    setViewQuote(null);
-    toast.info('Signed out');
   };
 
   // If public website mode is active, render the ToursWebsite landing page
@@ -672,7 +647,7 @@ export default function App() {
             )}
 
             {/* 1. Dashboard */}
-            {tab === 'dashboard' && (
+            {isAdmin && tab === 'dashboard' && (
               <Dashboard
                 {...common}
                 {...actions}
@@ -708,12 +683,12 @@ export default function App() {
                   act(() => api.updateBookingStatus(id, status), `Booking status updated to "${status}".`)
                 }
                 onStartTrip={handleStartTripFromBooking}
-                onGenerateBill={handleGenerateBillFromBooking}
+                onGenerateBill={isAdmin ? handleGenerateBillFromBooking : null}
               />
             )}
 
             {/* 3. Corporate Vehicle Contracts & Monthly Excess KM */}
-            {tab === 'corporateContracts' && (
+            {isAdmin && tab === 'corporateContracts' && (
               <CorporateContractTable
                 contracts={corporateContracts}
                 vehicles={vehicles}
@@ -756,7 +731,7 @@ export default function App() {
             )}
 
             {/* Corporate Invoices */}
-            {tab === 'corporateInvoices' && (
+            {isAdmin && tab === 'corporateInvoices' && (
               <CorporateInvoiceTable
                 invoices={corporateInvoices}
                 contracts={corporateContracts}
@@ -830,8 +805,8 @@ export default function App() {
                     'Delete Slip',
                   )
                 }
-                onCreateBillFromSlip={(slip) => setModal({ type: 'bill', slip })}
-                onOpenDocuments={(reading) => setModal({ type: 'meterDocuments', reading })}
+                onCreateBillFromSlip={isAdmin ? (slip) => setModal({ type: 'bill', slip }) : null}
+                onOpenDocuments={isAdmin ? (reading) => setModal({ type: 'meterDocuments', reading }) : null}
               />
             )}
 
@@ -859,7 +834,7 @@ export default function App() {
             )}
 
             {/* 7. Bills & Invoices */}
-            {tab === 'bills' && (
+            {isAdmin && tab === 'bills' && (
               <BillTable
                 bills={bills}
                 onAddBill={() => open('bill')}
@@ -878,7 +853,7 @@ export default function App() {
             )}
 
             {/* 8. Driver Payroll & Advance Tracking */}
-            {tab === 'payroll' && (
+            {isAdmin && tab === 'payroll' && (
               <DriverPayrollTable
                 payrollData={payrollData}
                 drivers={drivers}
@@ -967,6 +942,7 @@ export default function App() {
             {tab === 'drivers' && (
               <DriverTable
                 drivers={drivers}
+                canManageDocuments={isAdmin}
                 onAddDriver={() => open('driver')}
                 onEditDriver={(record) => setModal({ type: 'driver', record })}
                 onDeleteDriver={(id) =>
@@ -1000,16 +976,15 @@ export default function App() {
                     'Delete Customer',
                   )
                 }
-                onGenerateBillForCustomer={(customer) => setModal({ type: 'bill', customer })}
+                onGenerateBillForCustomer={isAdmin ? (customer) => setModal({ type: 'bill', customer }) : null}
                 onGenerateQuoteForCustomer={(customer) => setModal({ type: 'quote', customer })}
               />
             )}
 
             {/* 14. Settings */}
-            {tab === 'settings' && (
+            {isAdmin && tab === 'settings' && (
               <Settings
                 settings={settings}
-                onSignedOut={signedOut}
                 onSave={async (form) => {
                   try {
                     await api.saveSettings(form);
@@ -1041,6 +1016,8 @@ export default function App() {
       {modal?.type === 'driver' && (
         <DriverModal
           isOpen
+          canManageDocuments={isAdmin}
+          canManageSalary={isAdmin}
           onClose={() => setModal(null)}
           driverToEdit={modal.record}
           onSave={(form, id) => save('driver', form, id)}
@@ -1057,7 +1034,7 @@ export default function App() {
         />
       )}
 
-      {modal?.type === 'bill' && (
+      {isAdmin && modal?.type === 'bill' && (
         <BillModal
           isOpen
           onClose={() => setModal(null)}
@@ -1093,7 +1070,7 @@ export default function App() {
         />
       )}
 
-      {modal?.type === 'payment' && (
+      {isAdmin && modal?.type === 'payment' && (
         <PaymentModal
           bill={modal.bill}
           onClose={() => setModal(null)}
@@ -1117,6 +1094,7 @@ export default function App() {
       {modal?.type === 'vehicle' && (
         <VehicleModal
           isOpen
+          canManageDocuments={isAdmin}
           onClose={() => setModal(null)}
           vehicleToEdit={modal.record}
           drivers={drivers}
@@ -1177,7 +1155,7 @@ export default function App() {
         />
       )}
 
-      {modal?.type === 'meterDocuments' && (
+      {isAdmin && modal?.type === 'meterDocuments' && (
         <MeterDocumentModal
           isOpen
           reading={modal.reading}
@@ -1186,7 +1164,7 @@ export default function App() {
         />
       )}
 
-      {modal?.type === 'corporateContract' && (
+      {isAdmin && modal?.type === 'corporateContract' && (
         <CorporateContractModal
           isOpen
           onClose={() => setModal(null)}
@@ -1198,7 +1176,7 @@ export default function App() {
         />
       )}
 
-      {modal?.type === 'corporateTripLog' && (
+      {isAdmin && modal?.type === 'corporateTripLog' && (
         <CorporateTripLogModal
           isOpen
           onClose={() => setModal(null)}
@@ -1234,7 +1212,7 @@ export default function App() {
         />
       )}
 
-      {modal?.type === 'advance' && (
+      {isAdmin && modal?.type === 'advance' && (
         <AdvanceModal
           isOpen
           onClose={() => setModal(null)}
@@ -1246,7 +1224,7 @@ export default function App() {
         />
       )}
 
-      {modal?.type === 'payslip' && (
+      {isAdmin && modal?.type === 'payslip' && (
         <PayslipModal
           isOpen
           onClose={() => setModal(null)}
@@ -1256,7 +1234,7 @@ export default function App() {
         />
       )}
 
-      {viewBill && (
+      {isAdmin && viewBill && (
         <BillPrintView bill={viewBill} settings={settings} onClose={() => setViewBill(null)} />
       )}
 
@@ -1268,7 +1246,7 @@ export default function App() {
         />
       )}
 
-      {corporateInvoice && (
+      {isAdmin && corporateInvoice && (
         <CorporateInvoiceModal
           isOpen={!!corporateInvoice}
           onClose={() => setCorporateInvoice(null)}

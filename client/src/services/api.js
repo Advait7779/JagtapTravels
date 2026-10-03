@@ -54,11 +54,10 @@ export const api = {
     csrfToken = '';
     return result;
   },
-  changePassword: async (data) => {
-    const result = await send('/auth/change-password', 'POST', data);
-    csrfToken = '';
-    return result;
-  },
+  getUsers: () => request('/users'),
+  createUser: (data) => send('/users', 'POST', data),
+  updateUser: (id, data) => send('/users/' + id, 'PUT', data),
+  deleteUser: (id) => send('/users/' + id, 'DELETE'),
   logout: async () => {
     await send('/auth/logout', 'POST');
     csrfToken = '';

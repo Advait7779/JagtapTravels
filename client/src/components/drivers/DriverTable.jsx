@@ -26,6 +26,7 @@ export default function DriverTable({
   onDeleteDriver,
   onUpdateStatus,
   onRefresh,
+  canManageDocuments = true,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -266,7 +267,7 @@ export default function DriverTable({
                         )}
 
                         {/* License File on System Status & Actions */}
-                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                        {canManageDocuments && <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                           {hasDoc ? (
                             <div className="inline-flex items-center gap-1">
                               <a
@@ -324,7 +325,7 @@ export default function DriverTable({
                               />
                             </label>
                           )}
-                        </div>
+                        </div>}
                       </td>
 
                       {/* Vehicle */}
@@ -368,7 +369,7 @@ export default function DriverTable({
                       {/* Actions */}
                       <td className="py-3 px-4 text-center">
                         <div className="inline-flex items-center justify-center gap-1">
-                          <label
+                          {canManageDocuments && <label
                             className="p-1.5 rounded-lg text-slate-600 hover:text-navy-900 hover:bg-slate-100 cursor-pointer transition-colors"
                             title="Upload License from System"
                           >
@@ -384,7 +385,7 @@ export default function DriverTable({
                                 e.target.value = '';
                               }}
                             />
-                          </label>
+                          </label>}
 
                           <button
                             onClick={() => onEditDriver(driver)}

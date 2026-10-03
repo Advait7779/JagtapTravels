@@ -1021,11 +1021,16 @@ function createService(repo) {
         return row;
       });
     },
-    update(collection, key, input) {
+    update(collection, key, input, { staff = false } = {}) {
       return repo.change((d) => {
         const row = find(d, collection, key);
         const previousVehicleId = collection === 'corporateTripLogs' ? row.vehicleId : null;
-        const validated = validate(collection, input, d, row);
+        const safeInput = staff && collection === 'drivers'
+          ? { ...input, baseSalary: row.baseSalary, licenseDocumentUrl: row.licenseDocumentUrl, driverPhotoUrl: row.driverPhotoUrl }
+          : staff && collection === 'vehicles'
+            ? { ...input, rcDocumentUrl: row.rcDocumentUrl }
+            : input;
+        const validated = validate(collection, safeInput, d, row);
         if (collection === 'fuelLogs') validateFuelOdometer(d, validated, key);
         if (collection === 'driverAdvances') enforceAdvanceLimit(d, validated, key);
         Object.assign(row, validated, {

@@ -240,7 +240,7 @@ export default function MeterReadingTable({
                       <td className="py-3 px-4 text-center">
                         <div className="inline-flex items-center justify-center gap-1.5">
                           {/* Upload / View Vehicle Documents */}
-                          <button
+                          {onOpenDocuments && <button
                             onClick={() => onOpenDocuments && onOpenDocuments(reading)}
                             title="Vehicle and trip documents"
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200 transition-colors shadow-2xs"
@@ -252,10 +252,10 @@ export default function MeterReadingTable({
                                 {reading.documents.length}
                               </span>
                             )}
-                          </button>
+                          </button>}
 
                           {/* Create Bill From Slip */}
-                          <button
+                          {onCreateBillFromSlip && <button
                             onClick={() => onCreateBillFromSlip(reading)}
                             disabled={status !== 'Completed'}
                             title="Generate Customer Bill from this slip"
@@ -263,7 +263,7 @@ export default function MeterReadingTable({
                           >
                             <Receipt size={13} weight="bold" />
                             <span>Bill</span>
-                          </button>
+                          </button>}
 
                           <button
                             onClick={() => onEditReading(reading)}

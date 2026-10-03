@@ -22,9 +22,50 @@ import CorporateInvoiceTable from '../components/corporate/CorporateInvoiceTable
 import CorporateInvoiceModal from '../components/corporate/CorporateInvoiceModal';
 import CorporateLogsheetPrintView from '../components/corporate/CorporateLogsheetPrintView';
 import App from '../App';
+import Sidebar from '../components/Sidebar';
+import TeamUsers from '../components/TeamUsers';
 import { localDate, dateInput } from '../utils/formatters';
 import { api } from '../services/api';
 afterEach(() => vi.restoreAllMocks());
+it('shows daily operations to staff but hides corporate, billing, payroll and settings', () => {
+  render(<Sidebar activeTab="quotations" setActiveTab={vi.fn()} user={{ role: 'Staff' }} />);
+  expect(screen.getByRole('button', { name: /^Quotations/ })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /^Fuel Expenses/ })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /^Tyre Management/ })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /^Corporate Contracts/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Corporate Invoices/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Billing & Invoices/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Driver Payroll/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Business Settings/ })).toBeNull();
+});
+it('shows a red dustbin only for staff and deletes the selected staff account', async () => {
+  const admin = { id: 'admin-1', fullName: 'Owner', email: 'owner@example.invalid', role: 'Administrator' };
+  const staff = { id: 'staff-1', fullName: 'Operator', email: 'operator@example.invalid', role: 'Staff', active: true };
+  vi.spyOn(api, 'getUsers').mockResolvedValueOnce([admin, staff]).mockResolvedValueOnce([admin]);
+  const deleteUser = vi.spyOn(api, 'deleteUser').mockResolvedValue({ success: true });
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  render(<TeamUsers />);
+  const deleteButton = await screen.findByRole('button', { name: 'Delete staff account for Operator' });
+  expect(deleteButton.className).toContain('text-rose-600');
+  expect(deleteButton.querySelector('svg')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Delete staff account for Owner' })).toBeNull();
+  fireEvent.click(deleteButton);
+  await waitFor(() => expect(deleteUser).toHaveBeenCalledWith('staff-1'));
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Delete staff account for Operator' })).toBeNull());
+});
+it('shows and hides the six-character staff password before account creation', async () => {
+  vi.spyOn(api, 'getUsers').mockResolvedValue([]);
+  render(<TeamUsers />);
+  const password = screen.getByLabelText('Password');
+  expect(password.minLength).toBe(6);
+  expect(password.type).toBe('password');
+  fireEvent.change(password, { target: { value: 'S3cret' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+  expect(password.type).toBe('text');
+  expect(password.value).toBe('S3cret');
+  fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+  expect(password.type).toBe('password');
+});
 const input = (container, key) => container.querySelector(key);
 it('resets bill amounts, advance and customer on a new open', async () => {
   const props = { isOpen: true, onClose: vi.fn(), onSave: vi.fn() };

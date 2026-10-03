@@ -17,7 +17,7 @@ import {
 import ThemedSelect from '../ThemedSelect';
 import { api } from '../../services/api';
 
-export default function DriverModal({ isOpen, onClose, onSave, driverToEdit }) {
+export default function DriverModal({ isOpen, onClose, onSave, driverToEdit, canManageDocuments = true, canManageSalary = true }) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -152,14 +152,14 @@ export default function DriverModal({ isOpen, onClose, onSave, driverToEdit }) {
       const savedDriver = await onSave(
         {
           ...formData,
-          baseSalary: Number(formData.baseSalary) || 20000,
+          ...(canManageSalary ? { baseSalary: Number(formData.baseSalary) || 20000 } : {}),
           experienceYears: Number(formData.experienceYears) || 0,
         },
         driverToEdit?.id,
       );
 
       // If user selected a license file from system, upload it now
-      if (pendingFile) {
+      if (canManageDocuments && pendingFile) {
         const targetId = savedDriver?.id || driverToEdit?.id;
         if (targetId) {
           await api.uploadDriverDocument(targetId, {
@@ -279,7 +279,7 @@ export default function DriverModal({ isOpen, onClose, onSave, driverToEdit }) {
             </div>
 
             {/* Base Monthly Salary */}
-            <div>
+            {canManageSalary && <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <IndianRupee className="h-3.5 w-3.5 text-navy-900" />
                 <span>Base Monthly Salary (₹) <span className="text-rose-500">*</span></span>
@@ -299,7 +299,7 @@ export default function DriverModal({ isOpen, onClose, onSave, driverToEdit }) {
                   className="block w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-navy-900 focus:outline-none"
                 />
               </div>
-            </div>
+            </div>}
 
             {/* License & Badge Expiry Dates */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-md border border-slate-200 sm:col-span-2">
@@ -417,7 +417,7 @@ export default function DriverModal({ isOpen, onClose, onSave, driverToEdit }) {
           </div>
 
           {/* License Document Upload & Management */}
-          <div className="bg-slate-50 p-3.5 rounded-md border border-slate-200 space-y-2.5">
+          {canManageDocuments && <div className="bg-slate-50 p-3.5 rounded-md border border-slate-200 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-navy-900" />
@@ -499,7 +499,7 @@ export default function DriverModal({ isOpen, onClose, onSave, driverToEdit }) {
                 No license document attached yet. Click "Upload License from System" above to select a PDF or photo from your computer.
               </p>
             ) : null}
-          </div>
+          </div>}
 
           {/* Address */}
           <div>
