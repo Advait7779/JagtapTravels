@@ -211,8 +211,7 @@ export default function CorporateInvoiceTable({
           <table className="w-full text-left text-xs border-collapse min-w-[920px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-600 uppercase text-[10.5px] tracking-wider">
-                <th className="py-3 px-3.5 text-center w-12">#</th>
-                <th className="py-3 px-3.5">Invoice #</th>
+                <th className="py-3 px-3.5">Invoice</th>
                 <th className="py-3 px-3.5">Date</th>
                 <th className="py-3 px-3.5">Period</th>
                 <th className="py-3 px-3.5">Party / Client</th>
@@ -224,7 +223,7 @@ export default function CorporateInvoiceTable({
             <tbody className="divide-y divide-slate-100">
               {paginatedInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
                     <div className="max-w-xs mx-auto flex flex-col items-center">
                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
                         <Receipt size={24} weight="bold" />
@@ -271,11 +270,6 @@ export default function CorporateInvoiceTable({
                       key={inv.id || `${inv.contractId}_${inv.month}_${idx}`}
                       className="hover:bg-slate-50/80 transition-colors"
                     >
-                      {/* Index */}
-                      <td className="py-3 px-3.5 text-center text-slate-400 font-medium">
-                        {(currentPage - 1) * pageSize + idx + 1}
-                      </td>
-
                       {/* Invoice Number & Badge */}
                       <td className="py-3 px-3.5 font-bold text-slate-900">
                         <div className="flex flex-col gap-1 items-start">
