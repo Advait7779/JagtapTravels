@@ -115,36 +115,20 @@ export default function Sidebar({
             {visibleItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
-              const count = counts?.[item.id];
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-semibold transition-all group ${
                     isActive
                       ? 'bg-white text-navy-950 shadow-md font-bold'
                       : 'text-slate-300 hover:text-white hover:bg-navy-900/90'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="shrink-0 transition-transform group-hover:scale-110">
-                      <Icon size={17} weight={isActive ? 'bold' : 'regular'} />
-                    </div>
-                    <span className="truncate text-left">{item.label}</span>
+                  <div className="shrink-0 transition-transform group-hover:scale-110">
+                    <Icon size={17} weight={isActive ? 'bold' : 'regular'} />
                   </div>
-                  {count !== undefined && count > 0 && (
-                    <span
-                      className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                        item.id === 'inquiries'
-                          ? 'bg-blue-600 text-white animate-pulse'
-                          : isActive
-                          ? 'bg-navy-900 text-white'
-                          : 'bg-navy-850 text-slate-300'
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  )}
+                  <span className="truncate text-left">{item.label}</span>
                 </button>
               );
             })}
