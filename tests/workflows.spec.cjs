@@ -59,7 +59,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
     page.getByRole('heading', { name: 'Add New Customer', exact: true }),
   ).not.toBeVisible();
 
-  await page.getByRole('button', { name: /^Fleet & Service/ }).click();
+  await page.getByRole('button', { name: /^Vehicles & Service/ }).click();
   await page.getByRole('button', { name: 'Add Vehicle', exact: true }).click();
   await page.getByPlaceholder('e.g. Toyota Innova Crysta').fill('Browser Innova');
   await page.getByPlaceholder('e.g. MH 12 QX 4589').fill('MH 12 QA 9001');
@@ -74,7 +74,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(vehicleRow).toContainText('Service immediately');
   await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
   await expect(page.getByText('Vehicle Maintenance Due Reminder!')).toBeVisible();
-  await page.getByRole('button', { name: /^Fleet & Service/ }).click();
+  await page.getByRole('button', { name: /^Vehicles & Service/ }).click();
   vehicleRow = page.getByRole('row').filter({ hasText: 'MH 12 QA 9001' });
   await vehicleRow.getByTitle('Record workshop maintenance and reset service cycle').click();
   await page.getByPlaceholder('e.g. Sai Service Centre, Wakad').fill('Browser Garage');
@@ -122,7 +122,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   });
   await page.reload();
   await expect(page.getByText('Welcome back, Test Operator')).toBeVisible();
-  await page.getByRole('button', { name: /^Meter Readings/ }).click();
+  await page.getByRole('button', { name: /^Duty Slips/ }).click();
   const slipRow = page.getByRole('row').filter({ hasText: 'MH 12 QA 9001' });
   await slipRow.getByTitle('Vehicle and trip documents').click();
   await page.locator('#doc-file-upload').setInputFiles({
@@ -167,7 +167,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await page.pdf({ path: testInfo.outputPath('invoice.pdf'), format: 'A4', printBackground: true });
   await page.emulateMedia({ media: 'screen' });
   await page.getByRole('button', { name: 'Close invoice' }).click();
-  await page.getByRole('button', { name: /^Billing & Invoices/ }).click();
+  await page.getByRole('button', { name: /^Customer Invoices/ }).click();
   await page.getByRole('button', { name: 'Payment', exact: true }).click();
   await page.getByLabel('Payment mode').selectOption('UPI');
   await page.getByRole('button', { name: 'Save payment', exact: true }).click();
@@ -210,7 +210,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(page.getByRole('button', { name: /^Fuel Expenses/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Tyre Management/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Corporate Contracts/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Billing & Invoices/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Customer Invoices/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Business Settings/ })).toHaveCount(0);
   await expect(page.getByText(/Could not load/)).toHaveCount(0);
   expect(await page.evaluate(() => fetch('/api/bills').then((response) => response.status))).toBe(403);

@@ -38,19 +38,19 @@ export default function Sidebar({
       title: 'Daily Operations',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: SquaresFour },
-        { id: 'bookings', label: 'Bookings & Dispatch', icon: CalendarCheck },
+        { id: 'bookings', label: 'Bookings & Trips', icon: CalendarCheck },
         { id: 'corporateContracts', label: 'Corporate Contracts', icon: Buildings },
         { id: 'corporateInvoices', label: 'Corporate Invoices', icon: Scroll },
-        { id: 'inquiries', label: 'Leads & Enquiries', icon: ChatCircleDots },
-        { id: 'meterReadings', label: 'Meter Readings', icon: Gauge },
+        { id: 'inquiries', label: 'Website Inquiries', icon: ChatCircleDots },
+        { id: 'meterReadings', label: 'Duty Slips', icon: Gauge },
         { id: 'quotations', label: 'Quotations', icon: FileText },
       ],
     },
     {
-      title: 'Finance & Operations',
+      title: 'Finance & Expenses',
       items: [
-        { id: 'bills', label: 'Billing & Invoices', icon: Receipt },
-        { id: 'payroll', label: 'Driver Payroll & Advance', icon: Coins },
+        { id: 'bills', label: 'Customer Invoices', icon: Receipt },
+        { id: 'payroll', label: 'Driver Salary & Advance', icon: Coins },
         { id: 'fuel', label: 'Fuel Expenses', icon: GasPump },
         { id: 'tyres', label: 'Tyre Management', icon: CircleNotch },
       ],
@@ -58,8 +58,8 @@ export default function Sidebar({
     {
       title: 'Fleet & Administration',
       items: [
-        { id: 'vehicles', label: 'Fleet & Service', icon: Wrench },
-        { id: 'drivers', label: 'Drivers Fleet', icon: IdentificationBadge },
+        { id: 'vehicles', label: 'Vehicles & Service', icon: Wrench },
+        { id: 'drivers', label: 'Drivers', icon: IdentificationBadge },
         { id: 'customers', label: 'Customers', icon: Users },
         { id: 'settings', label: 'Business Settings', icon: Gear },
       ],

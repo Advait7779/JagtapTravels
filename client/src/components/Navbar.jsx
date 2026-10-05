@@ -22,21 +22,31 @@ export default function Navbar({
       case 'dashboard':
         return 'Dashboard Overview';
       case 'bookings':
-        return 'Bookings & Trip Dispatch';
+        return 'Bookings & Trips';
+      case 'corporateContracts':
+        return 'Corporate Contracts';
+      case 'corporateInvoices':
+        return 'Corporate Invoices';
       case 'inquiries':
-        return 'Leads & Web Enquiries';
+        return 'Website Inquiries';
       case 'customers':
         return 'Customer Directory';
       case 'drivers':
-        return 'Driver Fleet Management';
+        return 'Drivers';
       case 'meterReadings':
-        return 'Meter Readings & Duty Slips';
+        return 'Duty Slips & Trip KM';
       case 'bills':
-        return 'Billing & Invoices';
+        return 'Customer Invoices & Billing';
       case 'quotations':
         return 'Quotations & Estimates';
       case 'vehicles':
-        return 'Vehicle Service & Maintenance';
+        return 'Vehicles & Service';
+      case 'payroll':
+        return 'Driver Salary & Advance';
+      case 'fuel':
+        return 'Fuel Expenses';
+      case 'tyres':
+        return 'Tyre Management';
       default:
         return 'CRM Console';
     }

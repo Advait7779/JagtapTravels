@@ -34,8 +34,8 @@ it('shows daily operations to staff but hides corporate, billing, payroll and se
   expect(screen.getByRole('button', { name: /^Tyre Management/ })).toBeTruthy();
   expect(screen.queryByRole('button', { name: /^Corporate Contracts/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Corporate Invoices/ })).toBeNull();
-  expect(screen.queryByRole('button', { name: /^Billing & Invoices/ })).toBeNull();
-  expect(screen.queryByRole('button', { name: /^Driver Payroll/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Customer Invoices/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Driver Salary/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Business Settings/ })).toBeNull();
 });
 it('shows a red dustbin only for staff and deletes the selected staff account', async () => {
