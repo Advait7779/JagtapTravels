@@ -738,14 +738,15 @@ export default function App() {
                     'Delete Trip Log',
                   )
                 }
-                onGenerateInvoice={(contract, month, options = {}) =>
+                onGenerateInvoice={(contract, month, options = {}) => {
+                  if (!contract) return;
                   setCorporateInvoice({
                     contract,
                     month,
                     isNonGst: contract.quotationTaxMode === 'nongst',
                     ...options,
-                  })
-                }
+                  });
+                }}
                 onOpenQuotation={(contract) => {
                   const quotation = corporateQuotations.find((item) => item.id === contract.corporateQuotationId);
                   if (quotation) setViewCorporateQuote(quotation);

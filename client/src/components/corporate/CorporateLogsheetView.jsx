@@ -186,13 +186,15 @@ export default function CorporateLogsheetView({
           {/* Generate Tax Invoice (GST) Button */}
           <button
             type="button"
+            disabled={!contracts.length}
             onClick={() => {
-              if (onGenerateInvoice) {
-                onGenerateInvoice(currentContract || contracts[0] || null, selectedMonth, { isNonGst: false });
+              const contract = currentContract || contracts[0];
+              if (contract && onGenerateInvoice) {
+                onGenerateInvoice(contract, selectedMonth, { isNonGst: false });
               }
             }}
-            title="Generate Monthly Corporate Tax Invoice (GST 18%)"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+            title={contracts.length ? 'Generate Monthly Corporate Tax Invoice (GST 18%)' : 'Create a corporate contract first'}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Receipt size={16} weight="bold" />
             <span>Generate Invoice</span>
@@ -201,17 +203,22 @@ export default function CorporateLogsheetView({
           {/* Generate Non-GST Invoice Button */}
           <button
             type="button"
+            disabled={!contracts.length}
             onClick={() => {
-              if (onGenerateInvoice) {
-                onGenerateInvoice(currentContract || contracts[0] || null, selectedMonth, { isNonGst: true });
+              const contract = currentContract || contracts[0];
+              if (contract && onGenerateInvoice) {
+                onGenerateInvoice(contract, selectedMonth, { isNonGst: true });
               }
             }}
-            title="Generate Monthly Corporate Non-GST Invoice (0% Tax)"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+            title={contracts.length ? 'Generate Monthly Corporate Non-GST Invoice (0% Tax)' : 'Create a corporate contract first'}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Receipt size={16} weight="bold" className="text-amber-300" />
             <span>Non-GST Invoice</span>
           </button>
+          {!contracts.length && (
+            <span className="text-xs text-slate-500">Create a corporate contract to generate an invoice.</span>
+          )}
 
           {/* Download PDF Button */}
           <button
