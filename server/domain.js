@@ -1121,6 +1121,7 @@ function createService(repo) {
               'vehicles',
               'bookings',
               'corporateContracts',
+              'corporateQuotations',
               'driverAdvances',
               'fuelLogs',
               'corporateTripLogs',
@@ -1141,6 +1142,8 @@ function createService(repo) {
             (bill) => same(bill.corporateContractId, key) && !bill.voidedAt,
           ) ||
             (d.corporateInvoices || []).some((invoice) => same(invoice.contractId, key)) ||
+            (d.corporateQuotations || []).some((quote) =>
+              (quote.contractIds || []).some((contractId) => same(contractId, key))) ||
             (d.corporateTripLogs || []).some((log) => same(log.contractId, key)))
         )
           throw new HttpError(
@@ -1371,7 +1374,11 @@ function createService(repo) {
               dueDate: today(),
               baseFare: summary.monthlyBaseFare,
               otherCharges: summary.excessCharge,
-              taxPercent: 5,
+              taxPercent: contract.quotationTaxMode === 'nongst'
+                ? 0
+                : contract.quotationTaxMode === 'gst'
+                  ? Number(contract.quotationGstRate)
+                  : 5,
               advancePaid: 0,
               notes:
                 'Corporate Monthly Package: ' +

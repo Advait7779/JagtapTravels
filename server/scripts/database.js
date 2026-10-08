@@ -34,6 +34,7 @@ function validateImport(data) {
   for (const [collection, key] of [
     ['bills', 'billNumber'],
     ['quotations', 'quotationNumber'],
+    ['corporateQuotations', 'quotationNumber'],
     ['meterReadings', 'slipNumber'],
   ]) {
     const numbers = state[collection].map((r) => r[key]);

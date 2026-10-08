@@ -8,10 +8,12 @@ const { authRoutes } = require('./auth');
 const { auditMiddleware } = require('./audit');
 const { createService, HttpError, text } = require('./domain');
 const { identifier, invoiceMonth, validateCorporateInvoice } = require('./corporate-invoices');
+const { createCorporateQuotationService } = require('./corporate-quotations');
 const { isAdministrator, quotationCompany, staffCanAccess, redactStaffRecord } = require('./access');
 function createApp(repo, options = {}) {
   const app = express(),
-    service = createService(repo);
+    service = createService(repo),
+    corporateQuotations = createCorporateQuotationService(repo);
   const frontendOrigin = options.frontendOrigin || process.env.FRONTEND_ORIGIN || '';
   const browserApiUrl = options.apiBaseUrl || process.env.VITE_API_BASE_URL || '';
   const browserApiOrigin = browserApiUrl ? new URL(browserApiUrl).origin : '';
@@ -103,6 +105,18 @@ function createApp(repo, options = {}) {
     next();
   }).catch(next));
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res)).catch(next);
+  app.get('/api/corporate-quotations',
+    wrap(async (req, res) => res.json(await corporateQuotations.list())));
+  app.post('/api/corporate-quotations',
+    wrap(async (req, res) => res.status(201).json(await corporateQuotations.create(req.body))));
+  app.put('/api/corporate-quotations/:id',
+    wrap(async (req, res) => res.json(await corporateQuotations.update(req.params.id, req.body))));
+  app.patch('/api/corporate-quotations/:id/status',
+    wrap(async (req, res) => res.json(await corporateQuotations.status(req.params.id, req.body.status))));
+  app.post('/api/corporate-quotations/:id/convert',
+    wrap(async (req, res) => res.json(await corporateQuotations.convert(req.params.id, req.body))));
+  app.delete('/api/corporate-quotations/:id',
+    wrap(async (req, res) => res.json(await corporateQuotations.removeDraft(req.params.id))));
   for (const [route, collection] of [
     ['customers', 'customers'],
     ['drivers', 'drivers'],

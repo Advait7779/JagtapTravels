@@ -89,6 +89,35 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
     animations: 'disabled',
   });
 
+  await page.getByRole('button', { name: /^Corporate Quotations/ }).click();
+  await page.getByRole('button', { name: 'New corporate quotation' }).click();
+  const corporateEditor = page.getByRole('dialog', { name: 'New corporate quotation' });
+  await corporateEditor.getByLabel('Company name *').fill('Browser Customer');
+  await corporateEditor.getByLabel('Phone *').fill('9876543210');
+  await corporateEditor.getByLabel('Vehicle type *').fill('Innova Crysta');
+  await corporateEditor.getByLabel('Monthly fixed fare ₹ *').fill('45000');
+  await corporateEditor.getByLabel('Included KM/month').fill('2500');
+  await corporateEditor.getByLabel('Excess rate ₹/KM').fill('14');
+  await corporateEditor.getByLabel('Tax treatment').selectOption('nongst');
+  await expect(corporateEditor.getByText('₹45,000.00').last()).toBeVisible();
+  await corporateEditor.getByRole('button', { name: 'Save quotation' }).click();
+  const quoteRow = page.getByRole('row').filter({ hasText: 'Browser Customer' });
+  await expect(quoteRow).toContainText('CQ-');
+  await expect(quoteRow.getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(quoteRow.getByRole('button', { name: 'Mark sent' })).toHaveCount(0);
+  await expect(quoteRow.getByRole('button', { name: 'Accept' })).toHaveCount(0);
+  await expect(quoteRow.getByRole('button', { name: 'Reject' })).toHaveCount(0);
+  await expect(quoteRow.getByRole('button', { name: 'Create contracts' })).toHaveCount(0);
+  await quoteRow.getByRole('button', { name: 'View / PDF' }).click();
+  const corporatePreview = page.getByRole('dialog', { name: 'Corporate quotation preview' });
+  await expect(corporatePreview.getByText('₹45,000.00').last()).toBeVisible();
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('.corporate-quotation-printable')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('corporate-quotation-print.png'), fullPage: true });
+  await page.pdf({ path: testInfo.outputPath('corporate-quotation.pdf'), format: 'A4', printBackground: true });
+  await page.emulateMedia({ media: 'screen' });
+  await corporatePreview.getByRole('button', { name: 'Close quotation preview' }).click();
+
   await page.evaluate(async () => {
     const sessionResponse = await fetch('/api/auth/me');
     const session = await sessionResponse.json();
@@ -200,6 +229,8 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   });
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await page.getByRole('button', { name: 'Logout', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Sign out of CRM' })).toBeVisible();
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByLabel('Email', { exact: true }).fill('operations@example.invalid');
@@ -210,6 +241,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(page.getByRole('button', { name: /^Fuel Expenses/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Tyre Management/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Corporate Contracts/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Corporate Quotations/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Customer Invoices/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Business Settings/ })).toHaveCount(0);
   await expect(page.getByText(/Could not load/)).toHaveCount(0);

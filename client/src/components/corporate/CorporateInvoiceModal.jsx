@@ -315,7 +315,7 @@ export default function CorporateInvoiceModal({
       setInvoiceTitle('INVOICE');
       setIsNonGst(true);
     } else {
-      setGstRate(9);
+      setGstRate(contract?.quotationGstRate === 5 ? 2.5 : 9);
       setInvoiceTitle('Tax Invoice');
       setIsNonGst(false);
     }

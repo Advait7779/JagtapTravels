@@ -133,6 +133,14 @@ export const api = {
   updateCorporateContractStatus: (id, status) =>
     send('/corporate-contracts/' + id + '/status', 'PATCH', { status }),
   deleteCorporateContract: (id) => send('/corporate-contracts/' + id, 'DELETE'),
+  getCorporateQuotations: () => request('/corporate-quotations'),
+  addCorporateQuotation: (data) => send('/corporate-quotations', 'POST', data),
+  updateCorporateQuotation: (id, data) => send('/corporate-quotations/' + id, 'PUT', data),
+  updateCorporateQuotationStatus: (id, status) =>
+    send('/corporate-quotations/' + id + '/status', 'PATCH', { status }),
+  convertCorporateQuotation: (id, assignments) =>
+    send('/corporate-quotations/' + id + '/convert', 'POST', { assignments }),
+  deleteCorporateQuotation: (id) => send('/corporate-quotations/' + id, 'DELETE'),
   getCorporateMonthlySummary: (id, month) =>
     request('/corporate-contracts/' + id + '/monthly-summary' + (month ? `?month=${month}` : '')),
   generateCorporateBill: (id, month) =>

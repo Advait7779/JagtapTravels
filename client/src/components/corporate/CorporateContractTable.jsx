@@ -37,6 +37,7 @@ export default function CorporateContractTable({
   onEditTripLog,
   onDeleteTripLog,
   onGenerateInvoice,
+  onOpenQuotation,
 }) {
   const [activeTab, setActiveTab] = useState('contracts');
   const [logsheetContractId, setLogsheetContractId] = useState('ALL');
@@ -326,6 +327,7 @@ export default function CorporateContractTable({
                       <div className="text-[11px] text-slate-500 font-mono mt-0.5">
                         {c.contractNumber || 'CORP-CONTRACT'}
                       </div>
+                      {c.corporateQuotationId && <button type="button" onClick={() => onOpenQuotation?.(c)} className="mt-1 text-[11px] font-bold text-blue-700 hover:underline">View source quotation</button>}
                       <div className="text-[10px] text-slate-400 mt-0.5">
                         Since {formatDate(c.startDate)}
                       </div>
@@ -378,7 +380,7 @@ export default function CorporateContractTable({
                         {/* Invoice */}
                         <button
                           onClick={() => onGenerateInvoice && onGenerateInvoice(c, selectedMonth)}
-                          title="Generate Tax Invoice"
+                          title={c.quotationTaxMode === 'nongst' ? 'Generate Non-GST Invoice' : 'Generate Tax Invoice'}
                           className="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors"
                         >
                           <Receipt size={15} weight="bold" />

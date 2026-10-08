@@ -16,6 +16,7 @@ const collections = [
   'bookings',
   'inquiries',
   'corporateContracts',
+  'corporateQuotations',
   'fuelLogs',
   'tyreLogs',
   'driverAdvances',

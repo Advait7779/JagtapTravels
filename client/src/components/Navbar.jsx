@@ -25,6 +25,8 @@ export default function Navbar({
         return 'Bookings & Trips';
       case 'corporateContracts':
         return 'Corporate Contracts';
+      case 'corporateQuotations':
+        return 'Corporate Quotations';
       case 'corporateInvoices':
         return 'Corporate Invoices';
       case 'inquiries':

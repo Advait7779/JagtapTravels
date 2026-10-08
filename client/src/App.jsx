@@ -27,6 +27,8 @@ import BookingTable from './components/bookings/BookingTable';
 import BookingModal from './components/bookings/BookingModal';
 import InquiryTable from './components/inquiries/InquiryTable';
 import CorporateContractTable from './components/corporate/CorporateContractTable';
+import CorporateQuotationHub from './components/corporate/CorporateQuotationHub';
+import CorporateQuotationPrintView from './components/corporate/CorporateQuotationPrintView';
 import CorporateContractModal from './components/corporate/CorporateContractModal';
 import CorporateTripLogModal from './components/corporate/CorporateTripLogModal';
 import CorporateInvoiceModal from './components/corporate/CorporateInvoiceModal';
@@ -47,7 +49,7 @@ import { isAdministrator, canAccessTab } from './utils/access';
 
 const emptyData = {
   customers: [], drivers: [], meterReadings: [], bills: [], quotations: [], vehicles: [],
-  bookings: [], inquiries: [], corporateContracts: [], corporateInvoices: [], fuelLogs: [],
+  bookings: [], inquiries: [], corporateContracts: [], corporateQuotations: [], corporateInvoices: [], fuelLogs: [],
   tyreLogs: [], driverAdvances: [], corporateTripLogs: [], settings: {}, health: {},
 };
 
@@ -79,6 +81,7 @@ export default function App() {
     [modal, setModal] = useState(null),
     [viewBill, setViewBill] = useState(null),
     [viewQuote, setViewQuote] = useState(null),
+    [viewCorporateQuote, setViewCorporateQuote] = useState(null),
     [corporateInvoice, setCorporateInvoice] = useState(null),
     [confirmDialog, setConfirmDialog] = useState(null),
     [confirmLoading, setConfirmLoading] = useState(false),
@@ -108,6 +111,7 @@ export default function App() {
       setModal(null);
       setViewBill(null);
       setViewQuote(null);
+      setViewCorporateQuote(null);
       toast.warning('Session expired', {
         description: 'Your CRM session has timed out. Please sign in again.',
       });
@@ -183,13 +187,14 @@ export default function App() {
       ['quotations', api.getQuotations], ['vehicles', api.getVehicles],
       ['bookings', api.getBookings], ['inquiries', api.getInquiries],
       ['corporateContracts', api.getCorporateContracts],
+      ['corporateQuotations', api.getCorporateQuotations],
       ['corporateInvoices', api.getCorporateInvoices],
       ['fuelLogs', api.getFuelLogs], ['tyreLogs', api.getTyreLogs],
       ['driverAdvances', api.getDriverAdvances],
       ['corporateTripLogs', api.getCorporateTripLogs],
       ['settings', api.getSettings], ['health', api.getHealth],
     ].filter(([key]) => isAdmin || ![
-      'bills', 'corporateContracts', 'corporateInvoices', 'driverAdvances',
+      'bills', 'corporateContracts', 'corporateQuotations', 'corporateInvoices', 'driverAdvances',
       'corporateTripLogs', 'health',
     ].includes(key));
     const keys = requests.map(([key]) => key);
@@ -500,6 +505,7 @@ export default function App() {
       setModal(null);
       setViewBill(null);
       setViewQuote(null);
+      setViewCorporateQuote(null);
       toast.info('Signed out successfully');
     } catch (err) {
       setError(err.message);
@@ -563,6 +569,7 @@ export default function App() {
     bookings = [],
     inquiries = [],
     corporateContracts = [],
+    corporateQuotations = [],
     corporateInvoices = [],
     fuelLogs = [],
     tyreLogs = [],
@@ -608,6 +615,7 @@ export default function App() {
           quotations: quotations.length,
           vehicles: vehicles.length,
           corporateContracts: corporateContracts.filter((c) => c.status === 'Active').length,
+          corporateQuotations: corporateQuotations.length,
           corporateInvoices: corporateInvoices.length,
           fuel: fuelLogs.length,
           tyres: tyreLogs.length,
@@ -731,8 +739,28 @@ export default function App() {
                   )
                 }
                 onGenerateInvoice={(contract, month, options = {}) =>
-                  setCorporateInvoice({ contract, month, ...options })
+                  setCorporateInvoice({
+                    contract,
+                    month,
+                    isNonGst: contract.quotationTaxMode === 'nongst',
+                    ...options,
+                  })
                 }
+                onOpenQuotation={(contract) => {
+                  const quotation = corporateQuotations.find((item) => item.id === contract.corporateQuotationId);
+                  if (quotation) setViewCorporateQuote(quotation);
+                  else toast.error('Source quotation is unavailable.');
+                }}
+              />
+            )}
+
+            {isAdmin && tab === 'corporateQuotations' && (
+              <CorporateQuotationHub
+                quotations={corporateQuotations}
+                customers={customers}
+                onRefresh={refresh}
+                onView={setViewCorporateQuote}
+                onOpenContracts={() => navigate('corporateContracts')}
               />
             )}
 
@@ -1249,6 +1277,13 @@ export default function App() {
           quote={viewQuote}
           settings={settings}
           onClose={() => setViewQuote(null)}
+        />
+      )}
+      {viewCorporateQuote && (
+        <CorporateQuotationPrintView
+          quotation={viewCorporateQuote}
+          settings={settings}
+          onClose={() => setViewCorporateQuote(null)}
         />
       )}
 

@@ -18,6 +18,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import CorporateTripLogModal from '../components/corporate/CorporateTripLogModal';
 import CorporateLogsheetView from '../components/corporate/CorporateLogsheetView';
 import CorporateContractTable from '../components/corporate/CorporateContractTable';
+import CorporateQuotationHub from '../components/corporate/CorporateQuotationHub';
+import CorporateQuotationPrintView from '../components/corporate/CorporateQuotationPrintView';
 import CorporateInvoiceTable from '../components/corporate/CorporateInvoiceTable';
 import CorporateInvoiceModal from '../components/corporate/CorporateInvoiceModal';
 import CorporateLogsheetPrintView from '../components/corporate/CorporateLogsheetPrintView';
@@ -34,9 +36,57 @@ it('shows daily operations to staff but hides corporate, billing, payroll and se
   expect(screen.getByRole('button', { name: /^Tyre Management/ })).toBeTruthy();
   expect(screen.queryByRole('button', { name: /^Corporate Contracts/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Corporate Invoices/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Corporate Quotations/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Customer Invoices/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Driver Salary/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Business Settings/ })).toBeNull();
+});
+it('prepares a corporate monthly quote and shows server-bound proposal details', async () => {
+  const add = vi.spyOn(api, 'addCorporateQuotation').mockResolvedValue({ id: 'new-quote' });
+  const refresh = vi.fn().mockResolvedValue();
+  render(<CorporateQuotationHub quotations={[]} customers={[]} vehicles={[]} onRefresh={refresh} onView={vi.fn()} onOpenContracts={vi.fn()} />);
+  fireEvent.click(screen.getByRole('button', { name: 'New corporate quotation' }));
+  const editor = screen.getByRole('dialog', { name: 'New corporate quotation' });
+  fireEvent.change(within(editor).getByLabelText('Company name *'), { target: { value: 'Example Industries' } });
+  fireEvent.change(within(editor).getByLabelText('Phone *'), { target: { value: '9876543210' } });
+  fireEvent.change(within(editor).getByLabelText('Vehicle type *'), { target: { value: 'Innova Crysta' } });
+  fireEvent.change(within(editor).getByLabelText('Monthly fixed fare ₹ *'), { target: { value: '45000' } });
+  fireEvent.change(within(editor).getByLabelText('Included KM/month'), { target: { value: '2500' } });
+  fireEvent.change(within(editor).getByLabelText('Excess rate ₹/KM'), { target: { value: '14' } });
+  expect(within(editor).queryByLabelText('Estimated excess KM')).toBeNull();
+  expect(within(editor).queryByLabelText('Valid until *')).toBeNull();
+  expect(within(editor).getByText('₹53,100.00')).toBeTruthy();
+  fireEvent.click(within(editor).getByRole('button', { name: 'Save quotation' }));
+  await waitFor(() => expect(add).toHaveBeenCalledTimes(1));
+  expect(add.mock.calls[0][0].lineItems[0]).toMatchObject({ vehicleType: 'Innova Crysta', includedMonthlyKm: '2500', extraRatePerKm: '14' });
+  await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+});
+it('shows quote editing and print without contract or approval actions', () => {
+  const quote = {
+    id: 'q1', quotationNumber: 'CQ-2026-001', revision: 2, status: 'Draft',
+    companyName: 'Example Industries', contactPhone: '9876543210',
+    quotationDate: '2026-10-08', validityDate: '2026-10-20', proposedStartDate: '2026-11-01',
+    lineItems: [
+      { id: 'line-1', vehicleType: 'Innova', monthlyBaseFare: 45000, includedMonthlyKm: 2500, extraRatePerKm: 14, estimatedExtraKm: 100, estimatedExtraCharge: 1400 },
+      { id: 'line-2', vehicleType: 'Sedan', monthlyBaseFare: 30000, includedMonthlyKm: 2000, extraRatePerKm: 12, estimatedExtraKm: 0, estimatedExtraCharge: 0 },
+    ],
+    fixedMonthlyTotal: 75000, estimatedExcessTotal: 1400, estimatedOtherCharges: 0,
+    estimatedSubtotal: 76400, estimatedTax: 13752, estimatedTotal: 90152,
+    taxMode: 'gst', gstRate: 18, contractIds: [],
+    revisions: [{ revision: 1, quotationNumber: 'CQ-2026-001', quotationDate: '2026-10-08', companyName: 'Example Industries', contactPhone: '9876543210', validityDate: '2026-10-20', proposedStartDate: '2026-11-01', lineItems: [], fixedMonthlyTotal: 0, estimatedExcessTotal: 0, estimatedSubtotal: 0, estimatedTax: 0, estimatedTotal: 0, taxMode: 'gst', gstRate: 18 }],
+  };
+  render(<CorporateQuotationHub quotations={[quote]} customers={[]} onRefresh={vi.fn().mockResolvedValue()} onView={vi.fn()} onOpenContracts={vi.fn()} />);
+  expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'View / PDF' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Mark sent' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Reject' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Create contracts' })).toBeNull();
+  render(<CorporateQuotationPrintView quotation={quote} settings={{ companyName: 'Jagtap Travels' }} onClose={vi.fn()} />);
+  const preview = screen.getByRole('dialog', { name: 'Corporate quotation preview' });
+  expect(within(preview).getByText('₹90,152.00')).toBeTruthy();
+  fireEvent.change(within(preview).getByLabelText('Quotation revision'), { target: { value: '0' } });
+  expect(within(preview).getByText('Previous version · Revision 1')).toBeTruthy();
 });
 it('shows a red dustbin only for staff and deletes the selected staff account', async () => {
   const admin = { id: 'admin-1', fullName: 'Owner', email: 'owner@example.invalid', role: 'Administrator' };

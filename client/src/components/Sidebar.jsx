@@ -40,6 +40,7 @@ export default function Sidebar({
         { id: 'dashboard', label: 'Dashboard', icon: SquaresFour },
         { id: 'bookings', label: 'Bookings & Trips', icon: CalendarCheck },
         { id: 'corporateContracts', label: 'Corporate Contracts', icon: Buildings },
+        { id: 'corporateQuotations', label: 'Corporate Quotations', icon: FileText },
         { id: 'corporateInvoices', label: 'Corporate Invoices', icon: Scroll },
         { id: 'inquiries', label: 'Website Inquiries', icon: ChatCircleDots },
         { id: 'meterReadings', label: 'Duty Slips', icon: Gauge },
