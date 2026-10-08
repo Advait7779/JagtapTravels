@@ -1,12 +1,23 @@
 let csrfToken = '';
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+const apiUrl = (endpoint) => `${apiBaseUrl}/api${endpoint}`;
+const resolveUploadUrls = (value) => {
+  if (!apiBaseUrl) return value;
+  if (typeof value === 'string')
+    return value.startsWith('/api/uploads/') ? apiBaseUrl + value : value;
+  if (Array.isArray(value)) return value.map(resolveUploadUrls);
+  if (value && typeof value === 'object')
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, resolveUploadUrls(entry)]));
+  return value;
+};
 export async function request(endpoint, options = {}) {
   const controller = new AbortController(),
     timer = setTimeout(() => controller.abort(), 15000);
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   try {
-    const res = await fetch('/api' + endpoint, {
+    const res = await fetch(apiUrl(endpoint), {
       ...options,
-      credentials: 'same-origin',
+      credentials: apiBaseUrl ? 'include' : 'same-origin',
       signal: controller.signal,
       headers: {
         ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
@@ -25,7 +36,7 @@ export async function request(endpoint, options = {}) {
       throw error;
     }
     if (data?.csrfToken) csrfToken = data.csrfToken;
-    return data;
+    return resolveUploadUrls(data);
   } catch (error) {
     if (error.name === 'AbortError')
       throw new Error('The request timed out. Check the connection before retrying.', {

@@ -45,6 +45,35 @@ test('plaintext credentials are never accepted', async () => {
   assert.equal(await verifyPassword('anything', ''), false);
 });
 
+test('configured frontend origin can preflight and use credentialed API responses', async (t) => {
+  const origin = 'https://jagtaptravels.com';
+  const { app } = await environment(t, {
+    frontendOrigin: origin,
+    apiBaseUrl: 'https://api.jagtaptravels.com',
+  });
+  const preflight = await request(app).options('/api/auth/login')
+    .set('Origin', origin)
+    .set('Access-Control-Request-Method', 'POST')
+    .set('Access-Control-Request-Headers', 'content-type')
+    .expect(204);
+  assert.equal(preflight.headers['access-control-allow-origin'], origin);
+  assert.equal(preflight.headers['access-control-allow-credentials'], 'true');
+  assert.match(preflight.headers['access-control-allow-headers'], /X-CSRF-Token/);
+  const setup = await request(app).post('/api/auth/setup').set('Origin', origin).send({
+    setupToken: SETUP, email: EMAIL, password: PASSWORD, fullName: 'Security Admin',
+  }).expect(201);
+  assert.equal(setup.headers['access-control-allow-origin'], origin);
+  assert.equal(setup.headers['access-control-allow-credentials'], 'true');
+  assert.equal(setup.headers['cross-origin-resource-policy'], 'same-site');
+  assert.match(setup.headers['content-security-policy'], /connect-src 'self' https:\/\/api\.jagtaptravels\.com/);
+  assert.ok(setup.headers['set-cookie']?.some((cookie) => cookie.includes('SameSite=Strict')));
+  const denied = await request(app).options('/api/auth/login')
+    .set('Origin', 'https://untrusted.example')
+    .set('Access-Control-Request-Method', 'POST')
+    .expect(403);
+  assert.equal(denied.headers['access-control-allow-origin'], undefined);
+});
+
 test('staff passwords accept six characters while administrator setup still requires twelve', async (t) => {
   const { app } = await environment(t);
   await request(app).post('/api/auth/setup').send({

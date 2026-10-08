@@ -1,2 +1,4 @@
-# Frontend environment variables
-# No frontend environment variables are required.
+# Set as a build-time environment variable for a separately hosted frontend.
+VITE_API_BASE_URL=https://api.jagtaptravels.com
+
+# Leave unset when the frontend and API share one CRM service/domain.

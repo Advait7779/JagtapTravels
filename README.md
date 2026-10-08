@@ -131,6 +131,8 @@ Recommended Coolify Docker Compose deployment:
 7. If migrating real records, import your backup into the empty database **before the first normal deployment**, because administrator bootstrap makes the database nonempty. Run the import command in the CRM container with IMPORT_FILE pointing to a securely supplied JSON file. Remove the transfer file afterward; if the imported data already contains an administrator, the `ADMIN_*` values are ignored.
 8. Configure off-server backups for both PostgreSQL and `uploads_data`. Verify HTTPS sessions, `/api/health`, an uploaded document after restart/redeploy, and a paired database/files restore before going live.
 
+For a separately hosted frontend at `https://jagtaptravels.com` and API at `https://api.jagtaptravels.com`, set `VITE_API_BASE_URL=https://api.jagtaptravels.com` as a **build-time** variable on the frontend service and `FRONTEND_ORIGIN=https://jagtaptravels.com` on the API service. Rebuild the frontend and restart the API after setting them. The API allows credentials only from that exact frontend origin; both sites must use HTTPS. Leave these variables unset when the frontend and API use the same CRM service and domain.
+
 The compose port mapping binds to host loopback. With Coolify service routing, the proxy uses the container network; do not expose PostgreSQL or the raw API port publicly. If using a separate Coolify PostgreSQL resource instead of compose.yaml, configure DATABASE_URL with its internal connection string and run npm run db:migrate before starting the Dockerfile application.
 
 Official references:

@@ -12,19 +12,41 @@ const { isAdministrator, quotationCompany, staffCanAccess, redactStaffRecord } =
 function createApp(repo, options = {}) {
   const app = express(),
     service = createService(repo);
+  const frontendOrigin = options.frontendOrigin || process.env.FRONTEND_ORIGIN || '';
+  const browserApiUrl = options.apiBaseUrl || process.env.VITE_API_BASE_URL || '';
+  const browserApiOrigin = browserApiUrl ? new URL(browserApiUrl).origin : '';
   const uploadsDir = path.resolve(
     options.uploadsDir || process.env.UPLOADS_DIR || path.resolve(__dirname, 'data', 'uploads'),
   );
   fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o700 });
   if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
   app.disable('x-powered-by');
+  app.use('/api', (req, res, next) => {
+    const origin = req.get('Origin');
+    if (!frontendOrigin || !origin) return next();
+    res.vary('Origin');
+    if (origin !== frontendOrigin) {
+      if (req.method === 'OPTIONS') return res.sendStatus(403);
+      return next();
+    }
+    res.set({
+      'Access-Control-Allow-Origin': frontendOrigin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, X-CSRF-Token',
+    });
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
   app.use(
     helmet({
+      crossOriginResourcePolicy: { policy: frontendOrigin ? 'same-site' : 'same-origin' },
       contentSecurityPolicy: {
         directives: {
-          'img-src': ["'self'", 'data:'],
-          'object-src': ["'self'", 'blob:', 'data:'],
-          'frame-src': ["'self'", 'blob:', 'data:'],
+          'img-src': ["'self'", 'data:', ...(browserApiOrigin ? [browserApiOrigin] : [])],
+          'object-src': ["'self'", 'blob:', 'data:', ...(browserApiOrigin ? [browserApiOrigin] : [])],
+          'frame-src': ["'self'", 'blob:', 'data:', ...(browserApiOrigin ? [browserApiOrigin] : [])],
+          'connect-src': ["'self'", ...(browserApiOrigin ? [browserApiOrigin] : [])],
           'font-src': ["'self'", 'https://fonts.gstatic.com'],
           'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           'script-src': ["'self'"],
