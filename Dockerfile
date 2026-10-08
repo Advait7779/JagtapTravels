@@ -1,4 +1,4 @@
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app/client
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
@@ -7,7 +7,7 @@ RUN npm ci
 COPY client/ ./
 RUN npm run build
 
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 ENV NODE_ENV=production PORT=6001
 RUN apk upgrade --no-cache && apk add --no-cache curl
 WORKDIR /app/server
