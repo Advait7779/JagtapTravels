@@ -22,6 +22,7 @@ import {
 } from '@phosphor-icons/react';
 import StatCard from './StatCard';
 import { formatINR, formatDate } from '../utils/formatters';
+import { userDisplayName } from '../utils/userDisplayName';
 
 export default function Dashboard({
   user,
@@ -110,7 +111,7 @@ export default function Dashboard({
       <div className="relative overflow-hidden bg-navy-950 text-white p-4 sm:p-6 rounded-md shadow-lg border border-navy-850 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="relative z-10">
           <h2 className="text-lg sm:text-xl font-black tracking-tight">
-            Welcome back, {user?.fullName || 'Yashwant Jagtap'}
+            Welcome back, {userDisplayName(user, 'Yashwant Jagtap')}
           </h2>
           <p className="text-xs text-slate-300 mt-0.5 sm:mt-1 font-normal">
             Fleet operations, trip dispatches, website inquiries, and financial tracking.

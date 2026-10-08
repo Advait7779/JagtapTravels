@@ -1,5 +1,6 @@
 import React from 'react';
 import { List, CalendarBlank } from '@phosphor-icons/react';
+import { userDisplayName } from '../utils/userDisplayName';
 
 export default function Navbar({
   user,
@@ -12,7 +13,7 @@ export default function Navbar({
   onToggleMenu,
   activeTab,
 }) {
-  const displayName = user?.fullName || 'CRM User';
+  const displayName = userDisplayName(user);
   const initial = displayName.charAt(0).toUpperCase();
 
   const getTabTitle = () => {
