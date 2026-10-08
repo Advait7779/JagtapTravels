@@ -1,8 +1,18 @@
-# Backend environment variables for Hostinger Coolify
-POSTGRES_PASSWORD=replace_with_random_20_plus_character_url_safe_password
-ADMIN_EMAIL=replace_with_admin_email
-ADMIN_PASSWORD=replace_with_strong_12_plus_character_password
-ADMIN_FULL_NAME=Administrator
-SESSION_IDLE_MINUTES=10080
-# Set when the frontend is hosted at a separate origin.
+# Backend API application in Coolify (Dockerfile + separate PostgreSQL resource).
+# Set these as runtime variables on the BACKEND application, not the frontend or database.
+NODE_ENV=production
+STORAGE_MODE=postgres
+PORT=6001
+TRUST_PROXY=1
+DATABASE_URL=replace_with_PostgreSQL_internal_URL
 FRONTEND_ORIGIN=https://jagtaptravels.com
+SESSION_IDLE_MINUTES=10080
+
+# Set these only on a first deployment with no users. Once an administrator
+# exists in PostgreSQL, leave ADMIN_PASSWORD unset; changing it will not reset the account.
+# ADMIN_EMAIL=replace_with_admin_email
+# ADMIN_PASSWORD=replace_with_strong_12_plus_character_password
+# ADMIN_FULL_NAME=Administrator
+
+# POSTGRES_PASSWORD belongs to the separate PostgreSQL resource, not this API.
+# Never commit real passwords or DATABASE_URL values to the repository.

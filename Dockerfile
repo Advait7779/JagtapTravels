@@ -8,7 +8,7 @@ COPY client/ ./
 RUN npm run build
 
 FROM node:24-alpine AS runtime
-ENV NODE_ENV=production PORT=5000
+ENV NODE_ENV=production PORT=6001
 RUN apk upgrade --no-cache && apk add --no-cache curl
 WORKDIR /app/server
 COPY server/package*.json ./
@@ -18,6 +18,6 @@ COPY --from=build /app/client/dist /app/client/dist
 RUN mkdir -p /app/data /app/uploads && chown -R node:node /app
 ENV DATA_FILE=/app/data/db.json UPLOADS_DIR=/app/uploads
 USER node
-EXPOSE 5000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 CMD curl --fail --silent --show-error --max-time 5 http://127.0.0.1:5000/api/health || exit 1
+EXPOSE 6001
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 CMD curl --fail --silent --show-error --max-time 5 http://127.0.0.1:6001/api/health || exit 1
 CMD ["sh","-c","node scripts/database.js migrate && exec node index.js"]
