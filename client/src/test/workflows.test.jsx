@@ -236,6 +236,46 @@ it('network failure never logs in with demo credentials', async () => {
   expect(await screen.findByRole('alert')).toBeTruthy();
   expect(success).not.toHaveBeenCalled();
 });
+it('toggles login password visibility without submitting the form', async () => {
+  vi.spyOn(api, 'authStatus').mockResolvedValue({ setupRequired: false });
+  const login = vi.spyOn(api, 'login');
+  render(<LoginForm onLoginSuccess={vi.fn()} />);
+  const password = await screen.findByLabelText('Password');
+  fireEvent.change(password, { target: { value: 'MySecretPassword' } });
+  expect(password.type).toBe('password');
+  fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+  expect(password.type).toBe('text');
+  expect(password.value).toBe('MySecretPassword');
+  expect(login).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+  expect(password.type).toBe('password');
+});
+it('asks for sign-out confirmation and only logs out after confirmation', async () => {
+  const originalPath = window.location.pathname;
+  window.history.replaceState({}, '', '/admin');
+  vi.spyOn(api, 'me').mockResolvedValue({ user: { id: 'admin-1', fullName: 'Admin', role: 'Administrator' } });
+  vi.spyOn(api, 'authStatus').mockResolvedValue({ setupRequired: false });
+  for (const key of Object.keys(api).filter((name) => name.startsWith('get'))) {
+    vi.spyOn(api, key).mockResolvedValue([]);
+  }
+  api.getSettings.mockResolvedValue({});
+  api.getHealth.mockResolvedValue({ status: 'ready', storage: 'postgres' });
+  const logout = vi.spyOn(api, 'logout').mockResolvedValue({});
+  render(<App />);
+  const logoutButton = await screen.findByRole('button', { name: 'Logout' });
+  fireEvent.click(logoutButton);
+  let dialog = screen.getByRole('dialog', { name: 'Sign out of CRM' });
+  expect(logout).not.toHaveBeenCalled();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+  expect(screen.queryByRole('dialog', { name: 'Sign out of CRM' })).toBeNull();
+  expect(logout).not.toHaveBeenCalled();
+  fireEvent.click(logoutButton);
+  dialog = screen.getByRole('dialog', { name: 'Sign out of CRM' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Sign out' }));
+  await waitFor(() => expect(logout).toHaveBeenCalledTimes(1));
+  expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
+  window.history.replaceState({}, '', originalPath);
+});
 it('malformed old browser credentials do not crash or authenticate', async () => {
   window.history.replaceState({}, '', '/admin');
   localStorage.setItem('jagtap_crm_user', '{broken');

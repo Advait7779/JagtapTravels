@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Globe, ShieldCheck } from '@phosphor-icons/react';
+import { Eye, EyeSlash, Globe, ShieldCheck } from '@phosphor-icons/react';
 import { api } from '../services/api';
 import { toast } from '../context/ToastContext';
 
@@ -15,6 +15,7 @@ export default function LoginForm({ onLoginSuccess, onBackToWebsite }) {
   });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     api
@@ -77,7 +78,15 @@ export default function LoginForm({ onLoginSuccess, onBackToWebsite }) {
               </>
             )}
             <label className="form-label">Email<input className="form-input py-2.5" type="email" required autoComplete="username" value={form.email} onChange={(e) => update('email', e.target.value)} placeholder="admin@jagtaptours.com" /></label>
-            <label className="form-label">Password<input className="form-input py-2.5" type="password" required minLength={setupRequired ? 12 : undefined} autoComplete={setupRequired ? 'new-password' : 'current-password'} value={form.password} onChange={(e) => update('password', e.target.value)} placeholder="••••••••••••" /></label>
+            <div className="form-label">
+              <label htmlFor="login-password">Password</label>
+              <div className="relative">
+                <input id="login-password" className="form-input py-2.5 pr-11" type={showPassword ? 'text' : 'password'} required minLength={setupRequired ? 12 : undefined} autoComplete={setupRequired ? 'new-password' : 'current-password'} value={form.password} onChange={(e) => update('password', e.target.value)} placeholder="••••••••••••" />
+                <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)} className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-500 hover:text-navy-950">
+                  {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
             {!setupRequired && (
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 pt-0.5"><input type="checkbox" checked={form.rememberMe} onChange={(e) => update('rememberMe', e.target.checked)} /> Keep signed in for up to 30 days (7-day inactivity limit)</label>
             )}

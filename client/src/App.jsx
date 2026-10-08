@@ -81,7 +81,9 @@ export default function App() {
     [viewQuote, setViewQuote] = useState(null),
     [corporateInvoice, setCorporateInvoice] = useState(null),
     [confirmDialog, setConfirmDialog] = useState(null),
-    [confirmLoading, setConfirmLoading] = useState(false);
+    [confirmLoading, setConfirmLoading] = useState(false),
+    [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false),
+    [signOutLoading, setSignOutLoading] = useState(false);
 
   const checkSession = async () => {
     setChecking(true);
@@ -489,8 +491,10 @@ export default function App() {
   };
 
   const logout = async () => {
+    setSignOutLoading(true);
     try {
       await api.logout();
+      setSignOutConfirmOpen(false);
       setUser(null);
       setData(emptyData);
       setModal(null);
@@ -500,6 +504,8 @@ export default function App() {
     } catch (err) {
       setError(err.message);
       toast.error('Sign out error', { description: err.message });
+    } finally {
+      setSignOutLoading(false);
     }
   };
 
@@ -615,7 +621,7 @@ export default function App() {
         storage={health.storage}
         user={user}
         mobileOpen={mobileOpen}
-        onLogout={logout}
+        onLogout={() => setSignOutConfirmOpen(true)}
         onCloseMobile={() => setMobileOpen(false)}
         onOpenWebsite={() => switchView('website')}
       />
@@ -623,7 +629,7 @@ export default function App() {
         <Navbar
           user={user}
           activeTab={tab}
-          onLogout={logout}
+          onLogout={() => setSignOutConfirmOpen(true)}
           onToggleMenu={() => setMobileOpen((v) => !v)}
           {...actions}
         />
@@ -1275,6 +1281,17 @@ export default function App() {
           loading={confirmLoading}
         />
       )}
+      <ConfirmModal
+        isOpen={signOutConfirmOpen}
+        onClose={() => setSignOutConfirmOpen(false)}
+        onConfirm={logout}
+        title="Sign out of CRM"
+        heading="Ready to sign out?"
+        message="You will need to sign in again to access the CRM."
+        confirmText="Sign out"
+        variant="warning"
+        loading={signOutLoading}
+      />
     </div>
   );
 }
