@@ -133,7 +133,9 @@ Recommended Coolify Docker Compose deployment:
 
 For a separately hosted frontend at `https://jagtaptravels.com` and API at `https://api.jagtaptravels.com`, set `VITE_API_BASE_URL=https://api.jagtaptravels.com` as a **build-time** variable on the frontend service and `FRONTEND_ORIGIN=https://jagtaptravels.com` on the API service. Rebuild the frontend and restart the API after setting them. The API allows credentials only from that exact frontend origin; both sites must use HTTPS. Leave these variables unset when the frontend and API use the same CRM service and domain.
 
-The compose port mapping binds to host loopback. With Coolify service routing, the proxy uses the container network; do not expose PostgreSQL or the raw API port publicly. If using a separate Coolify PostgreSQL resource instead of compose.yaml, configure DATABASE_URL with its internal connection string and run npm run db:migrate before starting the Dockerfile application.
+When using a separate Coolify PostgreSQL resource, create the API application from this Git repository with the Dockerfile build strategy, Base Directory `/`, Dockerfile Location `Dockerfile`, and exposed port `5000`. Set `STORAGE_MODE=postgres`, `DATABASE_URL` to the database's internal URL, `NODE_ENV=production`, `TRUST_PROXY=1`, and the administrator bootstrap variables. The image runs the idempotent database migration before starting the API. For the separate frontend application, use Nixpacks from Base Directory `/client`, enable static site output, set Publish Directory `/dist`, and make `VITE_API_BASE_URL` available during the build. There is no Dockerfile inside `/client` or `/server`.
+
+The compose port mapping binds to host loopback. With Coolify service routing, the proxy uses the container network; do not expose PostgreSQL or the raw API port publicly. If using a separate Coolify PostgreSQL resource instead of compose.yaml, configure `DATABASE_URL` with its internal connection string; the Dockerfile image runs the migration before starting the application.
 
 Official references:
 
