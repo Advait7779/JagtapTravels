@@ -608,6 +608,7 @@ function createApp(repo, options = {}) {
         'upi',
         'stampUrl',
         'signatureUrl',
+        'nonGstQrUrl',
         'ratePerKmSedan',
         'ratePerKmErtiga',
         'ratePerKmCrysta',

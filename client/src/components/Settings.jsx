@@ -7,6 +7,7 @@ import {
   UploadSimple,
   ArrowCounterClockwise,
   Stamp,
+  QrCode,
   X,
 } from '@phosphor-icons/react';
 import { api } from '../services/api';
@@ -18,6 +19,7 @@ export default function Settings({ settings, onSave }) {
   const [busy, setBusy] = useState(false);
   const [uploadingStamp, setUploadingStamp] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
+  const [uploadingQr, setUploadingQr] = useState(false);
 
   useEffect(() => {
     setForm(settings || {});
@@ -43,6 +45,7 @@ export default function Settings({ settings, onSave }) {
 
   const isSigRemoved = form.signatureUrl === 'none';
   const currentSignature = isSigRemoved ? null : (form.signatureUrl || '/signature.jpg');
+  const currentNonGstQr = form.nonGstQrUrl === 'none' ? null : (form.nonGstQrUrl || '/non-gst-qr.jpeg');
 
   const handleStampUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -138,6 +141,39 @@ export default function Settings({ settings, onSave }) {
     }
   };
 
+  const handleQrUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingQr(true);
+    setMessage('');
+    try {
+      const res = await api.uploadSettingsAsset(file);
+      if (res?.fileUrl) {
+        const updated = { ...form, nonGstQrUrl: res.fileUrl };
+        setForm(updated);
+        await onSave(updated);
+        setMessage('Non-GST invoice payment QR updated successfully.');
+      }
+    } catch (err) {
+      setMessage(err.message || 'Failed to upload payment QR.');
+    } finally {
+      setUploadingQr(false);
+      e.target.value = '';
+    }
+  };
+
+  const updateQr = async (nonGstQrUrl, successMessage) => {
+    const updated = { ...form, nonGstQrUrl };
+    setForm(updated);
+    setMessage('');
+    try {
+      await onSave(updated);
+      setMessage(successMessage);
+    } catch (err) {
+      setMessage(err.message || 'Failed to update payment QR.');
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setBusy(true);
@@ -191,16 +227,16 @@ export default function Settings({ settings, onSave }) {
             ))}
           </div>
 
-          {/* Official Company Stamp & Digital Signature Section */}
+          {/* Invoice and document images */}
           <div className="pt-6 border-t border-slate-200 space-y-4">
             <div className="flex items-center gap-2">
               <Stamp size={20} weight="bold" className="text-navy-900" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Official Company Stamp & Digital Signature
+                Invoice & Document Images
               </h3>
             </div>
             <p className="text-xs text-slate-500">
-              Uploaded stamp and signature are automatically applied to corporate tax invoices, duty slips, and official documents.
+              Upload the stamp, signature, and Non-GST invoice payment QR used on the corresponding documents.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-5">
@@ -425,6 +461,46 @@ export default function Settings({ settings, onSave }) {
                     >
                       <ArrowCounterClockwise size={13} weight="bold" />
                       <span>Restore Default</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5">
+                  <QrCode size={18} weight="bold" className="text-blue-600" />
+                  <span className="text-xs font-bold text-slate-900 uppercase">Non-GST Invoice Payment QR</span>
+                </div>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                  currentNonGstQr ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  {currentNonGstQr ? 'Active' : 'Removed'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">Shown at the lower left of corporate Non-GST invoices only, including their print and PDF copies.</p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="w-40 h-40 bg-white border border-slate-200 rounded-md p-2 flex items-center justify-center shrink-0">
+                  {currentNonGstQr ? (
+                    <img src={currentNonGstQr} alt="Non-GST invoice payment QR" className="max-w-full max-h-full object-contain" />
+                  ) : (
+                    <span className="text-xs text-slate-400 text-center">No payment QR active</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <label className="btn-primary py-2 px-3 text-xs cursor-pointer flex items-center gap-1.5">
+                    <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleQrUpload} disabled={uploadingQr} />
+                    <UploadSimple size={14} weight="bold" />
+                    {uploadingQr ? 'Uploading…' : 'Upload Payment QR'}
+                  </label>
+                  {currentNonGstQr ? (
+                    <button type="button" onClick={() => updateQr('none', 'Payment QR removed from Non-GST invoices.')} className="px-3 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-md flex items-center gap-1">
+                      <X size={14} weight="bold" /> Remove
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => updateQr('/non-gst-qr.jpeg', 'Default payment QR restored.')} className="px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md flex items-center gap-1">
+                      <ArrowCounterClockwise size={14} weight="bold" /> Restore Default
                     </button>
                   )}
                 </div>

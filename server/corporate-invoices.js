@@ -45,6 +45,7 @@ function companySnapshot(value) {
     ifsc: 30,
     stampUrl: 1000,
     signatureUrl: 1000,
+    nonGstQrUrl: 1000,
   };
   return Object.fromEntries(
     Object.entries(limits).map(([key, max]) => [key, text(value[key], key, false, max)]),

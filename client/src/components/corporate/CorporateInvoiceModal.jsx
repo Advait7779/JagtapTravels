@@ -184,6 +184,13 @@ export default function CorporateInvoiceModal({
     return '/signature.jpg';
   }, [isSignatureRemoved, settings?.signatureUrl, company?.signatureUrl]);
 
+  const effectiveNonGstQrUrl = useMemo(() => {
+    if (!isNonGst || settings?.nonGstQrUrl === 'none') return null;
+    if (settings?.nonGstQrUrl) return settings.nonGstQrUrl;
+    if (company?.nonGstQrUrl === 'none') return null;
+    return company?.nonGstQrUrl || '/non-gst-qr.jpeg';
+  }, [isNonGst, settings?.nonGstQrUrl, company?.nonGstQrUrl]);
+
   // Keep company profile and stamp/signature synchronized whenever settings prop updates
   useEffect(() => {
     if (!settings || Object.keys(settings).length === 0) return;
@@ -351,6 +358,7 @@ export default function CorporateInvoiceModal({
             ...data.company,
             stampUrl: data.company.stampUrl || prev.stampUrl,
             signatureUrl: data.company.signatureUrl || prev.signatureUrl,
+            nonGstQrUrl: data.company.nonGstQrUrl || prev.nonGstQrUrl,
           },
           settings,
         ),
@@ -491,6 +499,7 @@ export default function CorporateInvoiceModal({
         bankIfsc: company.bankIfsc || defaultCompany.bankIfsc,
         stampUrl: effectiveStampUrl || company.stampUrl,
         signatureUrl: effectiveSignatureUrl || company.signatureUrl,
+        nonGstQrUrl: isNonGst ? (settings?.nonGstQrUrl === 'none' ? 'none' : effectiveNonGstQrUrl) : '',
       },
       lineItems,
       tollItems,
@@ -1342,6 +1351,13 @@ export default function CorporateInvoiceModal({
                 <tr>
                   <td style={{ borderRight: '1px solid #000', padding: '10px', verticalAlign: 'top', width: '55%' }}>
                     <div style={{ fontWeight: 'bold' }}>This certified that the particulars given are true and correct and the amount indicated represents the price actually charged , and all dispute are subjects to pune jurisdiction</div>
+                    {effectiveNonGstQrUrl && (
+                      <img
+                        src={effectiveNonGstQrUrl}
+                        alt="Non-GST Payment QR"
+                        style={{ display: 'block', width: 122, height: 130, objectFit: 'contain', marginTop: 10 }}
+                      />
+                    )}
                   </td>
                   <td style={{ padding: '8px', verticalAlign: 'top', position: 'relative' }}>
                     <div style={{ fontWeight: 'bold', color: '#000', fontSize: 13 }}>For {company.companyName || defaultCompany.companyName}</div>

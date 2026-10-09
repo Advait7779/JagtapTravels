@@ -202,6 +202,27 @@ test('audit trail records successes and failures without request secrets and ver
   assert.ok(visible.body.length >= 3);
 });
 
+test('Non-GST invoice payment QR can be saved and removed in business settings', async (t) => {
+  const { app } = await environment(t);
+  const { agent, csrf } = await setupAdmin(app);
+  const initial = await agent.get('/api/settings').expect(200);
+  assert.equal(initial.body.nonGstQrUrl, '/non-gst-qr.jpeg');
+
+  await agent.put('/api/settings').set('X-CSRF-Token', csrf).send({
+    companyName: initial.body.companyName,
+    nonGstQrUrl: '/api/uploads/payment-qr.png',
+  }).expect(200);
+  const updated = await agent.get('/api/settings').expect(200);
+  assert.equal(updated.body.nonGstQrUrl, '/api/uploads/payment-qr.png');
+
+  await agent.put('/api/settings').set('X-CSRF-Token', csrf).send({
+    companyName: updated.body.companyName,
+    nonGstQrUrl: 'none',
+  }).expect(200);
+  const removed = await agent.get('/api/settings').expect(200);
+  assert.equal(removed.body.nonGstQrUrl, 'none');
+});
+
 test('staff accounts can edit operations but cannot read company billing, settings or security', async (t) => {
   const { app, repo } = await environment(t);
   const admin = await setupAdmin(app);

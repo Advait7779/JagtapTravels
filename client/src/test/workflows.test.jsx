@@ -444,6 +444,38 @@ it('corporate invoice renders bank name and branch dynamically from settings', a
   expect(screen.getByText('9011507220')).toBeTruthy();
   expect(screen.getByText('8888094770')).toBeTruthy();
 });
+it('shows the configured payment QR only on corporate Non-GST invoices', () => {
+  vi.spyOn(api, 'getSavedCorporateInvoice').mockResolvedValue(null);
+  const contract = {
+    id: 'contract-qr',
+    companyName: 'Alpha Industries',
+    vehicleName: 'Innova Crysta',
+    vehicleNumber: 'MH 12 AB 1234',
+    includedMonthlyKm: 3000,
+    monthlyBaseFare: 50000,
+    extraRatePerKm: 15,
+  };
+  const props = {
+    isOpen: true,
+    onClose: () => {},
+    contract,
+    selectedMonth: '2026-10',
+    settings: { nonGstQrUrl: '/api/uploads/payment-qr.png' },
+  };
+  const nonGst = render(<CorporateInvoiceModal {...props} initialIsNonGst />);
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  expect(screen.getByAltText('Non-GST Payment QR').getAttribute('src')).toBe('/api/uploads/payment-qr.png');
+  nonGst.unmount();
+
+  const gst = render(<CorporateInvoiceModal {...props} initialIsNonGst={false} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  expect(screen.queryByAltText('Non-GST Payment QR')).toBeNull();
+  gst.unmount();
+
+  render(<CorporateInvoiceModal {...props} initialIsNonGst settings={{ nonGstQrUrl: 'none' }} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  expect(screen.queryByAltText('Non-GST Payment QR')).toBeNull();
+});
 it('renders QuotationTable with empty and populated data without runtime error', () => {
   const { rerender } = render(
     <QuotationTable
