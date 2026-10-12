@@ -223,6 +223,44 @@ test('Non-GST invoice payment QR can be saved and removed in business settings',
   assert.equal(removed.body.nonGstQrUrl, 'none');
 });
 
+test('administrator can save a Daily KM log while staff remain restricted', async (t) => {
+  const { app, repo } = await environment(t);
+  const admin = await setupAdmin(app);
+  const me = await admin.agent.get('/api/auth/me').expect(200);
+  assert.equal(me.body.user.role, 'Administrator');
+
+  await repo.change((data) => {
+    data.vehicles.push({ id: 'trip-vehicle', name: 'Innova', vehicleNumber: 'MH12AB1234' });
+    data.drivers.push({ id: 'trip-driver', name: 'Driver One' });
+    data.corporateContracts.push({
+      id: 'trip-contract', companyName: 'Corporate Client',
+      vehicleId: 'trip-vehicle', driverId: 'trip-driver',
+      startDate: '2020-01-01', endDate: '', status: 'Active',
+    });
+  });
+
+  const log = await admin.agent.post('/api/corporate-trip-logs')
+    .set('X-CSRF-Token', admin.csrf)
+    .send({
+      contractId: 'trip-contract', vehicleId: 'trip-vehicle', driverId: 'trip-driver',
+      date: '2020-01-02', startKm: 67096, closeKm: 67266,
+      placeFrom: 'Parking', placeTo: 'Corporate Client',
+    }).expect(201);
+  assert.equal(log.body.totalKm, 170);
+  assert.equal((await repo.read()).corporateTripLogs.length, 1);
+
+  await admin.agent.post('/api/users').set('X-CSRF-Token', admin.csrf).send({
+    fullName: 'Operations User', email: 'operations@example.invalid', password: 'S3cretPass',
+  }).expect(201);
+  const staffAgent = request.agent(app);
+  const staffLogin = await staffAgent.post('/api/auth/login').send({
+    email: 'operations@example.invalid', password: 'S3cretPass',
+  }).expect(200);
+  await staffAgent.post('/api/corporate-trip-logs')
+    .set('X-CSRF-Token', staffLogin.body.csrfToken)
+    .send({}).expect(403, { error: 'Administrator access required for this section.' });
+});
+
 test('staff can add corporate contracts but cannot edit them or access billing and security', async (t) => {
   const { app, repo } = await environment(t);
   const admin = await setupAdmin(app);
