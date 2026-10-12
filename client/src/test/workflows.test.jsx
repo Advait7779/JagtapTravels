@@ -29,17 +29,36 @@ import TeamUsers from '../components/TeamUsers';
 import { localDate, dateInput } from '../utils/formatters';
 import { api } from '../services/api';
 afterEach(() => vi.restoreAllMocks());
-it('shows daily operations to staff but hides corporate, billing, payroll and settings', () => {
+it('shows corporate contract entry to staff but hides billing, payroll and settings', () => {
   render(<Sidebar activeTab="quotations" setActiveTab={vi.fn()} user={{ role: 'Staff' }} />);
   expect(screen.getByRole('button', { name: /^Quotations/ })).toBeTruthy();
   expect(screen.getByRole('button', { name: /^Fuel Expenses/ })).toBeTruthy();
   expect(screen.getByRole('button', { name: /^Tyre Management/ })).toBeTruthy();
-  expect(screen.queryByRole('button', { name: /^Corporate Contracts/ })).toBeNull();
+  expect(screen.getByRole('button', { name: /^Corporate Contracts/ })).toBeTruthy();
   expect(screen.queryByRole('button', { name: /^Corporate Invoices/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Corporate Quotations/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Customer Invoices/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Driver Salary/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Business Settings/ })).toBeNull();
+});
+it('lets staff open new contract entry without showing contract administration actions', () => {
+  const onAddContract = vi.fn();
+  render(<CorporateContractTable
+    canManageContracts={false}
+    contracts={[{
+      id: 'contract-1', companyName: 'Example Industries', vehicleNumber: 'MH 12 AB 1234',
+      startDate: '2026-10-12', monthlyBaseFare: 45000, includedMonthlyKm: 2500,
+      extraRatePerKm: 14, status: 'Active',
+    }]}
+    onAddContract={onAddContract}
+  />);
+  fireEvent.click(screen.getByRole('button', { name: 'New Company Contract' }));
+  expect(onAddContract).toHaveBeenCalledOnce();
+  expect(screen.queryByRole('button', { name: /Daily KM Logsheet/ })).toBeNull();
+  expect(screen.queryByTitle('Edit Contract')).toBeNull();
+  expect(screen.queryByTitle('Delete Contract')).toBeNull();
+  expect(screen.queryByTitle('Generate Tax Invoice')).toBeNull();
+  expect(screen.getByText('Active', { selector: 'span' })).toBeTruthy();
 });
 it('prepares a corporate monthly quote and shows server-bound proposal details', async () => {
   const add = vi.spyOn(api, 'addCorporateQuotation').mockResolvedValue({ id: 'new-quote' });

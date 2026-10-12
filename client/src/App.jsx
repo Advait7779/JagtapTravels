@@ -194,7 +194,7 @@ export default function App() {
       ['corporateTripLogs', api.getCorporateTripLogs],
       ['settings', api.getSettings], ['health', api.getHealth],
     ].filter(([key]) => isAdmin || ![
-      'bills', 'corporateContracts', 'corporateQuotations', 'corporateInvoices', 'driverAdvances',
+      'bills', 'corporateQuotations', 'corporateInvoices', 'driverAdvances',
       'corporateTripLogs', 'health',
     ].includes(key));
     const keys = requests.map(([key]) => key);
@@ -241,7 +241,7 @@ export default function App() {
   };
 
   const open = (type) => {
-    if (!isAdmin && ['bill', 'corporateContract', 'corporateTripLog', 'advance'].includes(type)) return;
+    if (!isAdmin && ['bill', 'corporateTripLog', 'advance'].includes(type)) return;
     setModal({ type });
   };
 
@@ -702,8 +702,9 @@ export default function App() {
             )}
 
             {/* 3. Corporate Vehicle Contracts & Monthly Excess KM */}
-            {isAdmin && tab === 'corporateContracts' && (
+            {tab === 'corporateContracts' && (
               <CorporateContractTable
+                canManageContracts={isAdmin}
                 contracts={corporateContracts}
                 vehicles={vehicles}
                 drivers={drivers}
@@ -747,11 +748,11 @@ export default function App() {
                     ...options,
                   });
                 }}
-                onOpenQuotation={(contract) => {
+                onOpenQuotation={isAdmin ? (contract) => {
                   const quotation = corporateQuotations.find((item) => item.id === contract.corporateQuotationId);
                   if (quotation) setViewCorporateQuote(quotation);
                   else toast.error('Source quotation is unavailable.');
-                }}
+                } : null}
               />
             )}
 
@@ -1199,7 +1200,7 @@ export default function App() {
         />
       )}
 
-      {isAdmin && modal?.type === 'corporateContract' && (
+      {modal?.type === 'corporateContract' && (isAdmin || !modal.record) && (
         <CorporateContractModal
           isOpen
           onClose={() => setModal(null)}

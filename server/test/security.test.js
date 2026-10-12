@@ -223,7 +223,7 @@ test('Non-GST invoice payment QR can be saved and removed in business settings',
   assert.equal(removed.body.nonGstQrUrl, 'none');
 });
 
-test('staff accounts can edit operations but cannot read company billing, settings or security', async (t) => {
+test('staff can add corporate contracts but cannot edit them or access billing and security', async (t) => {
   const { app, repo } = await environment(t);
   const admin = await setupAdmin(app);
   await admin.agent.put('/api/settings').set('X-CSRF-Token', admin.csrf).send({
@@ -246,7 +246,7 @@ test('staff accounts can edit operations but cannot read company billing, settin
   }).expect(200);
   const csrf = login.body.csrfToken;
   const forbiddenGet = [
-    '/api/bills', '/api/corporate-contracts', '/api/corporate-invoices',
+    '/api/bills', '/api/corporate-invoices',
     '/api/corporate-trip-logs', '/api/driver-advances', '/api/payroll',
     '/api/security/audit-logs', '/api/users',
   ];
@@ -254,6 +254,20 @@ test('staff accounts can edit operations but cannot read company billing, settin
   await staffAgent.put('/api/settings').set('X-CSRF-Token', csrf)
     .send({ companyName: 'Changed by staff' }).expect(403);
   await staffAgent.post('/api/bills').set('X-CSRF-Token', csrf).send({}).expect(403);
+  const contract = await staffAgent.post('/api/corporate-contracts').set('X-CSRF-Token', csrf).send({
+    companyName: 'Staff Entered Company', vehicleName: 'Innova Crysta',
+    vehicleNumber: 'MH 12 AB 1234', startDate: '2026-10-12',
+    monthlyBaseFare: 45000, includedMonthlyKm: 2500, extraRatePerKm: 14,
+  }).expect(201);
+  assert.equal(contract.body.companyName, 'Staff Entered Company');
+  assert.equal((await staffAgent.get('/api/corporate-contracts').expect(200)).body[0].id, contract.body.id);
+  await staffAgent.put('/api/corporate-contracts/' + contract.body.id)
+    .set('X-CSRF-Token', csrf).send({ companyName: 'Unauthorized edit' }).expect(403);
+  await staffAgent.patch('/api/corporate-contracts/' + contract.body.id + '/status')
+    .set('X-CSRF-Token', csrf).send({ status: 'Terminated' }).expect(403);
+  await staffAgent.delete('/api/corporate-contracts/' + contract.body.id)
+    .set('X-CSRF-Token', csrf).expect(403);
+  assert.equal((await repo.read()).corporateContracts[0].companyName, 'Staff Entered Company');
   await staffAgent.post('/api/users').set('X-CSRF-Token', csrf).send({}).expect(403);
   await staffAgent.get('/api/uploads/00000000-0000-0000-0000-000000000000.pdf').expect(403);
   const settings = await staffAgent.get('/api/settings').expect(200);

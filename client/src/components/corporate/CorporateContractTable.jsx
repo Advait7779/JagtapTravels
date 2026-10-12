@@ -22,6 +22,7 @@ import CorporateLogsheetView from './CorporateLogsheetView';
 import { usePagination, PageSizeSelector, TablePaginationFooter } from '../common/Pagination';
 
 export default function CorporateContractTable({
+  canManageContracts = true,
   contracts = [],
   vehicles = [],
   drivers = [],
@@ -151,7 +152,7 @@ export default function CorporateContractTable({
     }
   };
 
-  if (activeTab === 'logsheets') {
+  if (canManageContracts && activeTab === 'logsheets') {
     return (
       <div className="space-y-4 font-['Plus_Jakarta_Sans',sans-serif]">
         {/* Navigation Tabs */}
@@ -200,16 +201,18 @@ export default function CorporateContractTable({
           <Buildings size={16} weight="bold" />
           <span>Corporate Contracts ({contracts.length})</span>
         </button>
-        <button
-          onClick={() => {
-            setLogsheetContractId('ALL');
-            setActiveTab('logsheets');
-          }}
-          className="px-4 py-2 rounded-md text-xs font-bold text-slate-600 hover:text-navy-950 hover:bg-slate-100 transition-all flex items-center gap-2"
-        >
-          <FileText size={16} />
-          <span>Daily KM Logsheet & Commute Register ({tripLogs.length})</span>
-        </button>
+        {canManageContracts && (
+          <button
+            onClick={() => {
+              setLogsheetContractId('ALL');
+              setActiveTab('logsheets');
+            }}
+            className="px-4 py-2 rounded-md text-xs font-bold text-slate-600 hover:text-navy-950 hover:bg-slate-100 transition-all flex items-center gap-2"
+          >
+            <FileText size={16} />
+            <span>Daily KM Logsheet & Commute Register ({tripLogs.length})</span>
+          </button>
+        )}
       </div>
       {/* Top Header Card */}
       <div className="bg-white p-4 sm:p-6 rounded-md shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -241,6 +244,7 @@ export default function CorporateContractTable({
 
           <button
             onClick={onAddContract}
+            aria-label="New Company Contract"
             className="btn-primary flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-2.5 rounded-md font-bold text-[11px] sm:text-xs h-9 leading-tight shrink-0 shadow-xs active:scale-[0.99]"
           >
             <Plus size={15} weight="bold" className="shrink-0" />
@@ -301,13 +305,13 @@ export default function CorporateContractTable({
                 <th className="py-3 px-4">Vehicle & Chauffeur</th>
                 <th className="py-3 px-4">Monthly Package</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-center">Actions</th>
+                {canManageContracts && <th className="py-3 px-4 text-center">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredContracts.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                  <td colSpan={canManageContracts ? 5 : 4} className="py-12 text-center text-slate-400">
                     <Buildings size={36} className="mx-auto mb-2 text-slate-300" />
                     <p className="font-semibold">No corporate contracts found</p>
                     <p className="text-[11px] text-slate-400 mt-1">
@@ -327,7 +331,7 @@ export default function CorporateContractTable({
                       <div className="text-[11px] text-slate-500 font-mono mt-0.5">
                         {c.contractNumber || 'CORP-CONTRACT'}
                       </div>
-                      {c.corporateQuotationId && <button type="button" onClick={() => onOpenQuotation?.(c)} className="mt-1 text-[11px] font-bold text-blue-700 hover:underline">View source quotation</button>}
+                      {c.corporateQuotationId && onOpenQuotation && <button type="button" onClick={() => onOpenQuotation(c)} className="mt-1 text-[11px] font-bold text-blue-700 hover:underline">View source quotation</button>}
                       <div className="text-[10px] text-slate-400 mt-0.5">
                         Since {formatDate(c.startDate)}
                       </div>
@@ -361,21 +365,25 @@ export default function CorporateContractTable({
 
                     {/* Status */}
                     <td className="py-3 px-4">
-                      <ThemedSelect
-                        value={c.status}
-                        onChange={(e) => onUpdateStatus(c.id, e.target.value)}
-                        className={`text-xs font-bold px-2 py-1 rounded-lg border focus:outline-none cursor-pointer ${getStatusBadge(
-                          c.status,
-                        )}`}
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Paused">Paused</option>
-                        <option value="Terminated">Terminated</option>
-                      </ThemedSelect>
+                      {canManageContracts ? (
+                        <ThemedSelect
+                          value={c.status}
+                          onChange={(e) => onUpdateStatus(c.id, e.target.value)}
+                          className={`text-xs font-bold px-2 py-1 rounded-lg border focus:outline-none cursor-pointer ${getStatusBadge(
+                            c.status,
+                          )}`}
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Paused">Paused</option>
+                          <option value="Terminated">Terminated</option>
+                        </ThemedSelect>
+                      ) : (
+                        <span className={`inline-block text-xs font-bold px-2 py-1 rounded-lg border ${getStatusBadge(c.status)}`}>{c.status}</span>
+                      )}
                     </td>
 
                     {/* Actions */}
-                    <td className="py-3 px-4 text-center">
+                    {canManageContracts && <td className="py-3 px-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         {/* Invoice */}
                         <button
@@ -404,7 +412,7 @@ export default function CorporateContractTable({
                           <Trash size={15} weight="bold" />
                         </button>
                       </div>
-                    </td>
+                    </td>}
                   </tr>
                 ))
               )}

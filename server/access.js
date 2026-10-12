@@ -17,6 +17,7 @@ const STAFF_COLLECTIONS = new Set([
 function staffCanAccess(method, route) {
   if (method === 'GET' && route === '/settings') return true;
   const parts = route.split('/').filter(Boolean);
+  if (route === '/corporate-contracts') return method === 'GET' || method === 'POST';
   if (STAFF_COLLECTIONS.has(parts[0])) {
     if (parts.length === 1) return method === 'GET' || method === 'POST';
     if (parts.length === 2) return ['PUT', 'DELETE'].includes(method);
