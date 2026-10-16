@@ -63,15 +63,14 @@ export default function CorporateQuotationHub({ quotations = [], customers = [],
     {error && <p role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{error}</p>}
     <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
       <table className="w-full min-w-[850px] text-left text-xs">
-        <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-600"><tr><th className="p-3">Quotation</th><th className="p-3">Company</th><th className="p-3">Proposal</th><th className="p-3">Estimated monthly</th><th className="p-3">Status</th><th className="p-3">Actions</th></tr></thead>
+        <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-600"><tr><th className="p-3">Quotation</th><th className="p-3">Company</th><th className="p-3">Proposal</th><th className="p-3">Estimated monthly</th><th className="p-3">Actions</th></tr></thead>
         <tbody className="divide-y divide-slate-100">
-          {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-sm text-slate-500">No corporate quotations found.</td></tr>}
+          {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-sm text-slate-500">No corporate quotations found.</td></tr>}
           {filtered.map((quote) => <tr key={quote.id} className="align-top">
             <td className="p-3"><strong className="text-navy-950">{quote.quotationNumber}</strong><p className="text-slate-500">Rev {quote.revision} · {formatDate(quote.quotationDate)}</p></td>
             <td className="p-3"><strong>{quote.companyName}</strong><p className="text-slate-500">{quote.contactPhone}</p></td>
             <td className="p-3">{quote.lineItems.length} vehicle{quote.lineItems.length === 1 ? '' : 's'}<p className="text-slate-500">From {formatDate(quote.proposedStartDate)}</p></td>
             <td className="p-3"><strong>{formatINR(quote.estimatedTotal)}</strong><p className="text-slate-500">Fixed {formatINR(quote.fixedMonthlyTotal)} · {quote.taxMode === 'gst' ? `GST ${quote.gstRate}%` : 'Non-GST'}</p></td>
-            <td className="p-3"><span className={`inline-block rounded-md border px-2 py-1 font-bold ${quote.contractIds?.length ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-700'}`}>{quote.contractIds?.length ? 'Converted' : 'Open'}</span>{quote.contractIds?.length > 0 && <p className="mt-1 text-emerald-700">{quote.contractIds.length} contract{quote.contractIds.length === 1 ? '' : 's'}</p>}</td>
             <td className="p-3"><div className="flex max-w-[240px] flex-wrap gap-1.5">
               <button type="button" onClick={() => onView(quote)} className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1.5 font-bold text-slate-700 hover:bg-slate-50"><Printer size={14} /> View / PDF</button>
               {!quote.contractIds?.length && <button type="button" onClick={() => setEditing(quote)} className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1.5 font-bold text-slate-700 hover:bg-slate-50"><PencilSimple size={14} /> Edit</button>}
