@@ -242,7 +242,7 @@ export default function CorporateContractTable({
             />
           </div>
 
-          <button
+          {canManageContracts && <button
             onClick={onAddContract}
             aria-label="New Company Contract"
             className="btn-primary flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-2.5 rounded-md font-bold text-[11px] sm:text-xs h-9 leading-tight shrink-0 shadow-xs active:scale-[0.99]"
@@ -252,7 +252,7 @@ export default function CorporateContractTable({
               <span className="sm:hidden leading-tight">New Company<br className="leading-none" />Contract</span>
               <span className="hidden sm:inline">New Company Contract</span>
             </span>
-          </button>
+          </button>}
         </div>
       </div>
 

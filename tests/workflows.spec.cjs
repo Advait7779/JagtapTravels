@@ -89,6 +89,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
     animations: 'disabled',
   });
 
+  await expect(page.getByRole('button', { name: /^Corporate Contracts/ })).toBeVisible();
   await page.getByRole('button', { name: /^Corporate Quotations/ }).click();
   await page.getByRole('button', { name: 'New corporate quotation' }).click();
   const corporateEditor = page.getByRole('dialog', { name: 'New corporate quotation' });
@@ -255,7 +256,8 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(page.getByRole('button', { name: /^Quotations/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Fuel Expenses/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Tyre Management/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Corporate Contracts/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Corporate Contracts/ })).toHaveCount(0);
+  expect(await page.evaluate(() => fetch('/api/corporate-contracts').then((response) => response.status))).toBe(403);
   await expect(page.getByRole('button', { name: /^Corporate Quotations/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Customer Invoices/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Business Settings/ })).toHaveCount(0);

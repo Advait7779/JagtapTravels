@@ -194,7 +194,7 @@ export default function App() {
       ['corporateTripLogs', api.getCorporateTripLogs],
       ['settings', api.getSettings], ['health', api.getHealth],
     ].filter(([key]) => isAdmin || ![
-      'bills', 'corporateQuotations', 'corporateInvoices', 'driverAdvances',
+      'bills', 'corporateContracts', 'corporateQuotations', 'corporateInvoices', 'driverAdvances',
       'corporateTripLogs', 'health',
     ].includes(key));
     const keys = requests.map(([key]) => key);
@@ -241,7 +241,7 @@ export default function App() {
   };
 
   const open = (type) => {
-    if (!isAdmin && ['bill', 'corporateTripLog', 'advance'].includes(type)) return;
+    if (!isAdmin && ['bill', 'corporateContract', 'corporateTripLog', 'advance'].includes(type)) return;
     setModal({ type });
   };
 
@@ -702,7 +702,7 @@ export default function App() {
             )}
 
             {/* 3. Corporate Vehicle Contracts & Monthly Excess KM */}
-            {tab === 'corporateContracts' && (
+            {isAdmin && tab === 'corporateContracts' && (
               <CorporateContractTable
                 canManageContracts={isAdmin}
                 contracts={corporateContracts}
@@ -1200,7 +1200,7 @@ export default function App() {
         />
       )}
 
-      {modal?.type === 'corporateContract' && (isAdmin || !modal.record) && (
+      {isAdmin && modal?.type === 'corporateContract' && (
         <CorporateContractModal
           isOpen
           onClose={() => setModal(null)}

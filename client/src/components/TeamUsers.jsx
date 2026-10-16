@@ -77,7 +77,7 @@ export default function TeamUsers() {
 
   return (
     <section className="bg-white rounded-md p-4 sm:p-7 border border-slate-200 shadow-sm space-y-5">
-      <div className="flex items-center gap-2.5"><Users size={24} weight="bold" /><div><h2 className="text-lg font-bold">Team users</h2><p className="text-sm text-slate-500">Staff can manage daily operations, quotations, fuel and tyres, and add corporate contracts. Contract editing, company billing, payroll, settings and security remain administrator-only.</p></div></div>
+      <div className="flex items-center gap-2.5"><Users size={24} weight="bold" /><div><h2 className="text-lg font-bold">Team users</h2><p className="text-sm text-slate-500">Staff can manage bookings, inquiries, duty slips, quotations, fuel, tyres, vehicles, drivers and customers. Corporate contracts, company billing, payroll, settings and security are administrator-only.</p></div></div>
       {error && <p role="alert" className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-sm text-rose-700">{error}</p>}
       <form className="border border-slate-200 rounded-md p-4 space-y-3" onSubmit={submit}>
         <div className="flex items-center gap-2"><UserPlus size={20} /><h3 className="font-bold">{editingId ? 'Edit staff account' : 'Add staff account'}</h3></div>

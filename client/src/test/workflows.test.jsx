@@ -29,19 +29,19 @@ import TeamUsers from '../components/TeamUsers';
 import { localDate, dateInput } from '../utils/formatters';
 import { api } from '../services/api';
 afterEach(() => vi.restoreAllMocks());
-it('shows corporate contract entry to staff but hides billing, payroll and settings', () => {
+it('hides corporate contracts, billing, payroll and settings from staff', () => {
   render(<Sidebar activeTab="quotations" setActiveTab={vi.fn()} user={{ role: 'Staff' }} />);
   expect(screen.getByRole('button', { name: /^Quotations/ })).toBeTruthy();
   expect(screen.getByRole('button', { name: /^Fuel Expenses/ })).toBeTruthy();
   expect(screen.getByRole('button', { name: /^Tyre Management/ })).toBeTruthy();
-  expect(screen.getByRole('button', { name: /^Corporate Contracts/ })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /^Corporate Contracts/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Corporate Invoices/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Corporate Quotations/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Customer Invoices/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Driver Salary/ })).toBeNull();
   expect(screen.queryByRole('button', { name: /^Business Settings/ })).toBeNull();
 });
-it('lets staff open new contract entry without showing contract administration actions', () => {
+it('hides contract administration actions from staff', () => {
   const onAddContract = vi.fn();
   render(<CorporateContractTable
     canManageContracts={false}
@@ -52,8 +52,8 @@ it('lets staff open new contract entry without showing contract administration a
     }]}
     onAddContract={onAddContract}
   />);
-  fireEvent.click(screen.getByRole('button', { name: 'New Company Contract' }));
-  expect(onAddContract).toHaveBeenCalledOnce();
+  expect(screen.queryByRole('button', { name: 'New Company Contract' })).toBeNull();
+  expect(onAddContract).not.toHaveBeenCalled();
   expect(screen.queryByRole('button', { name: /Daily KM Logsheet/ })).toBeNull();
   expect(screen.queryByTitle('Edit Contract')).toBeNull();
   expect(screen.queryByTitle('Delete Contract')).toBeNull();

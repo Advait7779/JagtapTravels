@@ -261,7 +261,7 @@ test('administrator can save a Daily KM log while staff remain restricted', asyn
     .send({}).expect(403, { error: 'Administrator access required for this section.' });
 });
 
-test('staff can add corporate contracts but cannot edit them or access billing and security', async (t) => {
+test('corporate contracts, billing and security are administrator-only', async (t) => {
   const { app, repo } = await environment(t);
   const admin = await setupAdmin(app);
   await admin.agent.put('/api/settings').set('X-CSRF-Token', admin.csrf).send({
@@ -284,7 +284,7 @@ test('staff can add corporate contracts but cannot edit them or access billing a
   }).expect(200);
   const csrf = login.body.csrfToken;
   const forbiddenGet = [
-    '/api/bills', '/api/corporate-invoices',
+    '/api/bills', '/api/corporate-contracts', '/api/corporate-invoices',
     '/api/corporate-trip-logs', '/api/driver-advances', '/api/payroll',
     '/api/security/audit-logs', '/api/users',
   ];
@@ -292,20 +292,25 @@ test('staff can add corporate contracts but cannot edit them or access billing a
   await staffAgent.put('/api/settings').set('X-CSRF-Token', csrf)
     .send({ companyName: 'Changed by staff' }).expect(403);
   await staffAgent.post('/api/bills').set('X-CSRF-Token', csrf).send({}).expect(403);
-  const contract = await staffAgent.post('/api/corporate-contracts').set('X-CSRF-Token', csrf).send({
-    companyName: 'Staff Entered Company', vehicleName: 'Innova Crysta',
+  const contractDetails = {
+    companyName: 'Admin Company', vehicleName: 'Innova Crysta',
     vehicleNumber: 'MH 12 AB 1234', startDate: '2026-10-12',
     monthlyBaseFare: 45000, includedMonthlyKm: 2500, extraRatePerKm: 14,
-  }).expect(201);
-  assert.equal(contract.body.companyName, 'Staff Entered Company');
-  assert.equal((await staffAgent.get('/api/corporate-contracts').expect(200)).body[0].id, contract.body.id);
+  };
+  const contract = await admin.agent.post('/api/corporate-contracts')
+    .set('X-CSRF-Token', admin.csrf).send(contractDetails).expect(201);
+  assert.equal(contract.body.companyName, 'Admin Company');
+  assert.equal((await admin.agent.get('/api/corporate-contracts').expect(200)).body[0].id, contract.body.id);
+  await staffAgent.get('/api/corporate-contracts').expect(403);
+  await staffAgent.post('/api/corporate-contracts').set('X-CSRF-Token', csrf)
+    .send(contractDetails).expect(403);
   await staffAgent.put('/api/corporate-contracts/' + contract.body.id)
     .set('X-CSRF-Token', csrf).send({ companyName: 'Unauthorized edit' }).expect(403);
   await staffAgent.patch('/api/corporate-contracts/' + contract.body.id + '/status')
     .set('X-CSRF-Token', csrf).send({ status: 'Terminated' }).expect(403);
   await staffAgent.delete('/api/corporate-contracts/' + contract.body.id)
     .set('X-CSRF-Token', csrf).expect(403);
-  assert.equal((await repo.read()).corporateContracts[0].companyName, 'Staff Entered Company');
+  assert.equal((await repo.read()).corporateContracts[0].companyName, 'Admin Company');
   await staffAgent.post('/api/users').set('X-CSRF-Token', csrf).send({}).expect(403);
   await staffAgent.get('/api/uploads/00000000-0000-0000-0000-000000000000.pdf').expect(403);
   const settings = await staffAgent.get('/api/settings').expect(200);

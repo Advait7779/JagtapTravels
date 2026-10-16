@@ -2,7 +2,7 @@ export const isAdministrator = (user) =>
   ['administrator', 'admin', 'owner'].includes(String(user?.role || '').toLowerCase());
 
 export const STAFF_TABS = new Set([
-  'bookings', 'corporateContracts', 'inquiries', 'meterReadings', 'quotations', 'fuel', 'tyres',
+  'bookings', 'inquiries', 'meterReadings', 'quotations', 'fuel', 'tyres',
   'vehicles', 'drivers', 'customers',
 ]);
 
