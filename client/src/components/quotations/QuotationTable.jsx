@@ -210,7 +210,7 @@ export default function QuotationTable({
                         <p className="font-mono font-bold text-slate-900 text-xs">
                           {formatINR(total)}
                         </p>
-                        <p className="text-[10px] text-slate-600 font-medium">Incl. 5% GST</p>
+                        <p className="text-[10px] text-slate-600 font-medium">+ GST &amp; Toll Extra</p>
                       </td>
 
                       {/* Status Dropdown */}

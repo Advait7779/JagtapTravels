@@ -43,7 +43,7 @@ const quotation = () => ({
   taxMode: 'gst',
   gstRate: 18,
   lineItems: [
-    { vehicleType: 'Innova Crysta', monthlyBaseFare: 45000, includedMonthlyKm: 2500, extraRatePerKm: 14, estimatedExtraKm: 100 },
+    { vehicleType: 'Innova Crysta', packageDays: 26, monthlyBaseFare: 45000, includedMonthlyKm: 2500, extraRatePerKm: 14, estimatedExtraKm: 100 },
     { vehicleType: 'Sedan', monthlyBaseFare: 30000, includedMonthlyKm: 2000, extraRatePerKm: 12, estimatedExtraKm: 0 },
   ],
   estimatedOtherCharges: 500,
@@ -78,6 +78,7 @@ test('corporate quotations are admin-only, server-priced, versioned and convert 
   assert.equal(quote.estimatedSubtotal, 76900);
   assert.equal(quote.estimatedTax, 13842);
   assert.equal(quote.estimatedTotal, 90742);
+  assert.equal(quote.lineItems[0].packageDays, 26);
   assert.equal((await agent.get('/api/corporate-quotations').expect(200)).body.length, 1);
   await agent.post(`/api/corporate-quotations/${quote.id}/convert`)
     .set('X-CSRF-Token', csrf).send({ assignments: [] }).expect(400);
@@ -88,6 +89,8 @@ test('corporate quotations are admin-only, server-priced, versioned and convert 
     .send({ ...quotation(), revision: 1, lineItems: quotation().lineItems.map((line, index) => ({ ...line, id: quote.lineItems[index].id })) })
     .expect(200);
   assert.equal(revised.body.revision, 2);
+  assert.equal(revised.body.lineItems[0].packageDays, 26);
+  assert.equal(revised.body.revisions[0].lineItems[0].packageDays, 26);
   assert.equal(revised.body.revisions.length, 1);
   assert.equal(revised.body.revisions[0].status, 'Sent');
   assert.equal(revised.body.status, 'Draft');
@@ -114,6 +117,11 @@ test('corporate quotations are admin-only, server-priced, versioned and convert 
   assert.equal(converted.body.contracts[0].extraRatePerKm, 14);
   assert.equal(converted.body.contracts[0].corporateQuotationId, quote.id);
   assert.equal(converted.body.contracts[0].quotationGstRate, 18);
+  assert.equal(converted.body.contracts[0].packageDays, 26);
+  const { packageDays, ...contractWithoutDays } = converted.body.contracts[0];
+  const editedContract = await agent.put(`/api/corporate-contracts/${contractWithoutDays.id}`)
+    .set('X-CSRF-Token', csrf).send({ ...contractWithoutDays, notes: 'Updated terms' }).expect(200);
+  assert.equal(editedContract.body.packageDays, 26);
   assert.equal((await repo.read()).customers.length, 1);
   assert.equal((await repo.read()).bills.length, 0);
   assert.equal((await repo.read()).corporateInvoices.length, 0);
@@ -168,6 +176,12 @@ test('non-GST quotes calculate zero tax, reject malformed prices and protect dra
     .send({ ...quotation(), taxMode: 'gst', gstRate: 7 }).expect(400);
   await agent.post('/api/corporate-quotations').set('X-CSRF-Token', csrf)
     .send({ ...quotation(), lineItems: [{ ...quotation().lineItems[0], monthlyBaseFare: -10 }] })
+    .expect(400);
+  await agent.post('/api/corporate-quotations').set('X-CSRF-Token', csrf)
+    .send({ ...quotation(), lineItems: [{ ...quotation().lineItems[0], packageDays: 0 }] })
+    .expect(400);
+  await agent.post('/api/corporate-quotations').set('X-CSRF-Token', csrf)
+    .send({ ...quotation(), lineItems: [{ ...quotation().lineItems[0], packageDays: 2.5 }] })
     .expect(400);
   await agent.post('/api/corporate-quotations').set('X-CSRF-Token', csrf)
     .send({ ...quotation(), validityDate: dateAfter(-1) }).expect(400);

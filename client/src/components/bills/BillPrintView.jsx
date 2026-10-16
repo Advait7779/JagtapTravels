@@ -29,12 +29,21 @@ export default function BillPrintView({ bill, onClose, settings = {} }) {
     return '';
   };
 
+  const cleanCompanyName = (name) => {
+    if (!name) return 'Jagtap Travels';
+    if (/jagtap\s+tours(\s+and|\s+&)?\s+travels/i.test(name.trim())) {
+      return 'Jagtap Travels';
+    }
+    return name.trim();
+  };
+
   const billCompany = bill.company || {};
+  const rawCompanyName = pickFirst(billCompany.companyName, settings.companyName, defaultCompany.companyName);
   const company = {
     ...defaultCompany,
     ...settings,
     ...billCompany,
-    companyName: pickFirst(billCompany.companyName, settings.companyName, defaultCompany.companyName),
+    companyName: cleanCompanyName(rawCompanyName),
     address: pickFirst(billCompany.address, settings.address, defaultCompany.address),
     phone: pickFirst(billCompany.phone, settings.phone, defaultCompany.phone),
     phone2: pickFirst(billCompany.phone2, settings.phone2, defaultCompany.phone2),

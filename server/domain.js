@@ -498,7 +498,6 @@ function validate(collection, input, data, existing) {
   }
   if (collection === 'quotations') {
     const baseAmount = number(input.baseAmount, 'Package cost'),
-      taxAmount = round(baseAmount * 0.05),
       durationDays = number(input.durationDays, 'Duration', 1, 365);
     if (!Number.isInteger(durationDays) || durationDays < 1)
       fail('Duration must be a whole number of days.');
@@ -506,6 +505,10 @@ function validate(collection, input, data, existing) {
       validityDate = date(input.validityDate, 'Validity date');
     if (travelDate && validityDate && validityDate > travelDate)
       fail('Quote validity cannot be later than travel date.');
+    const company = { ...data.settings };
+    if (company.companyName && /jagtap\s+tours(\s+and|\s+&)?\s+travels/i.test(company.companyName)) {
+      company.companyName = 'Jagtap Travels';
+    }
     return {
       ...fields(input, {
         customerName: true,
@@ -520,15 +523,15 @@ function validate(collection, input, data, existing) {
         exclusions: false,
         notes: false,
       }),
-      company: { ...data.settings },
+      company,
       customerId: ref(data, 'customers', input.customerId),
       durationDays,
       travelDate,
       validityDate,
       estimatedKm: number(input.estimatedKm, 'Estimated KM'),
       baseAmount,
-      taxAmount,
-      totalAmount: round(baseAmount + taxAmount),
+      taxAmount: 0,
+      totalAmount: baseAmount,
       status: choice(
         input.status,
         ['Draft', 'Sent', 'Accepted', 'Rejected'],
@@ -673,6 +676,14 @@ function validate(collection, input, data, existing) {
     const startDate = date(input.startDate, 'Start date', true);
     const endDate = date(input.endDate, 'End date');
     if (endDate && endDate < startDate) fail('Contract end date cannot precede start date.');
+    const packageDaysInput = input.packageDays === undefined
+      ? existing?.packageDays
+      : input.packageDays;
+    const packageDays = packageDaysInput != null && packageDaysInput !== ''
+      ? number(packageDaysInput, 'Days in package', 0, 31)
+      : null;
+    if (packageDays !== null && (!Number.isInteger(packageDays) || packageDays < 1))
+      fail('Days in package must be a whole number from 1 to 31.');
     return {
       ...fields(input, corporateContractSpec),
       companyId: ref(data, 'customers', input.companyId),
@@ -687,6 +698,7 @@ function validate(collection, input, data, existing) {
       monthlyBaseFare: number(input.monthlyBaseFare, 'Monthly base fare', 0),
       includedMonthlyKm: number(input.includedMonthlyKm, 'Included monthly KM', 0),
       extraRatePerKm: number(input.extraRatePerKm, 'Extra rate per KM', 0),
+      packageDays,
       status: choice(
         input.status,
         ['Active', 'Paused', 'Terminated'],
@@ -724,9 +736,18 @@ function validate(collection, input, data, existing) {
     const assignedVehicle = input.vehicleId ? find(data, 'vehicles', input.vehicleId) : null;
     const quantity = number(input.quantity, 'Tyre quantity', 1, 10);
     const costPerTyre = number(input.costPerTyre, 'Cost per tyre', 0);
+    const totalCost = round(quantity * costPerTyre);
+    const paidInput = Object.hasOwn(input, 'amountPaid') ? input.amountPaid : existing?.amountPaid;
+    const amountPaid = paidInput == null || paidInput === ''
+      ? null
+      : number(paidInput, 'Amount paid');
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10)
       fail('Tyre quantity must be a whole number from 1 to 10.');
     if (costPerTyre <= 0) fail('Cost per tyre must be greater than zero.');
+    if (existing?.amountPaid != null && amountPaid === null)
+      fail('Amount paid cannot be cleared once set.');
+    if (amountPaid !== null && amountPaid > totalCost)
+      fail('Amount paid cannot exceed the total tyre cost.');
     const replacementDate = date(input.date || today(), 'Replacement date', true);
     if (replacementDate > today()) fail('Replacement date cannot be in the future.');
     const odometerAtChange = number(input.odometerAtChange, 'Odometer at change');
@@ -754,7 +775,8 @@ function validate(collection, input, data, existing) {
       ),
       quantity,
       costPerTyre,
-      totalCost: round(quantity * costPerTyre),
+      totalCost,
+      amountPaid,
       oldTyreKmRun: number(input.oldTyreKmRun, 'Old tyre lifespan KM', 0),
     };
   }

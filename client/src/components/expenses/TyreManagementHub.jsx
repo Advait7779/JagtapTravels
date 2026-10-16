@@ -10,9 +10,12 @@ import {
   PencilSimple,
   Receipt,
 } from '@phosphor-icons/react';
-import { formatINR, formatDate } from '../../utils/formatters';
+import { formatINR, formatDate, roundMoney } from '../../utils/formatters';
 import ThemedSelect from '../ThemedSelect';
 import { usePagination, PageSizeSelector, TablePaginationFooter } from '../common/Pagination';
+
+const hasAmountPaid = (log) =>
+  log.amountPaid !== null && log.amountPaid !== undefined && log.amountPaid !== '';
 
 export default function TyreManagementHub({
   tyreLogs = [],
@@ -74,7 +77,7 @@ export default function TyreManagementHub({
               Fleet Tyre Expense Tracker
             </h2>
             <p className="text-xs text-slate-500">
-              Log tyre purchases, replacement bills, and costs across your fleet.
+              Log tyre purchases, replacement costs, and payments across your fleet.
             </p>
           </div>
         </div>
@@ -90,10 +93,10 @@ export default function TyreManagementHub({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        {/* Total Spend */}
+        {/* Total Cost */}
         <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Tyre Spend</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Total Tyre Cost</span>
             <CurrencyInr size={18} className="text-navy-900" />
           </div>
           <div className="text-2xl font-black text-slate-900">{formatINR(totalTyreSpendAll)}</div>
@@ -166,7 +169,7 @@ export default function TyreManagementHub({
                 <th className="py-3 px-4">Vehicle</th>
                 <th className="py-3 px-4">Tyre Brand & Position</th>
                 <th className="py-3 px-4">Quantity & Rate</th>
-                <th className="py-3 px-4">Total Cost (₹)</th>
+                <th className="py-3 px-4">Cost & Payment (₹)</th>
                 <th className="py-3 px-4">Odometer (KM)</th>
                 <th className="py-3 px-4">Vendor & Notes</th>
                 <th className="py-3 px-4 text-right">Actions</th>
@@ -225,6 +228,14 @@ export default function TyreManagementHub({
                     <td className="py-3 px-4">
                       <div className="font-black text-navy-950">
                         {formatINR(log.totalCost)}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-1">
+                        Paid: {hasAmountPaid(log) ? formatINR(log.amountPaid) : 'Not set'}
+                      </div>
+                      <div className="text-[10px] font-bold text-amber-700">
+                        Remaining: {hasAmountPaid(log)
+                          ? formatINR(Math.max(0, roundMoney(Number(log.totalCost) - Number(log.amountPaid))))
+                          : 'Not set'}
                       </div>
                     </td>
 

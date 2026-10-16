@@ -12,7 +12,7 @@ import {
 } from '@phosphor-icons/react';
 import ThemedSelect from '../ThemedSelect';
 import ThemedDatePicker from '../ThemedDatePicker';
-import { localDate } from '../../utils/formatters';
+import { formatINR, localDate, roundMoney } from '../../utils/formatters';
 
 const TYRE_BRANDS = [
   'MRF',
@@ -55,6 +55,7 @@ export default function TyreModal({
     quantity: 4,
     costPerTyre: 3800,
     totalCost: 15200,
+    amountPaid: 0,
     odometerAtChange: '',
     oldTyreKmRun: '',
     vendorName: '',
@@ -76,6 +77,7 @@ export default function TyreModal({
         quantity: tyreLogToEdit.quantity ?? 4,
         costPerTyre: tyreLogToEdit.costPerTyre ?? '',
         totalCost: tyreLogToEdit.totalCost ?? '',
+        amountPaid: tyreLogToEdit.amountPaid ?? '',
         odometerAtChange: tyreLogToEdit.odometerAtChange ?? '',
         oldTyreKmRun: tyreLogToEdit.oldTyreKmRun ?? '',
         vendorName: tyreLogToEdit.vendorName || '',
@@ -93,6 +95,7 @@ export default function TyreModal({
         quantity: 4,
         costPerTyre: 3800,
         totalCost: 15200,
+        amountPaid: 0,
         odometerAtChange: defaultVehicle?.currentOdometer || '',
         oldTyreKmRun: defaultVehicle?.currentOdometer ? Math.min(defaultVehicle.currentOdometer, 45000) : '',
         vendorName: '',
@@ -103,6 +106,12 @@ export default function TyreModal({
   }, [tyreLogToEdit, isOpen, vehicles]);
 
   if (!isOpen) return null;
+
+  const totalCost = Number(formData.totalCost) || 0;
+  const amountPaidIsSet = formData.amountPaid !== '' && formData.amountPaid != null;
+  const remainingAmount = amountPaidIsSet
+    ? roundMoney(totalCost - Number(formData.amountPaid))
+    : null;
 
   const handleVehicleSelect = (e) => {
     const id = e.target.value;
@@ -170,6 +179,18 @@ export default function TyreModal({
       setError('Please enter a valid cost per tyre.');
       return;
     }
+    if (amountPaidIsSet && (
+      !Number.isFinite(Number(formData.amountPaid)) ||
+      Number(formData.amountPaid) < 0 ||
+      Number(formData.amountPaid) > totalCost
+    )) {
+      setError('Amount paid must be between zero and the total tyre cost.');
+      return;
+    }
+    if (!amountPaidIsSet && (!tyreLogToEdit || tyreLogToEdit.amountPaid != null)) {
+      setError('Please enter the total amount paid so far, or zero if unpaid.');
+      return;
+    }
     if (!formData.odometerAtChange || Number(formData.odometerAtChange) <= 0) {
       setError('Please enter the current odometer reading.');
       return;
@@ -183,9 +204,10 @@ export default function TyreModal({
         quantity: Number(formData.quantity),
         costPerTyre: Number(formData.costPerTyre) || 0,
         totalCost: Number(formData.totalCost) || 0,
+        amountPaid: amountPaidIsSet ? Number(formData.amountPaid) : null,
         odometerAtChange: Number(formData.odometerAtChange) || 0,
         oldTyreKmRun: Number(formData.oldTyreKmRun) || 0,
-      });
+      }, tyreLogToEdit?.id);
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to save tyre replacement record.');
@@ -368,6 +390,34 @@ export default function TyreModal({
                   className="w-full px-3 py-2 bg-amber-50 border border-amber-300 rounded-lg text-xs font-black text-navy-950"
                   required
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
+              <div>
+                <label htmlFor="tyre-amount-paid" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Paid (₹)
+                </label>
+                <input
+                  id="tyre-amount-paid"
+                  type="number"
+                  min="0"
+                  max={totalCost}
+                  step="0.01"
+                  placeholder="Enter amount paid"
+                  value={formData.amountPaid}
+                  onChange={(e) => setFormData((p) => ({ ...p, amountPaid: e.target.value }))}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-navy-900"
+                  required={!tyreLogToEdit || tyreLogToEdit.amountPaid != null}
+                />
+                <p className="text-[10px] text-slate-500 mt-1">Enter the total paid till now.</p>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Remaining (₹)
+                </span>
+                <div className="px-3 py-2 bg-amber-50 border border-amber-300 rounded-lg text-xs font-black text-navy-950">
+                  {remainingAmount === null ? 'Not set' : formatINR(Math.max(0, remainingAmount))}
+                </div>
               </div>
             </div>
           </div>

@@ -95,6 +95,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await corporateEditor.getByLabel('Company name *').fill('Browser Customer');
   await corporateEditor.getByLabel('Phone *').fill('9876543210');
   await corporateEditor.getByLabel('Vehicle type *').fill('Innova Crysta');
+  await corporateEditor.getByLabel('Days / month').fill('26');
   await corporateEditor.getByLabel('Monthly fixed fare ₹ *').fill('45000');
   await corporateEditor.getByLabel('Included KM/month').fill('2500');
   await corporateEditor.getByLabel('Excess rate ₹/KM').fill('14');
@@ -111,6 +112,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await quoteRow.getByRole('button', { name: 'View / PDF' }).click();
   const corporatePreview = page.getByRole('dialog', { name: 'Corporate quotation preview' });
   await expect(corporatePreview.getByText('₹45,000.00').last()).toBeVisible();
+  await expect(corporatePreview.getByText('26 Days')).toBeVisible();
   await page.emulateMedia({ media: 'print' });
   await expect(page.locator('.corporate-quotation-printable')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('corporate-quotation-print.png'), fullPage: true });
@@ -203,6 +205,19 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(page.getByText('Status: Paid', { exact: true })).toBeVisible();
   await expect(page.getByText('Payment history', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Close invoice' }).click();
+  await page.getByRole('button', { name: /^Tyre Management/ }).click();
+  await page.getByRole('button', { name: 'Record Tyre Replacement' }).click();
+  await page.getByLabel('Paid (₹)').fill('5000');
+  await expect(page.getByText('₹10,200.00')).toBeVisible();
+  await page.getByRole('button', { name: 'Save Tyre Record' }).click();
+  const tyreRow = page.getByRole('row').filter({ hasText: 'MH 12 QA 9001' });
+  await expect(tyreRow).toContainText('Paid: ₹5,000.00');
+  await expect(tyreRow).toContainText('Remaining: ₹10,200.00');
+  await tyreRow.getByTitle('Edit Tyre Log').click();
+  await page.getByLabel('Paid (₹)').fill('10000');
+  await page.getByRole('button', { name: 'Update Tyre Log' }).click();
+  await expect(tyreRow).toContainText('Remaining: ₹5,200.00');
+  await expect(page.getByText('1 Entries')).toBeVisible();
   await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
   await page.screenshot({
     path: testInfo.outputPath('desktop.png'),
@@ -240,7 +255,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(page.getByRole('button', { name: /^Quotations/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Fuel Expenses/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Tyre Management/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Corporate Contracts/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Corporate Contracts/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Corporate Quotations/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Customer Invoices/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Business Settings/ })).toHaveCount(0);

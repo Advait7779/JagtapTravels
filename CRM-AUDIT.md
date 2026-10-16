@@ -1,4 +1,4 @@
-# Jagtap Tours And Travels CRM audit
+# Jagtap Travels CRM audit
 
 > Historical report from before the fixes. See [FIXES-VERIFIED.md](FIXES-VERIFIED.md) for the completed changes, passing checks and remaining hosting verification.
 

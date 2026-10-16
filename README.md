@@ -1,4 +1,4 @@
-# Jagtap Tours And Travels CRM
+# Jagtap Travels CRM
 
 React frontend and Express API with explicit local JSON or PostgreSQL storage. Node.js 22.13+ is required; Node.js 24 LTS is recommended.
 

@@ -73,7 +73,22 @@ function normalize(raw) {
       ...session,
       lastSeenAt: session.lastSeenAt || session.createdAt || new Date().toISOString(),
     }));
+  if (data.settings && /jagtap\s+tours(\s+and|\s+&)?\s+travels/i.test(data.settings.companyName || '')) {
+    data.settings.companyName = 'Jagtap Travels';
+  }
+  for (const q of data.quotations) {
+    if (q.company && /jagtap\s+tours(\s+and|\s+&)?\s+travels/i.test(q.company.companyName || '')) {
+      q.company.companyName = 'Jagtap Travels';
+    }
+    if (q.taxAmount && q.baseAmount) {
+      q.taxAmount = 0;
+      q.totalAmount = q.baseAmount;
+    }
+  }
   for (const b of data.bills) {
+    if (b.company && /jagtap\s+tours(\s+and|\s+&)?\s+travels/i.test(b.company.companyName || '')) {
+      b.company.companyName = 'Jagtap Travels';
+    }
     b.invoiceDate ||= (b.createdAt || b.startDate || '').slice(0, 10);
     b.billingType ||= Number(b.totalKm) > 0 ? 'distance' : 'package';
     b.payments ||= [];

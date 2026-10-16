@@ -5,8 +5,16 @@ import { formatDate, formatINR } from '../../utils/formatters';
 export default function CorporateQuotationPrintView({ quotation, onClose, settings = {} }) {
   const [revisionIndex, setRevisionIndex] = useState(-1);
   const [downloading, setDownloading] = useState(false);
+  const cleanCompanyName = (name) => {
+    if (!name) return 'Jagtap Travels';
+    if (/jagtap\s+tours(\s+and|\s+&)?\s+travels/i.test(name.trim())) {
+      return 'Jagtap Travels';
+    }
+    return name.trim();
+  };
   const quote = revisionIndex < 0 ? quotation : quotation.revisions[revisionIndex];
-  const company = { ...settings, ...(quote.company || {}) };
+  const rawCompanyName = (quote?.company && quote.company.companyName) || settings.companyName || 'Jagtap Travels';
+  const company = { ...settings, ...(quote?.company || {}), companyName: cleanCompanyName(rawCompanyName) };
 
   const savePdf = async () => {
     const element = document.querySelector('.corporate-quotation-printable');
@@ -70,8 +78,26 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
 
           <div className="mt-5 overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
-              <thead><tr className="bg-navy-950 text-white"><th className="p-2">Vehicle offer</th><th className="p-2 text-right">Fixed / month</th><th className="p-2 text-right">Included KM</th><th className="p-2 text-right">Excess ₹/KM</th></tr></thead>
-              <tbody>{quote.lineItems.map((line) => <tr key={line.id} className="border-b border-slate-300"><td className="p-2 font-bold">{line.vehicleType}</td><td className="p-2 text-right">{formatINR(line.monthlyBaseFare)}</td><td className="p-2 text-right">{line.includedMonthlyKm}</td><td className="p-2 text-right">{formatINR(line.extraRatePerKm)}</td></tr>)}</tbody>
+              <thead>
+                <tr className="bg-navy-950 text-white">
+                  <th className="p-2">Vehicle offer</th>
+                  <th className="p-2 text-center">Days / month</th>
+                  <th className="p-2 text-right">Fixed / month</th>
+                  <th className="p-2 text-right">Included KM</th>
+                  <th className="p-2 text-right">Excess ₹/KM</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quote.lineItems.map((line) => (
+                  <tr key={line.id} className="border-b border-slate-300">
+                    <td className="p-2 font-bold">{line.vehicleType}</td>
+                    <td className="p-2 text-center">{line.packageDays ? `${line.packageDays} Days` : '—'}</td>
+                    <td className="p-2 text-right">{formatINR(line.monthlyBaseFare)}</td>
+                    <td className="p-2 text-right">{line.includedMonthlyKm}</td>
+                    <td className="p-2 text-right">{formatINR(line.extraRatePerKm)}</td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
           <p className="mt-2 text-[11px] text-slate-600">KM above the included monthly amount is charged at the quoted excess rate.</p>

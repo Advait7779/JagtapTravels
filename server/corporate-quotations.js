@@ -55,10 +55,16 @@ function validateCorporateQuotation(input, data, existing = null) {
     const includedMonthlyKm = number(item.includedMonthlyKm, 'Included monthly KM', 0, 10000000);
     const extraRatePerKm = number(item.extraRatePerKm, 'Excess KM rate', 0, 1000000);
     const estimatedExtraKm = number(item.estimatedExtraKm, 'Estimated excess KM', 0, 10000000);
+    const packageDays = item.packageDays != null && item.packageDays !== ''
+      ? number(item.packageDays, 'Days in package', 0, 31)
+      : null;
     if (monthlyBaseFare <= 0) throw new HttpError(400, 'Each vehicle offer needs a monthly fare.');
+    if (packageDays !== null && (!Number.isInteger(packageDays) || packageDays < 1))
+      throw new HttpError(400, 'Days in package must be a whole number from 1 to 31.');
     return {
       id: lineId,
       vehicleType: text(item.vehicleType, 'Vehicle type', true, 200),
+      packageDays,
       monthlyBaseFare,
       includedMonthlyKm,
       extraRatePerKm,
@@ -241,8 +247,9 @@ function createCorporateQuotationService(repo) {
               monthlyBaseFare: line.monthlyBaseFare,
               includedMonthlyKm: line.includedMonthlyKm,
               extraRatePerKm: line.extraRatePerKm,
+              packageDays: line.packageDays,
               status: 'Active',
-              notes: `From corporate quotation ${quote.quotationNumber} rev ${quote.revision}.`,
+              notes: `From corporate quotation ${quote.quotationNumber} rev ${quote.revision}.${line.packageDays ? ` (${line.packageDays} days/month)` : ''}`,
             }, data),
             id: crypto.randomUUID(),
             contractNumber: nextNumber(data, 'corporateContracts', 'contractNumber', 'CORP'),

@@ -2,16 +2,27 @@ import React, { useState } from 'react';
 import { Printer, FilePdf, WhatsappLogo, X } from '@phosphor-icons/react';
 import { formatINR, formatDate } from '../../utils/formatters';
 
+const cleanCompanyName = (name) => {
+  if (!name) return 'Jagtap Travels';
+  if (/jagtap\s+tours(\s+and|\s+&)?\s+travels/i.test(name.trim())) {
+    return 'Jagtap Travels';
+  }
+  return name.trim();
+};
+
 export function quoteMessage(quote, company = {}) {
+  const companyName = cleanCompanyName(company.companyName);
   return [
-    'Greetings from ' + (company.companyName || 'Jagtap Travels') + '!',
+    'Greetings from ' + companyName + '!',
     'Dear ' + quote.customerName + ',',
     'Tour: ' + quote.tourTitle,
     'Vehicle: ' + quote.vehicleType,
     'Duration: ' + quote.durationDays + ' days',
     'Route: ' + quote.pickupLocation + ' to ' + quote.dropLocation,
     quote.travelDate ? 'Travel date: ' + formatDate(quote.travelDate) : '',
-    'Total: ' + formatINR(quote.totalAmount) + ' (including GST)',
+    'Total Estimate: ' + formatINR(quote.baseAmount || quote.totalAmount),
+    '• TOLL & PARKING CHARGES EXTRA',
+    '• GST CHARGES EXTRA 18% {CGST - 9% , SGST - 9%}',
     quote.inclusions ? 'Inclusions: ' + quote.inclusions : '',
     quote.exclusions ? 'Exclusions: ' + quote.exclusions : '',
     quote.validityDate ? 'Valid until: ' + formatDate(quote.validityDate) : '',
@@ -56,11 +67,12 @@ export default function QuotationPrintView({ quote, onClose, settings = {} }) {
   };
 
   const qComp = quote.company || {};
+  const rawCompanyName = pickFirst(qComp.companyName, settings.companyName, defaultCompany.companyName);
   const company = {
     ...defaultCompany,
     ...settings,
     ...qComp,
-    companyName: pickFirst(qComp.companyName, settings.companyName, defaultCompany.companyName),
+    companyName: cleanCompanyName(rawCompanyName),
     address: pickFirst(qComp.address, settings.address, defaultCompany.address),
     phone: pickFirst(qComp.phone, settings.phone, defaultCompany.phone),
     phone2: pickFirst(qComp.phone2, settings.phone2, defaultCompany.phone2),
@@ -286,20 +298,20 @@ export default function QuotationPrintView({ quote, onClose, settings = {} }) {
                 <span className="text-slate-700">Base Fare:</span>
                 <span className="font-bold text-black">{formatINR(quote.baseAmount)}</span>
               </div>
-              <div className="flex justify-between px-3 py-2 border-b border-black">
-                <span className="text-slate-700">GST (5%):</span>
-                <span className="font-bold text-black">{formatINR(quote.taxAmount)}</span>
-              </div>
               <div className="flex justify-between px-3 py-2 bg-black text-white text-sm font-black">
                 <span>TOTAL ESTIMATE:</span>
-                <span>{formatINR(quote.totalAmount)}</span>
+                <span>{formatINR(quote.baseAmount || quote.totalAmount)}</span>
               </div>
             </div>
           </div>
 
-          {/* Terms & Signature */}
-          <div className="mt-8 pt-4 border-t border-black text-xs text-slate-600 space-y-2">
-            <p>
+          {/* Terms & Extra Charges Note */}
+          <div className="mt-6 pt-4 border-t border-black text-xs space-y-2">
+            <div className="font-bold text-black text-xs space-y-1">
+              <p>• TOLL &amp; PARKING CHARGES EXTRA</p>
+              <p>• GST CHARGES EXTRA 18% &#123;CGST - 9% , SGST - 9%&#125;</p>
+            </div>
+            <p className="text-slate-600">
               <strong>Note:</strong> Subject to vehicle availability and the inclusions and
               exclusions stated above. Please contact us to confirm your booking and schedule.
             </p>
