@@ -285,11 +285,11 @@ export default function Dashboard({
         />
         <StatCard
           title="Fleet Vehicles"
-          value={`${vehicles.length} Cabs`}
+          value={`${vehicles.length} Vehicle${vehicles.length === 1 ? '' : 's'}`}
           subtext={
             vehiclesDue.length > 0
               ? `${vehiclesDue.length} service due • ${vehicles.length - vehiclesDue.length} active`
-              : `${vehicles.length} cabs ready for duty`
+              : `${vehicles.length} vehicle${vehicles.length === 1 ? '' : 's'} ready for duty`
           }
           icon={Car}
           color="emerald"
