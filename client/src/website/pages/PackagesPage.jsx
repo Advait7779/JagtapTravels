@@ -264,8 +264,8 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
         </div>
 
         {/* Custom Itinerary Planning Banner */}
-        <div className="mt-14 p-7 rounded-xl bg-navy-950 text-white border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
-          <div className="space-y-1.5 text-center md:text-left">
+        <div className="mt-14 p-5 sm:p-7 rounded-xl bg-navy-950 text-white border border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-sm">
+          <div className="space-y-1.5 text-center lg:text-left flex-1 min-w-0">
             <h4 className="text-xl sm:text-2xl font-black text-white">
               Need a Custom Tour Route or Multi-City Itinerary?
             </h4>
@@ -273,29 +273,29 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
               Contact our 24/7 Pune booking desk at +91 90115 07220 or request a customized itinerary tailored to your group size and vehicle preference.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-nowrap items-center justify-center gap-2 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={() => onNavigate('contact')}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-md bg-red-800 hover:bg-red-900 text-white text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-105 cursor-pointer"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-md bg-red-800 hover:bg-red-900 text-white text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-105 cursor-pointer whitespace-nowrap shrink-0"
             >
               <span>Plan Custom Tour</span>
-              <ArrowRight size={15} weight="bold" />
+              <ArrowRight size={14} weight="bold" />
             </button>
             <a
               href="https://wa.me/919011507220?text=Hello%20Jagtap%20Travels,%20I%20want%20to%20plan%20a%20custom%20tour%20package."
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-105 cursor-pointer"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-105 cursor-pointer whitespace-nowrap shrink-0"
             >
-              <WhatsappLogo size={16} weight="fill" />
+              <WhatsappLogo size={15} weight="fill" />
               <span>WhatsApp Us</span>
             </a>
             <a
               href="tel:+919011507220"
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold border border-white/20 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold border border-white/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Phone size={15} weight="bold" />
+              <Phone size={14} weight="bold" />
               <span>Call 24/7 Desk</span>
             </a>
           </div>
