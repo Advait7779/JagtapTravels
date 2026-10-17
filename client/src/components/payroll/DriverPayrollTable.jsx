@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  CurrencyInr,
   Plus,
   MagnifyingGlass,
   User,
@@ -76,11 +75,6 @@ export default function DriverPayrollTable({
       setUploadingDriverId(null);
     }
   };
-
-  // Totals
-  const totalBasePayroll = payrollData.reduce((acc, p) => acc + (Number(p.baseSalary) || 0), 0);
-  const totalAdvancesPaid = payrollData.reduce((acc, p) => acc + (Number(p.totalAdvances) || 0), 0);
-  const totalRemainingPayable = payrollData.reduce((acc, p) => acc + (Number(p.remainingSalary) || 0), 0);
 
   // Filter list
   const filtered = payrollData.filter((p) => {
@@ -167,43 +161,6 @@ export default function DriverPayrollTable({
               <span className="hidden sm:inline">Record Advance</span>
             </span>
           </button>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        {/* Total Base Payroll */}
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Base Payroll</span>
-            <CurrencyInr size={18} className="text-navy-900" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{formatINR(totalBasePayroll)}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Base salary budget for {payrollData.length} drivers</p>
-        </div>
-
-        {/* Advances Disbursed */}
-        <div className="bg-amber-50/70 p-4 rounded-md border border-amber-200 shadow-xs">
-          <div className="flex items-center justify-between text-amber-800 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Advances Given</span>
-            <Coins size={18} weight="bold" className="text-amber-600" />
-          </div>
-          <div className="text-2xl font-black text-amber-950">{formatINR(totalAdvancesPaid)}</div>
-          <p className="text-[11px] text-amber-800 font-semibold mt-0.5">
-            Deducted from monthly earnings
-          </p>
-        </div>
-
-        {/* Remaining Net Payable */}
-        <div className="bg-emerald-50/70 p-4 rounded-md border border-emerald-200 shadow-xs">
-          <div className="flex items-center justify-between text-emerald-800 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Net Balance Payable</span>
-            <CurrencyInr size={18} weight="bold" className="text-emerald-600" />
-          </div>
-          <div className="text-2xl font-black text-emerald-950">{formatINR(totalRemainingPayable)}</div>
-          <p className="text-[11px] text-emerald-800 font-semibold mt-0.5">
-            Remaining amount after subtracting advances
-          </p>
         </div>
       </div>
 

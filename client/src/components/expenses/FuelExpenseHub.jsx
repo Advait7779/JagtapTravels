@@ -6,11 +6,8 @@ import {
   Car,
   User,
   Trash,
-  CurrencyInr,
   Calendar,
   PencilSimple,
-  Drop,
-  Fire,
 } from '@phosphor-icons/react';
 import { formatINR, formatDate, localDate } from '../../utils/formatters';
 import ThemedMonthPicker from '../ThemedMonthPicker';
@@ -30,21 +27,6 @@ export default function FuelExpenseHub({
 
   // Filter by month
   const monthLogs = fuelLogs.filter((log) => log.date && log.date.startsWith(selectedMonth));
-
-  // KPI Calculations
-  const totalCost = monthLogs.reduce((acc, l) => acc + (Number(l.totalCost) || 0), 0);
-
-  const dieselLogs = monthLogs.filter((l) => l.fuelType === 'Diesel');
-  const dieselCost = dieselLogs.reduce((acc, l) => acc + (Number(l.totalCost) || 0), 0);
-  const dieselQty = dieselLogs.reduce((acc, l) => acc + (Number(l.quantity) || 0), 0);
-
-  const petrolLogs = monthLogs.filter((l) => l.fuelType === 'Petrol');
-  const petrolCost = petrolLogs.reduce((acc, l) => acc + (Number(l.totalCost) || 0), 0);
-  const petrolQty = petrolLogs.reduce((acc, l) => acc + (Number(l.quantity) || 0), 0);
-
-  const cngLogs = monthLogs.filter((l) => l.fuelType === 'CNG');
-  const cngCost = cngLogs.reduce((acc, l) => acc + (Number(l.totalCost) || 0), 0);
-  const cngQty = cngLogs.reduce((acc, l) => acc + (Number(l.quantity) || 0), 0);
 
   // Table filter
   const filteredLogs = monthLogs.filter((l) => {
@@ -129,55 +111,6 @@ export default function FuelExpenseHub({
               <span className="hidden sm:inline">Log Fuel Entry</span>
             </span>
           </button>
-        </div>
-      </div>
-
-      {/* KPI Cards: Total, Diesel, Petrol, CNG */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Spend */}
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Fuel Spend</span>
-            <CurrencyInr size={18} className="text-navy-900" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{formatINR(totalCost)}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">{monthLogs.length} fuel entries in {selectedMonth}</p>
-        </div>
-
-        {/* Diesel */}
-        <div className="bg-amber-50/70 p-4 rounded-md border border-amber-200 shadow-xs">
-          <div className="flex items-center justify-between text-amber-800 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Diesel Spend</span>
-            <Drop size={18} weight="bold" className="text-amber-600" />
-          </div>
-          <div className="text-2xl font-black text-amber-950">{formatINR(dieselCost)}</div>
-          <p className="text-[11px] text-amber-800 font-semibold mt-0.5">
-            {dieselQty.toLocaleString()} Litres ({dieselLogs.length} fills)
-          </p>
-        </div>
-
-        {/* CNG */}
-        <div className="bg-emerald-50/70 p-4 rounded-md border border-emerald-200 shadow-xs">
-          <div className="flex items-center justify-between text-emerald-800 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">CNG Spend</span>
-            <Fire size={18} weight="bold" className="text-emerald-600" />
-          </div>
-          <div className="text-2xl font-black text-emerald-950">{formatINR(cngCost)}</div>
-          <p className="text-[11px] text-emerald-800 font-semibold mt-0.5">
-            {cngQty.toLocaleString()} Kg ({cngLogs.length} fills)
-          </p>
-        </div>
-
-        {/* Petrol */}
-        <div className="bg-rose-50/70 p-4 rounded-md border border-rose-200 shadow-xs">
-          <div className="flex items-center justify-between text-rose-800 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Petrol Spend</span>
-            <GasPump size={18} weight="bold" className="text-rose-600" />
-          </div>
-          <div className="text-2xl font-black text-rose-950">{formatINR(petrolCost)}</div>
-          <p className="text-[11px] text-rose-800 font-semibold mt-0.5">
-            {petrolQty.toLocaleString()} Litres ({petrolLogs.length} fills)
-          </p>
         </div>
       </div>
 

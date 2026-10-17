@@ -5,10 +5,8 @@ import {
   MagnifyingGlass,
   Car,
   Trash,
-  CurrencyInr,
   Calendar,
   PencilSimple,
-  Receipt,
 } from '@phosphor-icons/react';
 import { formatINR, formatDate, roundMoney } from '../../utils/formatters';
 import ThemedSelect from '../ThemedSelect';
@@ -26,9 +24,6 @@ export default function TyreManagementHub({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVehicleFilter, setSelectedVehicleFilter] = useState('ALL');
-
-  const totalTyresReplacedAll = tyreLogs.reduce((acc, l) => acc + (Number(l.quantity) || 0), 0);
-  const totalTyreSpendAll = tyreLogs.reduce((acc, l) => acc + (Number(l.totalCost) || 0), 0);
 
   // Filter logs
   const filteredLogs = tyreLogs.filter((l) => {
@@ -89,39 +84,6 @@ export default function TyreManagementHub({
           <Plus size={16} weight="bold" />
           <span>Record Tyre Replacement</span>
         </button>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        {/* Total Cost */}
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Tyre Cost</span>
-            <CurrencyInr size={18} className="text-navy-900" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{formatINR(totalTyreSpendAll)}</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">{tyreLogs.length} replacement entries logged</p>
-        </div>
-
-        {/* Tyres Replaced */}
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Tyres Replaced</span>
-            <CircleNotch size={18} className="text-navy-900" weight="bold" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{totalTyresReplacedAll} Tyres</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Across {vehicles.length} fleet vehicles</p>
-        </div>
-
-        {/* Total Entries */}
-        <div className="bg-white p-4 rounded-md border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Records</span>
-            <Receipt size={18} className="text-navy-900" weight="bold" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{filteredLogs.length} Entries</div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Tyre invoices & change logs</p>
-        </div>
       </div>
 
       {/* Filter & Search Bar */}
