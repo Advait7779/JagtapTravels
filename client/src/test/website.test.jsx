@@ -60,20 +60,20 @@ describe('ToursWebsite Multi-Page Architecture', () => {
   it('VehicleCollagePattern switches between vehicles and shows specs', () => {
     const { container } = render(<VehicleCollagePattern />);
 
-    // Default vehicle is Maruti Suzuki Ertiga
-    expect(container.textContent).toContain('Maruti Suzuki Ertiga');
-    expect(container.textContent).toContain('6 - 7 Seater');
-
-    // Switch to Innova Crysta
-    const innovaBtn = screen.getByRole('button', { name: /Innova Crysta/i });
-    fireEvent.click(innovaBtn);
+    // Default vehicle is Toyota Innova Crysta (6+1 Tourist)
     expect(container.textContent).toContain('Toyota Innova Crysta');
-    expect(container.textContent).toContain('6 - 7 Seater');
+    expect(container.textContent).toContain('6 + 1 Seater');
 
-    // Switch to Sedan
-    const sedanBtn = screen.getByRole('button', { name: /Dzire Sedan/i });
-    fireEvent.click(sedanBtn);
-    expect(container.textContent).toContain('Maruti Suzuki Dzire');
-    expect(container.textContent).toContain('4 Seater');
+    // Switch to 20 Seater Traveller
+    const travellerBtn = screen.getAllByRole('button', { name: /20 Seater Traveller/i })[0];
+    fireEvent.click(travellerBtn);
+    expect(container.textContent).toContain('Force Traveller 20 Seater');
+    expect(container.textContent).toContain('20 Seater');
+
+    // Switch to 32 Seater Bus
+    const busBtn = screen.getAllByRole('button', { name: /32 Seater Bus/i })[0];
+    fireEvent.click(busBtn);
+    expect(container.textContent).toContain('Tata Ultra 32 Seater');
+    expect(container.textContent).toContain('32 Seater');
   });
 });

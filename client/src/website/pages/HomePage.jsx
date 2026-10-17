@@ -23,7 +23,7 @@ export default function HomePage({ onNavigate }) {
                 Our Travel Fleet in Maharashtra
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                Choose from company tie-up Maruti Ertiga MPVs, executive Toyota Innova Crysta SUVs, economical Sedans, and spacious luxury tourist buses with expert chauffeurs.
+                Choose from our premium owned fleet: executive Toyota Innova Crysta (6+1), luxury Force Travellers (20 & 26 Seater AC Pushback), and executive AC coaches (32, 45 & 46 Seater with Air Suspension) with expert highway chauffeurs.
               </p>
             </div>
 
