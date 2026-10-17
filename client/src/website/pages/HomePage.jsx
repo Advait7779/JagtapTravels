@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import HeroSection from '../HeroSection';
-import PopularTours from '../PopularTours';
 import WhyChooseUs from '../WhyChooseUs';
 import CustomerReviews from '../CustomerReviews';
 import CtaSection from '../CtaSection';
@@ -45,22 +44,7 @@ export default function HomePage({ onNavigate }) {
         </div>
       </section>
 
-      {/* 3. Popular Maharashtra Tour Packages Preview */}
-      <PopularTours />
-
-      {/* View All Packages Quick Bar */}
-      <div className="bg-slate-50 py-6 border-b border-slate-200 text-center">
-        <button
-          type="button"
-          onClick={() => onNavigate('packages')}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-navy-900 hover:bg-navy-950 text-white text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-105"
-        >
-          <span>View All Tour Packages & Custom Itineraries</span>
-          <ArrowRight size={16} weight="bold" />
-        </button>
-      </div>
-
-      {/* 4. Complete Owned Fleet Inventory & Flyer Showcase */}
+      {/* 3. Complete Owned Fleet Inventory & Flyer Showcase */}
       <FleetGallerySection onBookClick={() => onNavigate('contact')} />
 
       {/* 5. Why Choose Us (Trust Pillars) */}

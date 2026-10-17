@@ -4,167 +4,154 @@ import PageHeader from '../components/PageHeader';
 import {
   MapPin,
   Clock,
-  Car,
   CheckCircle,
   ArrowRight,
-  Sparkle,
-  CalendarCheck,
-  ShieldCheck,
+  Phone,
+  WhatsappLogo,
 } from '@phosphor-icons/react';
 
 const PACKAGES_DATA = [
   {
-    id: 'corporate-monthly',
-    title: 'Company Tie-Ups & Monthly Cab Packages',
+    id: 'innova-crysta',
+    title: 'Toyota Innova Crysta (6+1 Tourist)',
+    category: 'suv',
+    categories: ['all', 'suv', 'airport', 'pilgrimage'],
+    duration: '6 + 1 Seater AC · MH 61E 7220',
+    route: 'Pune ➔ Mumbai Airport (T1/T2) ➔ Shirdi ➔ Mahabaleshwar ➔ Goa',
+    image: '/images/fleet/innova-crysta-6plus1.jpeg',
+    fallbackImage: '/WhatsApp Image 2026-10-17 at 10.32.44 AM.jpeg',
+    tag: 'Executive Choice',
+    description:
+      'Executive luxury MPV with reclining captain seats and dual AC cooling. Ideal for seamless Mumbai Airport transfers, corporate executive pickups, and family tours.',
+    inclusions: [
+      'Reclining captain bucket seats with personal armrests',
+      'Dual chilled AC with rear passenger cooling vents',
+      'Mobile fast charging points & whisper-quiet expressway ride',
+      'Commercial tourist permit & verified highway chauffeur',
+    ],
+  },
+  {
+    id: 'traveller-20',
+    title: 'Force Traveller 20 Seater AC Pushback',
+    category: 'traveller',
+    categories: ['all', 'traveller', 'pilgrimage'],
+    duration: '20 Seater AC · MH 12 WX 7255',
+    route: 'Pune ➔ Pandharpur ➔ Tuljapur ➔ Akkalkot ➔ Alibaug ➔ Mahabaleshwar',
+    image: '/images/fleet/traveller-20-seater.jpeg',
+    fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.35 AM.jpeg',
+    tag: 'Devotional & Group Touring',
+    description:
+      'Specially equipped high-roof tourist van for pilgrimage circuits, beach getaways, and school/family group outings with ample boot space.',
+    inclusions: [
+      'Individual pushback recliner seats with armrests',
+      'Powerful roof-mounted AC with individual louvers',
+      'USB fast charging sockets on every seat row & music audio',
+      'High-roof easy walking aisle & dedicated rear luggage hold',
+    ],
+  },
+  {
+    id: 'traveller-26',
+    title: 'Force Traveller 26 Seater AC Pushback',
+    category: 'traveller',
+    categories: ['all', 'traveller', 'outstation'],
+    duration: '26 Seater AC · MH 12 TR 2261',
+    route: 'Pune ➔ Konkan Coastal Circuit ➔ Goa ➔ Trimbakeshwar ➔ Lonavala',
+    image: '/images/fleet/traveller-26-seater.jpeg',
+    fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.35 AM (1).jpeg',
+    tag: 'Coastal & Ghat Special',
+    description:
+      'High-capacity 26-seater touring van with diamond-stitched pushback seats and twin AC units, engineered for Konkan beaches, ghats, and highway roadtrips.',
+    inclusions: [
+      'Premium diamond-stitched 26 pushback recliner seats',
+      'High-capacity twin AC cooling units with ceiling ducting',
+      'Panoramic large tour windows with full sun curtains',
+      'Ghat & long-distance highway suspension with dual pilots',
+    ],
+  },
+  {
+    id: 'bus-32',
+    title: 'Tata Ultra 32 Seater Pushback Tourist Bus',
+    category: 'bus',
+    categories: ['all', 'bus', 'corporate', 'pilgrimage'],
+    duration: '32 Seater AC · MH 12 ZE 7220',
+    route: 'Pune ➔ Bhimashankar ➔ Kolhapur Mahalaxmi ➔ Ellora ➔ Shirdi',
+    image: '/images/fleet/bus-32-seater.jpeg',
+    fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.36 AM.jpeg',
+    tag: 'Tata Ultra Luxury',
+    description:
+      'Mid-size luxury AC tourist coach featuring 2x2 pushback recliners, soft ambient LED ceiling lights, and massive underfloor baggage bays for group tours.',
+    inclusions: [
+      '2x2 luxury pushback reclining seats with armrests',
+      'Heavy-duty central air conditioning climate comfort',
+      'Soft ambient LED overhead ceiling lighting & high headroom',
+      'Massive underfloor cargo holds for group luggage & gear',
+    ],
+  },
+  {
+    id: 'bus-45',
+    title: '45 Seater AC Pushback + Air Suspension Coach',
+    category: 'bus',
+    categories: ['all', 'bus', 'outstation', 'pilgrimage'],
+    duration: '45 Seater AC · MH 12 XN 7220',
+    route: 'All 5 Maharashtra Jyotirlingas ➔ Tirupati ➔ Goa ➔ Hyderabad ➔ Indore',
+    image: '/images/fleet/bus-45-seater.jpeg',
+    fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.37 AM.jpeg',
+    tag: 'Air Suspension Flagship',
+    description:
+      'Pneumatic air-suspension flagship coach delivering an ultra-smooth, vibration-free highway ride on long-distance interstate and statewide pilgrimage yatras.',
+    inclusions: [
+      'Pneumatic air suspension for ultra-smooth bump-free travel',
+      '45 premium reclining pushback seats with passenger seatbelts',
+      'Cool & pleasant central dual AC climate system & surround audio',
+      'Massive underfloor luggage bays & two certified highway captains',
+    ],
+  },
+  {
+    id: 'bus-46',
+    title: '46 Seater AC Pushback Tourist Coach',
+    category: 'bus',
+    categories: ['all', 'bus', 'airport', 'corporate'],
+    duration: '46 Seater AC · Yashraj Pink Coach',
+    route: 'Pune ➔ Mumbai Airport International Terminals ➔ Expressway ➔ Goa',
+    image: '/images/fleet/bus-46-seater.jpeg',
+    fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.36 AM (1).jpeg',
+    tag: 'Airport Charters & Events',
+    description:
+      'Grand luxury tourist coach equipped with full cabin AC, ergonomic pushback seats, and CCTV camera security, specialized for Mumbai Airport flight transfers and conferences.',
+    inclusions: [
+      'Full heavy-duty air conditioning throughout the cabin',
+      'High-back ergonomic pushback luxury recliner seats',
+      'CCTV camera surveillance for maximum passenger security',
+      'Direct Chhatrapati Shivaji Maharaj Mumbai Airport charters',
+    ],
+  },
+  {
+    id: 'all-fleet',
+    title: 'Complete Fleet Lineup (17 to 50 Seats)',
     category: 'corporate',
-    categoryLabel: 'Corporate & Monthly Fleet',
-    duration: 'Monthly Contract',
-    route: 'Pune (Hinjawadi, Magarpatta, Kharadi) ➔ Executive Commute & Plant Visits',
-    image: '/images/tours/corporate-monthly-car.jpg',
-    tag: 'Monthly Contract',
+    categories: ['all', 'corporate', 'outstation'],
+    duration: '17 to 50 Seater Range · All Models',
+    route: 'Pan-Maharashtra ➔ Outstation Yatras ➔ Airport Transfers ➔ Corporate Shuttles',
+    image: '/images/fleet/fleet-overview-all.jpeg',
+    fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.37 AM (1).jpeg',
+    tag: 'Custom Group Solutions',
     description:
-      'Dedicated monthly chauffeur-driven vehicles for IT companies, executive daily commutes & long-term rentals in Pune with guaranteed backup vehicles.',
-    pricing: [
-      { vehicle: 'Sedan (Dzire / Etios)', seats: '4 Seats', price: '₹35,000 / Mo' },
-      { vehicle: 'Ertiga (7 Seater)', seats: '6 Seats', price: '₹42,000 / Mo' },
-      { vehicle: 'Innova Crysta', seats: '7 Seats', price: '₹55,000 / Mo' },
-      { vehicle: 'Force Urbania', seats: '13-17 Seats', price: '₹75,000 / Mo' },
-    ],
+      'Comprehensive owned fleet offering AC and Non-AC configurations for custom group sizes, destination wedding convoys, and corporate employee transportation contracts.',
     inclusions: [
-      'Dedicated monthly vehicle & verified commercial driver',
-      'Tailored IT park staff commute (Hinjawadi, Magarpatta, Kharadi)',
-      'Guaranteed immediate replacement vehicle on service days',
-      'Transparent monthly billing with official GST tax invoice',
-    ],
-  },
-  {
-    id: 'ashtavinayak',
-    title: 'Complete 8 Ashtavinayak Yatra',
-    category: 'pilgrimage',
-    categoryLabel: 'Pilgrimage & Darshan',
-    duration: '3 Days / 2 Nights',
-    route: 'Pune ➔ Theur ➔ Siddhatek ➔ Morgaon ➔ Pali ➔ Mahad ➔ Lenyadri ➔ Ozar ➔ Ranjangaon',
-    image: '/images/tours/ashtavinayak.jpg',
-    tag: 'Sacred Circuit',
-    description:
-      'Complete, hassle-free darshan of all 8 Swayambhu Ganpati temples across Maharashtra in religious sequential order with elderly-friendly drivers.',
-    pricing: [
-      { vehicle: 'Sedan (Dzire / Etios)', seats: '4 Seats', price: '₹9,500' },
-      { vehicle: 'Ertiga (7 Seater)', seats: '6 Seats', price: '₹12,500' },
-      { vehicle: 'Innova Crysta', seats: '7 Seats', price: '₹16,500' },
-      { vehicle: 'Force Urbania / Tempo', seats: '13-17 Seats', price: '₹22,000' },
-    ],
-    inclusions: [
-      'Fuel & Driver Allowance (Day & Night)',
-      'Toll Tax & Parking Charges',
-      'Doorstep Pickup & Drop in Pune/PCMC',
-      'Customized Aarti & Darshan Timing Breaks',
-    ],
-  },
-  {
-    id: 'shirdi-trimbak',
-    title: 'Shirdi Sai Baba & Trimbakeshwar Jyotirlinga',
-    category: 'pilgrimage',
-    categoryLabel: 'Pilgrimage & Darshan',
-    duration: '2 Days / 1 Night',
-    route: 'Pune ➔ Shirdi ➔ Shani Shingnapur ➔ Nashik ➔ Trimbakeshwar ➔ Pune',
-    image: '/images/tours/shirdi-trimbakeshwar.jpg',
-    tag: 'Jyotirlinga & Sai',
-    description:
-      'Sacred darshan at Shirdi Sai Sansthan, holy dip and darshan at Trimbakeshwar Jyotirlinga, Panchavati Ram Mandir, and Shani Shingnapur.',
-    pricing: [
-      { vehicle: 'Sedan (Dzire / Etios)', seats: '4 Seats', price: '₹8,200' },
-      { vehicle: 'Ertiga (7 Seater)', seats: '6 Seats', price: '₹10,500' },
-      { vehicle: 'Innova Crysta', seats: '7 Seats', price: '₹13,800' },
-      { vehicle: 'Force Urbania', seats: '13-17 Seats', price: '₹19,500' },
-    ],
-    inclusions: [
-      'AC Cab with fuel & toll taxes',
-      'Driver night charges included',
-      'Doorstep pickup from anywhere in Pune',
-      'Sightseeing halts for local snacks & prasad',
-    ],
-  },
-  {
-    id: 'mahabaleshwar',
-    title: 'Mahabaleshwar & Panchgani Queen of Hills',
-    category: 'nature',
-    categoryLabel: 'Hill Stations & Nature',
-    duration: '2 Days / 1 Night',
-    route: 'Pune ➔ Shirwal ➔ Wai ➔ Panchgani ➔ Mahabaleshwar ➔ Tapola ➔ Pune',
-    image: '/images/tours/mahabaleshwar.jpg',
-    tag: 'Monsoon & Winter Favorite',
-    description:
-      'Scenic Pasarni Ghat drive to Venna Lake, Mapro Garden strawberry fields, Arthur’s Seat, Kate’s Point, Elephant’s Head, and Table Land.',
-    pricing: [
-      { vehicle: 'Sedan (Dzire / Etios)', seats: '4 Seats', price: '₹6,200' },
-      { vehicle: 'Ertiga (7 Seater)', seats: '6 Seats', price: '₹7,800' },
-      { vehicle: 'Innova Crysta', seats: '7 Seats', price: '₹10,200' },
-      { vehicle: 'Force Urbania', seats: '13-17 Seats', price: '₹14,500' },
-    ],
-    inclusions: [
-      'Experienced mountain & ghat chauffeur',
-      'Toll & parking charges',
-      'Flexible viewpoints stopovers',
-      'Sanitized AC vehicle with fresh aroma',
-    ],
-  },
-  {
-    id: 'konkan-beach',
-    title: 'Alibaug, Nagaon Beach & Murud Janjira',
-    category: 'coastal',
-    categoryLabel: 'Coastal Konkan',
-    duration: '2 Days / 1 Night',
-    route: 'Pune ➔ Khopoli ➔ Pen ➔ Alibaug ➔ Nagaon Beach ➔ Murud Janjira Fort',
-    image: '/images/tours/konkan-beach.jpg',
-    tag: 'Beach & Watersports',
-    description:
-      'Golden sand beaches, banana boat rides, authentic Konkani seafood feasts, and boat exploration of the historic Murud Janjira sea fortress.',
-    pricing: [
-      { vehicle: 'Sedan (Dzire / Etios)', seats: '4 Seats', price: '₹7,500' },
-      { vehicle: 'Ertiga (7 Seater)', seats: '6 Seats', price: '₹9,500' },
-      { vehicle: 'Innova Crysta', seats: '7 Seats', price: '₹12,800' },
-      { vehicle: 'Force Urbania', seats: '13-17 Seats', price: '₹18,000' },
-    ],
-    inclusions: [
-      'Entire fuel, toll & state taxes',
-      'Driver night stay charges',
-      'Beachside drop & pickup',
-      'Boot space for weekend luggage',
-    ],
-  },
-  {
-    id: 'mumbai-airport',
-    title: 'Pune ➔ Mumbai T1 / T2 Airport Transfer',
-    category: 'airport',
-    categoryLabel: 'Airport & Outstation',
-    duration: 'One-Way / Round Trip',
-    route: 'Pune (Any Address) ➔ Mumbai-Pune Expressway ➔ CSMI Airport Terminal 1 & 2',
-    image: '/images/tours/mumbai-expressway.jpg',
-    tag: '24/7 Guaranteed Punctual',
-    description:
-      'Stress-free, dependable airport transit with 15-minute advance arrival at your gate, polite chauffeur, flight tracking, and zero surge pricing.',
-    pricing: [
-      { vehicle: 'Sedan (Dzire / Etios)', seats: '4 Seats', price: '₹2,600' },
-      { vehicle: 'Ertiga (7 Seater)', seats: '6 Seats', price: '₹3,400' },
-      { vehicle: 'Innova Crysta', seats: '7 Seats', price: '₹4,800' },
-      { vehicle: 'Force Urbania', seats: '13-17 Seats', price: '₹7,200' },
-    ],
-    inclusions: [
-      'Expressway Toll fee included',
-      'Airport entry & parking buffer',
-      'Flight delay tracking',
-      'Luggage assistance by chauffeur',
+      'Fleet options: Innova Crysta, 17, 21, 26, 32, 40, 45 & 50 Seaters',
+      'Both AC and Non-AC options suited to your schedule and budget',
+      '100% verified chauffeurs with 24/7 Pune & Hadapsar support',
+      'Direct owner pricing with transparent rates & zero brokerage',
     ],
   },
 ];
 
 const CATEGORIES = [
   { id: 'all', label: 'All Tour Packages' },
-  { id: 'corporate', label: 'Company Tie-Ups & Monthly' },
+  { id: 'suv', label: 'Innova Crysta (6+1)' },
+  { id: 'traveller', label: 'Force Travellers (20 & 26)' },
+  { id: 'bus', label: 'Luxury Buses (32 to 50)' },
   { id: 'pilgrimage', label: 'Pilgrimage & Darshan' },
-  { id: 'nature', label: 'Hill Stations & Nature' },
-  { id: 'coastal', label: 'Coastal Konkan' },
   { id: 'airport', label: 'Airport Transfers' },
 ];
 
@@ -174,15 +161,17 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
   const filteredPackages =
     selectedCategory === 'all'
       ? PACKAGES_DATA
-      : PACKAGES_DATA.filter((p) => p.category === selectedCategory);
+      : PACKAGES_DATA.filter(
+          (p) => p.category === selectedCategory || (p.categories && p.categories.includes(selectedCategory))
+        );
 
   return (
     <div className="min-h-screen bg-slate-50 font-['Plus_Jakarta_Sans',sans-serif]">
       <PageHeader
         title="Tour Packages Across Maharashtra"
-        subtitle="Customized family yatras, hill station getaways, beach holidays, and airport transfers with guaranteed clean cars and patient chauffeurs."
+        subtitle="Explore our verified luxury fleet and custom travel circuits. Transparent billing with doorstep pickup anywhere in Pune."
         breadcrumb="Tour Packages"
-        badge="Curated Maharashtra Circuits"
+        badge="Direct Fleet Owner Pricing"
         onNavigateHome={() => onNavigate('home')}
       />
 
@@ -194,7 +183,7 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
               key={cat.id}
               type="button"
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 selectedCategory === cat.id
                   ? 'bg-red-800 text-white shadow-md shadow-red-900/20 scale-[1.02]'
                   : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -205,7 +194,7 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
           ))}
         </div>
 
-        {/* Tour Cards Grid */}
+        {/* Tour Cards Grid (Identical Card Layout) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <AnimatePresence>
             {filteredPackages.map((tour, idx) => (
@@ -218,14 +207,19 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
                 transition={{ duration: 0.35, delay: idx * 0.05 }}
                 className="bg-white rounded-md border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-red-200 transition-all flex flex-col group"
               >
-                {/* Tour Image with Duration Tag */}
+                {/* Tour Image with Duration / Capacity Tag */}
                 <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
                   <img
                     src={tour.image}
+                    onError={(e) => {
+                      if (tour.fallbackImage && e.currentTarget.src !== tour.fallbackImage) {
+                        e.currentTarget.src = tour.fallbackImage;
+                      }
+                    }}
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
                   <div className="absolute bottom-3 left-3 right-3 text-white">
                     <div className="flex items-center gap-1.5 text-amber-300 text-xs font-bold mb-1">
@@ -252,7 +246,7 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
 
                     {/* Key Inclusions Checklist */}
                     <div className="space-y-1.5 pt-1">
-                      {tour.inclusions.slice(0, 3).map((inc, incIdx) => (
+                      {tour.inclusions.slice(0, 4).map((inc, incIdx) => (
                         <div key={incIdx} className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
                           <CheckCircle size={15} weight="fill" className="text-emerald-600 shrink-0" />
                           <span className="truncate">{inc}</span>
@@ -269,7 +263,7 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
                         if (onBookPackage) onBookPackage(tour);
                         onNavigate('contact');
                       }}
-                      className="w-full py-3 rounded-md bg-red-800 hover:bg-red-900 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-950/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95"
+                      className="w-full py-3 rounded-md bg-red-800 hover:bg-red-900 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-950/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
                     >
                       <span>Book This Package</span>
                       <ArrowRight size={15} weight="bold" />
@@ -288,16 +282,35 @@ export default function PackagesPage({ onNavigate, onBookPackage }) {
               Need a Custom Tour Route or Multi-City Itinerary?
             </h4>
             <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-2xl">
-              We customize multi-day pilgrim circuits, family vacations, and corporate transport tailored to your exact departure time, preferred car, and budget.
+              Contact our 24/7 Pune booking desk at +91 90115 07220 or request a customized itinerary tailored to your group size and vehicle preference.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('contact')}
-            className="px-6 py-3.5 rounded-md bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-bold shadow-md shrink-0 transition-transform hover:scale-105"
-          >
-            Request Custom Quotation
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onNavigate('contact')}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-md bg-red-800 hover:bg-red-900 text-white text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-105 cursor-pointer"
+            >
+              <span>Plan Custom Tour</span>
+              <ArrowRight size={16} weight="bold" />
+            </button>
+            <a
+              href="https://wa.me/919011507220?text=Hello%20Jagtap%20Travels,%20I%20want%20to%20plan%20a%20custom%20tour%20package."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-105 cursor-pointer"
+            >
+              <WhatsappLogo size={16} weight="fill" />
+              <span>WhatsApp Us</span>
+            </a>
+            <a
+              href="tel:+919011507220"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold border border-white/20 transition-all cursor-pointer"
+            >
+              <Phone size={16} weight="bold" />
+              <span>Call 24/7 Desk</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>
