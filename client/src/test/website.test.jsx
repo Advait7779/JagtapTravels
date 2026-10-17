@@ -65,13 +65,13 @@ describe('ToursWebsite Multi-Page Architecture', () => {
     expect(container.textContent).toContain('6 + 1 Seater');
 
     // Switch to 20 Seater Traveller
-    const travellerBtn = screen.getAllByRole('button', { name: /20 Seater Traveller/i })[0];
+    const travellerBtn = screen.getAllByRole('button', { name: /Traveller 20/i })[0];
     fireEvent.click(travellerBtn);
     expect(container.textContent).toContain('Force Traveller 20 Seater');
     expect(container.textContent).toContain('20 Seater');
 
     // Switch to 32 Seater Bus
-    const busBtn = screen.getAllByRole('button', { name: /32 Seater Bus/i })[0];
+    const busBtn = screen.getAllByRole('button', { name: /Tata Ultra 32/i })[0];
     fireEvent.click(busBtn);
     expect(container.textContent).toContain('Tata Ultra 32 Seater');
     expect(container.textContent).toContain('32 Seater');

@@ -3,220 +3,191 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
   Briefcase,
-  Buildings,
   ShieldCheck,
   ArrowRight,
   WhatsappLogo,
   Phone,
   MagnifyingGlassPlus,
   X,
-  MapPin,
   Wind,
-  Armchair,
   Eye,
 } from '@phosphor-icons/react';
 
 export const FLEET_VEHICLES = [
   {
     id: 'innova-crysta',
-    name: 'Toyota Innova Crysta (6+1 Tourist)',
+    name: 'Toyota Innova Crysta',
     shortName: 'Innova Crysta',
     pillLabel: 'Innova Crysta',
-    capacity: '6 + 1 Seater',
+    capacityBadge: '6+1 Seater',
     plate: 'MH 61E 7220',
     category: 'Executive Luxury Tourist SUV',
-    acType: 'Dual Chilled Front & Rear AC',
+    capacity: '6 + 1 Seater',
+    acType: 'Dual Chilled AC',
     luggage: '4 - 5 Large Bags',
-    tag: 'Executive & Family',
     image: '/images/fleet/innova-crysta-6plus1.jpeg',
     fallbackImage: '/WhatsApp Image 2026-10-17 at 10.32.44 AM.jpeg',
-    serviceType: 'Airport Transfers, Pilgrimage & Outstation Tours',
-    tagline: 'Travel in Comfort with Us',
+    serviceType: 'Airport & Outstation',
+    description: 'Premium executive MPV for airport transfers, corporate delegates, and family tours across Maharashtra.',
     features: [
-      '6+1 seating with luxury reclining captain bucket seats',
+      'Reclining captain bucket seats with armrests',
       'Dual chilled AC with rear passenger cooling vents',
-      'Plush dual-tone leather interior & executive legroom',
-      'Expressway tested for utmost passenger safety & reliability',
-      'Mobile fast charging ports & whisper-quiet expressway ride',
+      'Mobile charging ports & smooth highway suspension',
+      'Commercial tourist permit & verified highway chauffeur',
     ],
-    idealFor: 'Mumbai airport transfers, pilgrimage tours (Shirdi, Ashtavinayak), corporate delegates, and luxury family holidays to Mahabaleshwar & Goa.',
-    routes: ['Mumbai Airport', 'Shirdi', 'Mahabaleshwar', 'Ashtavinayak', 'Konkan & Goa'],
     phone: '+91 90115 07220',
     whatsappNumber: '919011507220',
-    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the Toyota Innova Crysta (6+1 Tourist) for our upcoming trip.',
+    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the Toyota Innova Crysta (6+1 Seater).',
   },
   {
     id: 'traveller-20',
-    name: 'Force Traveller 20 Seater AC Pushback',
+    name: 'Force Traveller 20 Seater',
     shortName: '20 Seater Traveller',
-    pillLabel: '20 Seater Traveller',
-    capacity: '20 Seater',
+    pillLabel: 'Traveller 20',
+    capacityBadge: '20 Seater',
     plate: 'MH 12 WX 7255',
-    category: 'Luxury Tourist Van / Mini Coach',
-    acType: 'Roof-Mounted High-Power AC',
-    luggage: 'Dedicated Rear Luggage Bay & Overhead Racks',
-    tag: 'Group Touring Choice',
+    category: 'AC Pushback Tourist Van',
+    capacity: '20 Seater',
+    acType: 'Roof-Mounted AC',
+    luggage: 'Dedicated Rear Hold',
     image: '/images/fleet/traveller-20-seater.jpeg',
     fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.35 AM.jpeg',
-    serviceType: 'Pilgrimage, Corporate & School Tours',
-    tagline: 'Safe Journey, Happy Memories',
+    serviceType: 'Pilgrimage & Group Tours',
+    description: 'Equipped for pilgrimage circuits (Pandharpur, Tuljapur, Akkalkot), beach holidays, and group travel.',
     features: [
-      'Powerful air conditioning with individual overhead louvers',
-      'Plush individual pushback recliner seats with armrests',
-      'USB fast charging sockets on every seat row',
-      'Music system & PA audio microphone for group entertainment',
-      'Spacious luggage space & high-roof wide walking aisle',
-      'CSM Mumbai Airport pickup & Maharashtra outstation ready',
+      'Individual pushback recliner seats with armrests',
+      'Powerful roof AC with individual passenger vents',
+      'USB charging points on every row & music system',
+      'Spacious luggage space & high-roof wide aisle',
     ],
-    idealFor: 'Pilgrimage yatras (Pandharpur, Tuljapur, Akkalkot), beach holidays to Alibaug & Dapoli, hill stations, school picnics, and corporate group outings.',
-    routes: ['Pandharpur', 'Tuljapur', 'Akkalkot', 'Mumbai Airport', 'Alibaug', 'Matheran'],
     phone: '+91 90115 07220',
     whatsappNumber: '919011507220',
-    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the 20 Seater Force Traveller (AC Pushback) for our group travel.',
+    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the Force Traveller 20 Seater.',
   },
   {
     id: 'traveller-26',
-    name: 'Force Traveller 26 Seater AC Pushback',
+    name: 'Force Traveller 26 Seater',
     shortName: '26 Seater Traveller',
-    pillLabel: '26 Seater Traveller',
-    capacity: '26 Seater',
+    pillLabel: 'Traveller 26',
+    capacityBadge: '26 Seater',
     plate: 'MH 12 TR 2261',
     category: 'Spacious Group Touring Van',
-    acType: 'High-Capacity Twin AC Units',
-    luggage: '25+ Bags in Dedicated Luggage Hold',
-    tag: 'Bookings Open',
+    capacity: '26 Seater',
+    acType: 'Twin AC Units',
+    luggage: '25+ Bags Hold',
     image: '/images/fleet/traveller-26-seater.jpeg',
     fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.35 AM (1).jpeg',
-    serviceType: 'Large Groups, Weddings & Corporate Offsites',
-    tagline: 'Booking Open · Premium Beach, Ghat & Highway Travel',
+    serviceType: 'Large Groups & Offsites',
+    description: 'High-capacity touring van for Konkan & Goa beach roadtrips, corporate offsites, and wedding parties.',
     features: [
-      'Premium diamond-stitched 26 pushback recliner seats',
-      'High-capacity twin AC cooling units with ceiling ducting',
-      'Panoramic large tour windows with full sun curtains',
-      'Wide center walking aisle & generous leg clearance',
-      'Beach, ghat & long-distance highway tuned suspension',
-      'Experienced dual highway pilots for extended journeys',
+      'Diamond-stitched pushback recliner seats',
+      'High-capacity twin air conditioning system',
+      'Panoramic large tour windows with sun curtains',
+      'Experienced dual highway pilots for long hauls',
     ],
-    idealFor: 'Medium-to-large group vacations, Konkan & Goa beach roadtrips, company offsites, destination weddings, and all-Maharashtra temple yatras.',
-    routes: ['Konkan Coastal Tour', 'Goa Beach Circuit', 'Trimbakeshwar', 'Lonavala', 'Mahabaleshwar'],
     phone: '+91 90115 07220',
     whatsappNumber: '919011507220',
-    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the 26 Seater Force Traveller (AC Pushback) for our group trip.',
+    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the Force Traveller 26 Seater.',
   },
   {
     id: 'bus-32',
-    name: 'Tata Ultra 32 Seater Pushback Tourist Bus',
+    name: 'Tata Ultra 32 Seater Bus',
     shortName: '32 Seater Luxury Bus',
-    pillLabel: '32 Seater Bus',
+    pillLabel: 'Tata Ultra 32',
+    capacityBadge: '32 Seater',
+    plate: 'MH 12 ZE 7220',
+    category: 'Executive Mid-Size AC Coach',
     capacity: '32 Seater',
-    plate: 'MH 12 ZE 7220 · Yashraj',
-    category: 'Executive Mid-Size AC Tourist Coach',
-    acType: 'Heavy-Duty Central Climate AC',
-    luggage: 'Massive Underfloor Cargo Luggage Bays',
-    tag: 'Tata Ultra Luxury',
+    acType: 'Central Climate AC',
+    luggage: 'Underfloor Bays',
     image: '/images/fleet/bus-32-seater.jpeg',
     fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.36 AM.jpeg',
-    serviceType: 'Corporate Outings, School & Pilgrimage',
-    tagline: 'Comfortable Journey, Happier Destinations',
+    serviceType: 'Corporate & School Outings',
+    description: 'Mid-size AC coach designed for corporate team outings, school picnics, and statewide pilgrimage yatras.',
     features: [
-      'Comfortable 2x2 luxury pushback reclining seats with armrests',
-      'Central heavy-duty air conditioning climate comfort',
-      'Soft ambient LED overhead ceiling lighting & high headroom',
+      '2x2 luxury pushback reclining seats with armrests',
+      'Heavy-duty central AC & soft ambient ceiling lights',
       'Full privacy window curtains for all passenger rows',
-      'Tata Ultra modern commercial chassis for a smooth highway glide',
-      'Extra-large underfloor cargo holds for bags & gear',
+      'Massive underfloor cargo storage for bags & gear',
     ],
-    idealFor: 'Pilgrimage yatras, corporate team outings, wedding guest transportation, school & college picnics, and large group holiday tours across Maharashtra.',
-    routes: ['Bhimashankar', 'Kolhapur Mahalaxmi', 'Ellora / Aurangabad', 'Panchgani', 'Shirdi'],
     phone: '+91 90115 07220',
     whatsappNumber: '919011507220',
-    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the 32 Seater Tata Ultra Tourist Bus for our group trip.',
+    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the Tata Ultra 32 Seater Bus.',
   },
   {
     id: 'bus-45',
-    name: '45 Seater AC Pushback + Air Suspension Coach',
-    shortName: '45 Seater Air Suspension Bus',
-    pillLabel: '45 Seater Bus',
+    name: '45 Seater Air Suspension Coach',
+    shortName: '45 Seater Coach',
+    pillLabel: 'Luxury Coach 45',
+    capacityBadge: '45 Seater',
+    plate: 'MH 12 XN 7220',
+    category: 'Flagship Air Suspension Coach',
     capacity: '45 Seater',
-    plate: 'MH 12 XN 7220 · Yashraj',
-    category: 'Flagship Air Suspension Tourist Coach',
-    acType: 'Cool & Pleasant Dual Climate AC',
-    luggage: 'Giant Underfloor Luggage Bays (50+ Bags)',
-    tag: 'Air Suspension Flagship',
+    acType: 'Dual Climate AC',
+    luggage: '50+ Bags Cargo',
     image: '/images/fleet/bus-45-seater.jpeg',
     fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.37 AM.jpeg',
-    serviceType: 'State & Inter-State Charters & Pilgrimages',
-    tagline: 'प्रत्येक प्रवास... आपला विश्वास... Comfort Beyond Distance',
+    serviceType: 'Inter-State & Long Distance',
+    description: 'Flagship coach with pneumatic air suspension for smooth, vibration-free travel on long-distance routes.',
     features: [
-      'Pneumatic air suspension for ultra-smooth bump-free travel',
-      '45 premium reclining pushback seats with passenger safety belts',
-      'Cool & pleasant central dual AC climate system',
-      'Neon ambient ceiling lighting & hi-fi surround sound system',
-      'Massive side-loading underfloor luggage compartments',
-      'Two government-certified professional highway captains',
+      'Pneumatic air suspension for ultra-smooth highway ride',
+      '45 premium reclining pushback seats with seatbelts',
+      'Central dual AC climate system & surround sound',
+      'Two certified professional highway captains',
     ],
-    idealFor: 'State-wide Maharashtra & Inter-State group tours, long distance pilgrimage (Tirupati, Jyotirlinga, Konkan), corporate annual meets, and grand wedding baraat transfers.',
-    routes: ['Maharashtra 5 Jyotirlinga', 'Tirupati Circuit', 'Goa', 'Hyderabad', 'Indore'],
     phone: '+91 90115 07220',
     whatsappNumber: '919011507220',
-    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the 45 Seater AC Pushback + Air Suspension Coach for our group travel.',
+    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the 45 Seater Air Suspension Coach.',
   },
   {
     id: 'bus-46',
-    name: '46 Seater AC Pushback Tourist Coach',
-    shortName: '46 Seater AC Coach',
-    pillLabel: '46 Seater Bus',
-    capacity: '46 Seater',
-    plate: 'Yashraj Pink Coach · Bookings Open',
+    name: '46 Seater AC Tourist Coach',
+    shortName: '46 Seater Coach',
+    pillLabel: 'Luxury Coach 46',
+    capacityBadge: '46 Seater',
+    plate: 'Yashraj Pink Coach',
     category: 'Grand Luxury Tourist Coach',
-    acType: 'Full Heavy-Duty Climate AC',
-    luggage: 'Extra-Large Boot + Overhead Parcel Racks',
-    tag: 'Airport & Corporate Charters',
+    capacity: '46 Seater',
+    acType: 'Full Climate AC',
+    luggage: 'Large Boot + Racks',
     image: '/images/fleet/bus-46-seater.jpeg',
     fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.36 AM (1).jpeg',
-    serviceType: 'Mumbai Airport Transfers & Corporate Events',
-    tagline: 'Bookings Open · Mumbai Airport & Outstation Ready',
+    serviceType: 'Airport Charters & Events',
+    description: 'Spacious tourist coach suited for Mumbai Airport flight transfers, conferences, and wedding logistics.',
     features: [
-      'Full heavy-duty air conditioning throughout the cabin',
       'High-back ergonomic pushback luxury recliner seats',
-      'CCTV camera surveillance for maximum passenger security',
-      'Full music entertainment system & PA announcement mic',
-      'High-ceiling spacious walking gangway & large scenic windows',
-      'Direct Chhatrapati Shivaji Maharaj Mumbai Airport transfers',
+      'Full heavy-duty air conditioning throughout the cabin',
+      'CCTV camera surveillance for passenger safety',
+      'Direct Chhatrapati Shivaji Maharaj Mumbai Airport charters',
     ],
-    idealFor: 'Mumbai Airport flight charters, multi-day company conferences, wedding guest logistics, and large group holiday excursions.',
-    routes: ['Mumbai Airport Terminals', 'Pune-Mumbai Expressway', 'Mahabaleshwar', 'Alibaug', 'Goa'],
     phone: '+91 90115 07220',
     whatsappNumber: '919011507220',
-    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the 46 Seater AC Pushback Tourist Coach for our trip.',
+    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about booking the 46 Seater AC Tourist Coach.',
   },
   {
     id: 'all-fleet',
-    name: 'Jagtap Travels Complete Fleet Lineup',
-    shortName: 'All Fleet Overview',
-    pillLabel: 'All Fleet Overview',
-    capacity: '6 to 50 Seater Fleet',
-    plate: '17 to 50 Seater Range',
-    category: 'Complete Maharashtra Fleet Lineup',
+    name: 'Complete Fleet Lineup (17-50 Seats)',
+    shortName: 'Complete Fleet',
+    pillLabel: 'All Fleet Lineup',
+    capacityBadge: '6 to 50 Seats',
+    plate: 'All Vehicle Models',
+    category: 'Full Maharashtra Fleet Range',
+    capacity: '6 to 50 Seater',
     acType: 'AC & Non-AC Available',
-    luggage: 'All Luggage Capacities',
-    tag: 'All Vehicles Available',
+    luggage: 'All Cargo Sizes',
     image: '/images/fleet/fleet-overview-all.jpeg',
     fallbackImage: '/WhatsApp Image 2026-10-17 at 10.28.37 AM (1).jpeg',
-    serviceType: 'Custom Fleet Solutions for Any Group Size',
-    tagline: 'Your Journey... Our Responsibility...',
+    serviceType: 'Tailored Fleet Solutions',
+    description: 'Comprehensive owned fleet offering AC and Non-AC configurations for custom group sizes and wedding convoys.',
     features: [
-      'Full fleet lineup: Innova Crysta (6+1), 17, 21, 26, 32, 40, 45 & 50 Seater',
-      'Both AC and Non-AC options available for every travel budget',
-      'Safe & comfortable journeys across Maharashtra & Pan-India',
-      'Dedicated corporate transport, pilgrimage yatras & weddings',
-      '100% verified, polite chauffeurs with 24/7 Pune & Hadapsar support',
+      'Fleet options: Innova Crysta, 17, 21, 26, 32, 40, 45 & 50 Seaters',
+      'AC and Non-AC options suited to your schedule and budget',
+      '100% verified chauffeurs with 24/7 Pune & Hadapsar support',
+      'Direct owner pricing with transparent rates & zero brokerage',
     ],
-    idealFor: 'Custom group sizes, multi-vehicle wedding convoys, company employee transport contracts, and tailored outstation itineraries.',
-    routes: ['Pan-Maharashtra', 'Outstation Yatras', 'Airport Transfers', 'Corporate Routes'],
     phone: '+91 90115 07220',
     whatsappNumber: '919011507220',
-    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about custom vehicle booking from your fleet.',
+    whatsappMessage: 'Hello Jagtap Travels, I want to inquire about custom fleet booking for our group.',
   },
 ];
 
@@ -242,8 +213,8 @@ export default function VehicleCollagePattern({ onSelectVehicle, onBookClick }) 
 
   return (
     <div className="w-full font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* 1. Vehicle Category Selector Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 scrollbar-none mb-6 sm:mb-8">
+      {/* 1. Vehicle Category Selector Pills (Compact & Clean) */}
+      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none mb-6">
         {FLEET_VEHICLES.map((vehicle) => {
           const isActive = vehicle.id === activeVehicleId;
           return (
@@ -254,288 +225,191 @@ export default function VehicleCollagePattern({ onSelectVehicle, onBookClick }) 
                 setActiveVehicleId(vehicle.id);
                 if (onSelectVehicle) onSelectVehicle(vehicle);
               }}
-              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-2 shadow-xs cursor-pointer ${
+              className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                 isActive
-                  ? 'bg-red-800 text-white shadow-md shadow-red-900/25 scale-[1.02] ring-2 ring-red-700/50'
+                  ? 'bg-red-800 text-white shadow-sm ring-2 ring-red-700/40'
                   : 'bg-white text-slate-700 hover:bg-slate-100 hover:text-navy-950 border border-slate-200'
               }`}
             >
               <span>{vehicle.pillLabel || vehicle.shortName}</span>
               <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                   isActive ? 'bg-amber-400 text-slate-900' : 'bg-slate-100 text-slate-600'
                 }`}
               >
-                {vehicle.capacity}
+                {vehicle.capacityBadge || vehicle.capacity}
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* 2. Main Featured Vehicle Showcase Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start bg-slate-50/70 p-4 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs">
-        {/* Left Column: Authentic Vehicle Flyer / Poster Card */}
-        <div className="lg:col-span-5 flex flex-col items-center">
-          <div className="relative w-full max-w-[390px] mx-auto rounded-xl overflow-hidden shadow-xl border-4 border-white bg-slate-950 group">
-            {/* Poster Header Badges */}
-            <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-              <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black bg-amber-400 text-slate-950 shadow-md">
-                {activeVehicle.capacity}
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/70 backdrop-blur-md text-white border border-white/20">
-                {activeVehicle.plate}
-              </span>
-            </div>
-
-            {/* Poster Image with AnimatePresence */}
-            <div
-              className="relative aspect-[9/13.5] w-full bg-slate-900 cursor-pointer overflow-hidden"
-              onClick={() => setLightboxOpen(true)}
-              title="Click to zoom / view full poster"
-            >
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={activeVehicle.id}
-                  src={activeVehicle.image}
-                  onError={(e) => {
-                    if (activeVehicle.fallbackImage && e.currentTarget.src !== activeVehicle.fallbackImage) {
-                      e.currentTarget.src = activeVehicle.fallbackImage;
-                    }
-                  }}
-                  alt={activeVehicle.name}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.02 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-full h-full object-contain sm:object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                />
-              </AnimatePresence>
-
-              {/* Hover Dark Overlay with Zoom Prompt */}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 text-white">
-                <span className="p-3 bg-red-800/90 rounded-full shadow-lg text-white">
-                  <MagnifyingGlassPlus size={24} weight="bold" />
+      {/* 2. Main Featured Vehicle Showcase Grid (Balanced, Compact, Professional) */}
+      <div className="bg-slate-50/70 p-4 sm:p-6 rounded-xl border border-slate-200/80 shadow-2xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+          {/* Left Column: Smaller, Elegantly Sized Vehicle Poster */}
+          <div className="lg:col-span-5 flex justify-center">
+            <div className="relative w-full max-w-[260px] sm:max-w-[280px] rounded-lg overflow-hidden shadow-md border-2 border-white bg-slate-950 group">
+              {/* Floating Capacity & Registration Badges */}
+              <div className="absolute top-2 left-2 right-2 z-20 flex items-center justify-between pointer-events-none">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 shadow-xs">
+                  {activeVehicle.capacity}
                 </span>
-                <span className="text-xs font-bold tracking-wide bg-black/60 px-3 py-1 rounded-full border border-white/20">
-                  Click to View Full Poster
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/75 backdrop-blur-xs text-white border border-white/20">
+                  {activeVehicle.plate}
                 </span>
               </div>
-            </div>
 
-            {/* Card Footer Bar */}
-            <div className="p-3 bg-slate-900 text-white flex items-center justify-between gap-2 border-t border-slate-800">
-              <div className="truncate">
-                <p className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Official Jagtap Fleet</p>
-                <p className="text-xs font-black truncate">{activeVehicle.name}</p>
-              </div>
-              <button
-                type="button"
+              {/* Compact Poster View */}
+              <div
+                className="relative aspect-[9/13.5] max-h-[390px] sm:max-h-[410px] w-full bg-slate-900 cursor-pointer overflow-hidden"
                 onClick={() => setLightboxOpen(true)}
-                className="shrink-0 px-2.5 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Click to view full vehicle poster"
               >
-                <Eye size={14} weight="bold" />
-                <span>Zoom</span>
-              </button>
-            </div>
-          </div>
-          <p className="text-[11px] text-slate-500 font-medium mt-2 text-center">
-            Click image above to preview the complete high-resolution vehicle poster
-          </p>
-        </div>
-
-        {/* Right Column: Vehicle Details, Specs, Amenities & Direct Booking CTAs */}
-        <div className="lg:col-span-7 space-y-5">
-          {/* Header & Category */}
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-black uppercase tracking-wider text-red-800 bg-red-100/80 px-2.5 py-1 rounded-md">
-                {activeVehicle.category}
-              </span>
-              <span className="text-[11px] font-extrabold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-md">
-                {activeVehicle.tag}
-              </span>
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {activeVehicle.name}
-            </h3>
-            <p className="text-xs sm:text-sm text-red-900/90 font-bold italic">
-              "{activeVehicle.tagline}"
-            </p>
-            <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed pt-1">
-              {activeVehicle.idealFor}
-            </p>
-          </div>
-
-          {/* 4-Column Quick Specification Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <div className="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs">
-              <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold mb-1">
-                <Users size={16} weight="bold" className="text-red-700 shrink-0" />
-                <span>Seating</span>
-              </div>
-              <p className="text-xs sm:text-sm font-black text-slate-900">{activeVehicle.capacity}</p>
-            </div>
-
-            <div className="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs">
-              <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold mb-1">
-                <Wind size={16} weight="bold" className="text-sky-600 shrink-0" />
-                <span>Climate</span>
-              </div>
-              <p className="text-xs font-bold text-slate-900 leading-snug truncate" title={activeVehicle.acType}>
-                {activeVehicle.acType}
-              </p>
-            </div>
-
-            <div className="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs">
-              <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold mb-1">
-                <Briefcase size={16} weight="bold" className="text-amber-600 shrink-0" />
-                <span>Luggage</span>
-              </div>
-              <p className="text-xs font-bold text-slate-900 leading-snug truncate" title={activeVehicle.luggage}>
-                {activeVehicle.luggage}
-              </p>
-            </div>
-
-            <div className="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs">
-              <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold mb-1">
-                <Buildings size={16} weight="bold" className="text-emerald-600 shrink-0" />
-                <span>Service Type</span>
-              </div>
-              <p className="text-xs font-bold text-slate-900 leading-snug truncate" title={activeVehicle.serviceType}>
-                {activeVehicle.serviceType}
-              </p>
-            </div>
-          </div>
-
-          {/* Vehicle Comfort & Safety Highlights (Extracted directly from the poster) */}
-          <div className="space-y-2 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <Armchair size={16} weight="bold" className="text-red-700" />
-              <span>Vehicle Comfort & Safety Highlights</span>
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              {activeVehicle.features.map((feature, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-xs font-semibold text-slate-700">
-                  <ShieldCheck size={16} weight="fill" className="text-emerald-600 shrink-0 mt-0.5" />
-                  <span>{feature}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Popular Maharashtra Routes / Circuits */}
-          <div className="space-y-1.5">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <MapPin size={14} weight="bold" className="text-red-700" />
-              <span>Top Destinations & Tour Circuits:</span>
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {activeVehicle.routes.map((route, i) => (
-                <span
-                  key={i}
-                  className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-slate-700 border border-slate-200 shadow-2xs"
-                >
-                  {route}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Fast Booking CTA Actions */}
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            <a
-              href="#contact"
-              onClick={(e) => {
-                if (onBookClick) {
-                  e.preventDefault();
-                  onBookClick(activeVehicle);
-                }
-              }}
-              className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 rounded-lg bg-red-800 hover:bg-red-900 text-white text-xs sm:text-sm font-bold shadow-md shadow-red-950/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            >
-              <span>Book {activeVehicle.shortName} Now</span>
-              <ArrowRight size={16} weight="bold" />
-            </a>
-
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 sm:px-5 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-700/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            >
-              <WhatsappLogo size={18} weight="fill" />
-              <span>WhatsApp Inquiry</span>
-            </a>
-
-            <a
-              href="tel:+919011507220"
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer"
-            >
-              <Phone size={16} weight="bold" className="text-red-700" />
-              <span>Call: 90115 07220</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Visual Fleet Lineup Thumbnail Strip (Browse All Vehicles at a Glance) */}
-      <div className="mt-8 pt-6 border-t border-slate-200">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h4 className="text-sm font-extrabold text-slate-900">Browse All Vehicles in Our Owned Fleet</h4>
-            <p className="text-xs text-slate-500">Click any vehicle card to view full specifications & booking options</p>
-          </div>
-          <span className="hidden sm:inline-block text-xs font-bold text-slate-500">
-            {FLEET_VEHICLES.length} Vehicles Available
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          {FLEET_VEHICLES.map((vehicle) => {
-            const isCurrent = vehicle.id === activeVehicleId;
-            return (
-              <button
-                key={vehicle.id}
-                type="button"
-                onClick={() => {
-                  setActiveVehicleId(vehicle.id);
-                  if (onSelectVehicle) onSelectVehicle(vehicle);
-                }}
-                className={`group text-left p-2 rounded-xl transition-all border cursor-pointer ${
-                  isCurrent
-                    ? 'bg-red-50/80 border-red-700 ring-2 ring-red-700 shadow-md scale-[1.02]'
-                    : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs hover:shadow-xs'
-                }`}
-              >
-                <div className="aspect-[9/13] w-full rounded-lg overflow-hidden bg-slate-900 mb-2 relative">
-                  <img
-                    src={vehicle.image}
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={activeVehicle.id}
+                    src={activeVehicle.image}
                     onError={(e) => {
-                      if (vehicle.fallbackImage && e.currentTarget.src !== vehicle.fallbackImage) {
-                        e.currentTarget.src = vehicle.fallbackImage;
+                      if (activeVehicle.fallbackImage && e.currentTarget.src !== activeVehicle.fallbackImage) {
+                        e.currentTarget.src = activeVehicle.fallbackImage;
                       }
                     }}
-                    alt={vehicle.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    alt={activeVehicle.name}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="w-full h-full object-contain object-center transition-transform duration-300 group-hover:scale-105"
                   />
-                  <span className="absolute bottom-1 right-1 text-[9px] font-black px-1.5 py-0.5 rounded-sm bg-black/80 text-white">
-                    {vehicle.capacity}
+                </AnimatePresence>
+
+                {/* Subtle Hover Zoom Overlay */}
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center text-white">
+                  <span className="p-2 bg-red-800/90 rounded-full shadow text-white">
+                    <MagnifyingGlassPlus size={20} weight="bold" />
                   </span>
                 </div>
-                <p className="text-[11px] font-black text-slate-900 line-clamp-1 group-hover:text-red-800">
-                  {vehicle.shortName}
-                </p>
-                <p className="text-[10px] text-slate-500 font-semibold truncate">
-                  {vehicle.category.split('&')[0]}
-                </p>
-              </button>
-            );
-          })}
+              </div>
+
+              {/* Footer Preview Bar */}
+              <div className="px-3 py-2 bg-slate-900 text-white flex items-center justify-between gap-2 border-t border-slate-800">
+                <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider truncate">
+                  {activeVehicle.shortName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLightboxOpen(true)}
+                  className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-[10px] font-bold text-white transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Eye size={12} weight="bold" />
+                  <span>Preview</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Minimal, Professional Specs & Information */}
+          <div className="lg:col-span-7 space-y-4">
+            {/* Title & Classification */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-red-800 bg-red-100/70 px-2 py-0.5 rounded">
+                  {activeVehicle.category}
+                </span>
+                <span className="text-[10px] font-semibold text-slate-500">
+                  {activeVehicle.plate}
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                {activeVehicle.name}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed pt-0.5">
+                {activeVehicle.description}
+              </p>
+            </div>
+
+            {/* 3 Core Metric Pills */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-2.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
+                <div className="flex items-center gap-1 text-slate-500 text-[11px] font-medium mb-0.5">
+                  <Users size={14} weight="bold" className="text-red-700 shrink-0" />
+                  <span>Seating</span>
+                </div>
+                <p className="text-xs font-black text-slate-900 truncate">{activeVehicle.capacity}</p>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
+                <div className="flex items-center gap-1 text-slate-500 text-[11px] font-medium mb-0.5">
+                  <Wind size={14} weight="bold" className="text-sky-600 shrink-0" />
+                  <span>Climate</span>
+                </div>
+                <p className="text-xs font-bold text-slate-900 truncate">{activeVehicle.acType}</p>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-white border border-slate-200 shadow-2xs">
+                <div className="flex items-center gap-1 text-slate-500 text-[11px] font-medium mb-0.5">
+                  <Briefcase size={14} weight="bold" className="text-amber-600 shrink-0" />
+                  <span>Luggage</span>
+                </div>
+                <p className="text-xs font-bold text-slate-900 truncate">{activeVehicle.luggage}</p>
+              </div>
+            </div>
+
+            {/* Key Features (Clean, Professional, Strictly 4 items) */}
+            <div className="space-y-1.5 bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                Key Fleet Specifications
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-0.5">
+                {activeVehicle.features.map((feature, idx) => (
+                  <div key={idx} className="flex items-start gap-1.5 text-xs text-slate-700 font-medium">
+                    <ShieldCheck size={14} weight="fill" className="text-emerald-600 shrink-0 mt-0.5" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons (Compact & Focused) */}
+            <div className="pt-1 flex flex-wrap items-center gap-2.5">
+              <a
+                href="#contact"
+                onClick={(e) => {
+                  if (onBookClick) {
+                    e.preventDefault();
+                    onBookClick(activeVehicle);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-md bg-red-800 hover:bg-red-900 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                <span>Book Vehicle</span>
+                <ArrowRight size={14} weight="bold" />
+              </a>
+
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                <WhatsappLogo size={16} weight="fill" />
+                <span>WhatsApp Inquiry</span>
+              </a>
+
+              <a
+                href="tel:+919011507220"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-md bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-all cursor-pointer"
+              >
+                <Phone size={14} weight="bold" className="text-red-700" />
+                <span>Call: 90115 07220</span>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 4. Full-Screen Lightbox Modal for Hi-Res Poster Preview */}
+      {/* 3. Full-Screen Lightbox Modal for Hi-Res Poster Preview */}
       <AnimatePresence>
         {lightboxOpen && (
           <div
@@ -546,30 +420,28 @@ export default function VehicleCollagePattern({ onSelectVehicle, onBookClick }) 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="relative max-w-2xl max-h-[92vh] w-full bg-slate-950 rounded-2xl overflow-hidden shadow-2xl border border-white/20 flex flex-col"
+              transition={{ duration: 0.18 }}
+              className="relative max-w-xl max-h-[92vh] w-full bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-white/20 flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Lightbox Header Bar */}
-              <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+              <div className="p-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-400 text-slate-950">
+                  <span className="px-2 py-0.5 rounded text-[11px] font-black bg-amber-400 text-slate-950">
                     {activeVehicle.capacity}
                   </span>
-                  <h4 className="text-sm font-black truncate">{activeVehicle.name}</h4>
+                  <h4 className="text-xs sm:text-sm font-black truncate">{activeVehicle.name}</h4>
                 </div>
                 <button
                   type="button"
                   onClick={() => setLightboxOpen(false)}
-                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                  aria-label="Close poster preview"
+                  className="p-1 rounded bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                  aria-label="Close"
                 >
-                  <X size={20} weight="bold" />
+                  <X size={18} weight="bold" />
                 </button>
               </div>
 
-              {/* Lightbox Poster Image */}
-              <div className="flex-1 overflow-auto p-2 sm:p-4 flex items-center justify-center bg-black/50">
+              <div className="flex-1 overflow-auto p-2 sm:p-3 flex items-center justify-center bg-black/50">
                 <img
                   src={activeVehicle.image}
                   onError={(e) => {
@@ -578,31 +450,30 @@ export default function VehicleCollagePattern({ onSelectVehicle, onBookClick }) 
                     }
                   }}
                   alt={activeVehicle.name}
-                  className="max-h-[75vh] w-auto object-contain rounded-md shadow-2xl"
+                  className="max-h-[72vh] w-auto object-contain rounded shadow-lg"
                 />
               </div>
 
-              {/* Lightbox Action Footer */}
-              <div className="p-3 bg-slate-900 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800">
+              <div className="p-2.5 bg-slate-900 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800">
                 <p className="text-xs text-slate-300 font-medium">
-                  Direct Booking Desk: <strong className="text-amber-400">+91 90115 07220</strong>
+                  Booking Desk: <strong className="text-amber-400">+91 90115 07220</strong>
                 </p>
                 <div className="flex items-center gap-2">
                   <a
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
                   >
-                    <WhatsappLogo size={16} weight="fill" />
-                    <span>Inquire on WhatsApp</span>
+                    <WhatsappLogo size={15} weight="fill" />
+                    <span>Inquire</span>
                   </a>
                   <a
                     href="tel:+919011507220"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-800 hover:bg-red-900 text-white text-xs font-bold transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-800 hover:bg-red-900 text-white text-xs font-bold"
                   >
-                    <Phone size={15} weight="bold" />
-                    <span>Call Now</span>
+                    <Phone size={14} weight="bold" />
+                    <span>Call</span>
                   </a>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import WhyChooseUs from '../WhyChooseUs';
 import CustomerReviews from '../CustomerReviews';
 import CtaSection from '../CtaSection';
 import VehicleCollagePattern from '../components/VehicleCollagePattern';
+import FleetGallerySection from '../components/FleetGallerySection';
 import { ArrowRight } from '@phosphor-icons/react';
 
 export default function HomePage({ onNavigate }) {
@@ -59,7 +60,10 @@ export default function HomePage({ onNavigate }) {
         </button>
       </div>
 
-      {/* 4. Why Choose Us (Trust Pillars) */}
+      {/* 4. Complete Owned Fleet Inventory & Flyer Showcase */}
+      <FleetGallerySection onBookClick={() => onNavigate('contact')} />
+
+      {/* 5. Why Choose Us (Trust Pillars) */}
       <WhyChooseUs />
 
       {/* 5. Verified Customer Reviews */}
