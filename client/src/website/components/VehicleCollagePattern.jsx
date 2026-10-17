@@ -118,7 +118,7 @@ export const FLEET_VEHICLES = [
     id: 'bus-45',
     name: '45 Seater Air Suspension Coach',
     shortName: '45 Seater Coach',
-    pillLabel: 'Luxury Coach 45',
+    pillLabel: 'Coach 45',
     capacityBadge: '45 Seater',
     plate: 'MH 12 XN 7220',
     category: 'Flagship Air Suspension Coach',
@@ -143,7 +143,7 @@ export const FLEET_VEHICLES = [
     id: 'bus-46',
     name: '46 Seater AC Tourist Coach',
     shortName: '46 Seater Coach',
-    pillLabel: 'Luxury Coach 46',
+    pillLabel: 'Coach 46',
     capacityBadge: '46 Seater',
     plate: 'Yashraj Pink Coach',
     category: 'Grand Luxury Tourist Coach',
@@ -168,8 +168,8 @@ export const FLEET_VEHICLES = [
     id: 'all-fleet',
     name: 'Complete Fleet Lineup (17-50 Seats)',
     shortName: 'Complete Fleet',
-    pillLabel: 'All Fleet Lineup',
-    capacityBadge: '6 to 50 Seats',
+    pillLabel: 'All Fleet',
+    capacityBadge: '17-50',
     plate: 'All Vehicle Models',
     category: 'Full Maharashtra Fleet Range',
     capacity: '6 to 50 Seater',
@@ -213,8 +213,8 @@ export default function VehicleCollagePattern({ onSelectVehicle, onBookClick }) 
 
   return (
     <div className="w-full font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* 1. Vehicle Category Selector Pills (Compact & Clean) */}
-      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none mb-6">
+      {/* 1. Vehicle Category Selector Pills (Small, No Scrollbar, Fits in 1 Screen) */}
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-5">
         {FLEET_VEHICLES.map((vehicle) => {
           const isActive = vehicle.id === activeVehicleId;
           return (
@@ -225,15 +225,15 @@ export default function VehicleCollagePattern({ onSelectVehicle, onBookClick }) 
                 setActiveVehicleId(vehicle.id);
                 if (onSelectVehicle) onSelectVehicle(vehicle);
               }}
-              className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
                 isActive
-                  ? 'bg-red-800 text-white shadow-sm ring-2 ring-red-700/40'
+                  ? 'bg-red-800 text-white shadow-xs ring-1 ring-red-700'
                   : 'bg-white text-slate-700 hover:bg-slate-100 hover:text-navy-950 border border-slate-200'
               }`}
             >
               <span>{vehicle.pillLabel || vehicle.shortName}</span>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded font-extrabold ${
                   isActive ? 'bg-amber-400 text-slate-900' : 'bg-slate-100 text-slate-600'
                 }`}
               >
