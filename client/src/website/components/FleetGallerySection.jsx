@@ -169,34 +169,8 @@ export default function FleetGallerySection({ onBookClick }) {
                     }
                   }}
                   alt={selectedVehicle.name}
-                  className="max-h-[72vh] w-auto object-contain rounded shadow-lg"
+                  className="max-h-[82vh] w-auto object-contain rounded shadow-lg"
                 />
-              </div>
-
-              <div className="p-2.5 bg-slate-900 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800">
-                <p className="text-xs text-slate-300 font-medium">
-                  Booking Desk: <strong className="text-amber-400">+91 90115 07220</strong>
-                </p>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://wa.me/${selectedVehicle.whatsappNumber}?text=${encodeURIComponent(
-                      selectedVehicle.whatsappMessage
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
-                  >
-                    <WhatsappLogo size={15} weight="fill" />
-                    <span>Inquire</span>
-                  </a>
-                  <a
-                    href="tel:+919011507220"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-800 hover:bg-red-900 text-white text-xs font-bold"
-                  >
-                    <Phone size={14} weight="bold" />
-                    <span>Call</span>
-                  </a>
-                </div>
               </div>
             </motion.div>
           </div>
