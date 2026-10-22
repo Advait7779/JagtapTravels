@@ -13,6 +13,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
     return name.trim();
   };
   const quote = revisionIndex < 0 ? quotation : quotation.revisions[revisionIndex];
+  const dailyPricing = quote.pricingBasis === 'daily';
   const rawCompanyName = (quote?.company && quote.company.companyName) || settings.companyName || 'Jagtap Travels';
   const company = { ...settings, ...(quote?.company || {}), companyName: cleanCompanyName(rawCompanyName) };
 
@@ -59,31 +60,30 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
               {company.address && <p className="max-w-md text-xs text-slate-600">{company.address}</p>}
               <p className="text-xs text-slate-600">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
             </div>
-            <img src="/jagtap-brand-logo.png" alt="Jagtap Travels" className="h-12 w-auto object-contain" />
+            <img src="/jagtap-brand-logo.png" alt="Jagtap Travels" className="h-20 w-auto shrink-0 object-contain sm:h-24" />
           </header>
 
           <div className="border-b border-slate-300 py-5 text-xs">
             <p className="text-base font-extrabold">{quote.companyName}</p>
           </div>
 
-          <div className="mt-5 overflow-x-auto">
+          {!dailyPricing && <p className="mt-5 text-xs text-slate-600">Existing quotation with monthly pricing</p>}
+          <div className={`${dailyPricing ? 'mt-5' : 'mt-2'} overflow-x-auto`}>
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="bg-navy-950 text-white">
-                  <th className="p-2">Vehicle offer</th>
-                  <th className="p-2 text-center">Days / month</th>
-                  <th className="p-2 text-right">Fixed / month</th>
-                  <th className="p-2 text-right">Included KM</th>
-                  <th className="p-2 text-right">Excess ₹/KM</th>
+                  <th className="p-2">Type of Vehicle</th>
+                  <th className="p-2 text-center">{dailyPricing ? 'Per Day Package km' : 'Package KM'}</th>
+                  <th className="p-2 text-right">{dailyPricing ? 'Per Day Package Amount' : 'Package Amount'}</th>
+                  <th className="p-2 text-right">Extra km Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {quote.lineItems.map((line) => (
                   <tr key={line.id} className="border-b border-slate-300">
                     <td className="p-2 font-bold">{line.vehicleType}</td>
-                    <td className="p-2 text-center">{line.packageDays ? `${line.packageDays} Days` : '—'}</td>
-                    <td className="p-2 text-right">{formatINR(line.monthlyBaseFare)}</td>
-                    <td className="p-2 text-right">{line.includedMonthlyKm}</td>
+                    <td className="p-2 text-center">{dailyPricing ? line.includedDailyKm : line.includedMonthlyKm}</td>
+                    <td className="p-2 text-right">{formatINR(dailyPricing ? line.dailyBaseFare : line.monthlyBaseFare)}</td>
                     <td className="p-2 text-right">{formatINR(line.extraRatePerKm)}</td>
                   </tr>
                 ))}
@@ -91,12 +91,12 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             </table>
           </div>
           <div className="mt-6 ml-auto w-full max-w-sm border border-slate-400 text-xs">
-            <div className="flex justify-between border-b border-slate-300 p-2"><span>Monthly packages</span><strong>{formatINR(quote.fixedMonthlyTotal)}</strong></div>
+            <div className="flex justify-between border-b border-slate-300 p-2"><span>{dailyPricing ? '1day charges' : 'Package charges'}</span><strong>{formatINR(dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal)}</strong></div>
             {Number(quote.estimatedExcessTotal) > 0 && <div className="flex justify-between border-b border-slate-300 p-2"><span>Estimated excess KM</span><strong>{formatINR(quote.estimatedExcessTotal)}</strong></div>}
             {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-slate-300 p-2"><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
             {(Number(quote.estimatedExcessTotal) > 0 || Number(quote.estimatedOtherCharges) > 0) && <div className="flex justify-between border-b border-slate-300 p-2"><span>Subtotal</span><strong>{formatINR(quote.estimatedSubtotal)}</strong></div>}
             <div className="flex justify-between border-b border-slate-300 p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
-            <div className="flex justify-between bg-navy-950 p-2 text-sm font-black text-white"><span>MONTHLY TOTAL</span><span>{formatINR(quote.estimatedTotal)}</span></div>
+            <div className="flex justify-between bg-navy-950 p-2 text-sm font-black text-white"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
         </article>
       </div>

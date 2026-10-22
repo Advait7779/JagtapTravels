@@ -42,6 +42,9 @@ function validateCorporateQuotation(input, data, existing = null) {
   const gstRate = taxMode === 'nongst' ? 0 : number(input.gstRate, 'GST rate', 0, 100);
   if (taxMode === 'gst' && ![5, 18].includes(gstRate))
     throw new HttpError(400, 'Choose a 5% or 18% GST rate.');
+  const pricingBasis = input.pricingBasis || existing?.pricingBasis || 'monthly';
+  if (!['daily', 'monthly'].includes(pricingBasis))
+    throw new HttpError(400, 'Choose daily or monthly quotation pricing.');
   if (!Array.isArray(input.lineItems) || input.lineItems.length < 1 || input.lineItems.length > 20)
     throw new HttpError(400, 'Add between 1 and 20 vehicle offers.');
   const seenIds = new Set();
@@ -51,31 +54,36 @@ function validateCorporateQuotation(input, data, existing = null) {
     const lineId = item.id ? quotationId(String(item.id)) : crypto.randomUUID();
     if (seenIds.has(lineId)) throw new HttpError(400, 'Vehicle offer IDs must be unique.');
     seenIds.add(lineId);
-    const monthlyBaseFare = number(item.monthlyBaseFare, 'Monthly fare', 0);
-    const includedMonthlyKm = number(item.includedMonthlyKm, 'Included monthly KM', 0, 10000000);
+    const baseFare = number(pricingBasis === 'daily' ? item.dailyBaseFare : item.monthlyBaseFare,
+      pricingBasis === 'daily' ? 'Per-day package amount' : 'Monthly fare', 0);
+    const includedKm = number(pricingBasis === 'daily' ? item.includedDailyKm : item.includedMonthlyKm,
+      pricingBasis === 'daily' ? 'Per-day package KM' : 'Included monthly KM', 0, 10000000);
     const extraRatePerKm = number(item.extraRatePerKm, 'Excess KM rate', 0, 1000000);
     const estimatedExtraKm = number(item.estimatedExtraKm, 'Estimated excess KM', 0, 10000000);
     const packageDays = item.packageDays != null && item.packageDays !== ''
       ? number(item.packageDays, 'Days in package', 0, 31)
       : null;
-    if (monthlyBaseFare <= 0) throw new HttpError(400, 'Each vehicle offer needs a monthly fare.');
+    if (baseFare <= 0) throw new HttpError(400,
+      pricingBasis === 'daily' ? 'Each vehicle offer needs a per-day package amount.' : 'Each vehicle offer needs a monthly fare.');
     if (packageDays !== null && (!Number.isInteger(packageDays) || packageDays < 1))
       throw new HttpError(400, 'Days in package must be a whole number from 1 to 31.');
     return {
       id: lineId,
       vehicleType: text(item.vehicleType, 'Vehicle type', true, 200),
       packageDays,
-      monthlyBaseFare,
-      includedMonthlyKm,
+      ...(pricingBasis === 'daily'
+        ? { dailyBaseFare: baseFare, includedDailyKm: includedKm }
+        : { monthlyBaseFare: baseFare, includedMonthlyKm: includedKm }),
       extraRatePerKm,
       estimatedExtraKm,
       estimatedExtraCharge: money(estimatedExtraKm * extraRatePerKm),
     };
   });
   const estimatedOtherCharges = number(input.estimatedOtherCharges, 'Estimated other charges', 0);
-  const fixedMonthlyTotal = money(lineItems.reduce((sum, item) => sum + item.monthlyBaseFare, 0));
+  const fixedTotal = money(lineItems.reduce((sum, item) => sum +
+    (pricingBasis === 'daily' ? item.dailyBaseFare : item.monthlyBaseFare), 0));
   const estimatedExcessTotal = money(lineItems.reduce((sum, item) => sum + item.estimatedExtraCharge, 0));
-  const estimatedSubtotal = money(fixedMonthlyTotal + estimatedExcessTotal + estimatedOtherCharges);
+  const estimatedSubtotal = money(fixedTotal + estimatedExcessTotal + estimatedOtherCharges);
   const estimatedTax = money(estimatedSubtotal * gstRate / 100);
   const contactEmail = text(input.contactEmail, 'Contact email', false, 255);
   if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail))
@@ -93,9 +101,10 @@ function validateCorporateQuotation(input, data, existing = null) {
     validityDate,
     taxMode,
     gstRate,
+    pricingBasis,
     lineItems,
     estimatedOtherCharges,
-    fixedMonthlyTotal,
+    ...(pricingBasis === 'daily' ? { fixedDailyTotal: fixedTotal } : { fixedMonthlyTotal: fixedTotal }),
     estimatedExcessTotal,
     estimatedSubtotal,
     estimatedTax,
@@ -149,6 +158,8 @@ function createCorporateQuotationService(repo) {
         const validated = validateCorporateQuotation(input, data, row);
         const { revisions, ...previous } = row;
         row.revisions = [...revisions, { ...previous, revisedAt: new Date().toISOString() }];
+        delete row.fixedDailyTotal;
+        delete row.fixedMonthlyTotal;
         Object.assign(row, validated, {
           revision: row.revision + 1,
           status: 'Draft',
@@ -191,6 +202,8 @@ function createCorporateQuotationService(repo) {
         const assignments = input?.assignments;
         if (!Array.isArray(assignments) || assignments.length !== quote.lineItems.length)
           throw new HttpError(400, 'Assign one fleet vehicle to each quoted offer.');
+        if (quote.pricingBasis === 'daily' && quote.lineItems.some((line) => !line.packageDays))
+          throw new HttpError(400, 'Enter days per month for each daily offer before creating monthly contracts.');
         const assigned = new Map();
         const vehicleIds = new Set();
         for (const assignment of assignments) {
@@ -244,8 +257,10 @@ function createCorporateQuotationService(repo) {
               driverName: vehicle.driverName || '',
               startDate: quote.proposedStartDate,
               endDate: quote.proposedEndDate || '',
-              monthlyBaseFare: line.monthlyBaseFare,
-              includedMonthlyKm: line.includedMonthlyKm,
+              monthlyBaseFare: quote.pricingBasis === 'daily'
+                ? money(line.dailyBaseFare * line.packageDays) : line.monthlyBaseFare,
+              includedMonthlyKm: quote.pricingBasis === 'daily'
+                ? money(line.includedDailyKm * line.packageDays) : line.includedMonthlyKm,
               extraRatePerKm: line.extraRatePerKm,
               packageDays: line.packageDays,
               status: 'Active',

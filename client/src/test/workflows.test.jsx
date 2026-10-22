@@ -19,6 +19,7 @@ import CorporateTripLogModal from '../components/corporate/CorporateTripLogModal
 import CorporateLogsheetView from '../components/corporate/CorporateLogsheetView';
 import CorporateContractTable from '../components/corporate/CorporateContractTable';
 import CorporateQuotationHub from '../components/corporate/CorporateQuotationHub';
+import CorporateQuotationEditor from '../components/corporate/CorporateQuotationEditor';
 import CorporateQuotationPrintView from '../components/corporate/CorporateQuotationPrintView';
 import CorporateInvoiceTable from '../components/corporate/CorporateInvoiceTable';
 import CorporateInvoiceModal from '../components/corporate/CorporateInvoiceModal';
@@ -60,7 +61,7 @@ it('hides contract administration actions from staff', () => {
   expect(screen.queryByTitle('Generate Tax Invoice')).toBeNull();
   expect(screen.getByText('Active', { selector: 'span' })).toBeTruthy();
 });
-it('prepares a corporate monthly quote and shows server-bound proposal details', async () => {
+it('prepares a corporate per-day quote and shows server-bound proposal details', async () => {
   const add = vi.spyOn(api, 'addCorporateQuotation').mockResolvedValue({ id: 'new-quote' });
   const refresh = vi.fn().mockResolvedValue();
   render(<CorporateQuotationHub quotations={[]} customers={[]} vehicles={[]} onRefresh={refresh} onView={vi.fn()} onOpenContracts={vi.fn()} />);
@@ -69,16 +70,31 @@ it('prepares a corporate monthly quote and shows server-bound proposal details',
   fireEvent.change(within(editor).getByLabelText('Company name *'), { target: { value: 'Example Industries' } });
   fireEvent.change(within(editor).getByLabelText('Phone *'), { target: { value: '9876543210' } });
   fireEvent.change(within(editor).getByLabelText('Vehicle type *'), { target: { value: 'Innova Crysta' } });
-  fireEvent.change(within(editor).getByLabelText('Monthly fixed fare ₹ *'), { target: { value: '45000' } });
-  fireEvent.change(within(editor).getByLabelText('Included KM/month'), { target: { value: '2500' } });
+  fireEvent.change(within(editor).getByLabelText('Per Day Package Amount ₹ *'), { target: { value: '45000' } });
+  fireEvent.change(within(editor).getByLabelText('Per Day Package KM'), { target: { value: '2500' } });
   fireEvent.change(within(editor).getByLabelText('Excess rate ₹/KM'), { target: { value: '14' } });
   expect(within(editor).queryByLabelText('Estimated excess KM')).toBeNull();
   expect(within(editor).queryByLabelText('Valid until *')).toBeNull();
   expect(within(editor).getByText('₹53,100.00')).toBeTruthy();
   fireEvent.click(within(editor).getByRole('button', { name: 'Save quotation' }));
   await waitFor(() => expect(add).toHaveBeenCalledTimes(1));
-  expect(add.mock.calls[0][0].lineItems[0]).toMatchObject({ vehicleType: 'Innova Crysta', includedMonthlyKm: '2500', extraRatePerKm: '14' });
+  expect(add.mock.calls[0][0].pricingBasis).toBe('daily');
+  expect(add.mock.calls[0][0].lineItems[0]).toMatchObject({ vehicleType: 'Innova Crysta', includedDailyKm: '2500', extraRatePerKm: '14' });
   await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+});
+it('requires fresh per-day figures when switching an older monthly quotation', () => {
+  render(<CorporateQuotationEditor quotation={{
+    quotationNumber: 'CQ-2026-001', pricingBasis: 'monthly', companyName: 'Example Industries',
+    contactPhone: '9876543210', taxMode: 'nongst', gstRate: 0,
+    proposedStartDate: '2026-11-01', validityDate: '2026-11-30',
+    lineItems: [{ id: 'line-1', vehicleType: 'Bus', packageDays: 26,
+      monthlyBaseFare: 45000, includedMonthlyKm: 2500, extraRatePerKm: 14 }],
+  }} onClose={vi.fn()} onSave={vi.fn()} />);
+  expect(screen.getByLabelText('Monthly fixed fare ₹ *').value).toBe('45000');
+  fireEvent.click(screen.getByRole('button', { name: 'Switch to per-day prices' }));
+  expect(screen.getByLabelText('Per Day Package Amount ₹ *').value).toBe('');
+  expect(screen.getByLabelText('Per Day Package KM').value).toBe('');
+  expect(screen.getByText(/Previous monthly values were not converted automatically/)).toBeTruthy();
 });
 it('shows quote editing and print without contract or approval actions', () => {
   const quote = {

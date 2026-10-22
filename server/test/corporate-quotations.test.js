@@ -73,6 +73,7 @@ test('corporate quotations are admin-only, server-priced, versioned and convert 
   const quote = created.body;
   assert.match(quote.quotationNumber, /^CQ-\d{4}-001$/);
   assert.equal(quote.status, 'Draft');
+  assert.equal(quote.pricingBasis, 'monthly');
   assert.equal(quote.fixedMonthlyTotal, 75000);
   assert.equal(quote.estimatedExcessTotal, 1400);
   assert.equal(quote.estimatedSubtotal, 76900);
@@ -142,6 +143,48 @@ test('corporate quotations are admin-only, server-priced, versioned and convert 
     .send({ assignments: [{ lineId: overlapping.body.lineItems[0].id, vehicleId: vehicle1.body.id }] })
     .expect(409);
   assert.equal((await repo.read()).corporateContracts.length, 2);
+});
+
+test('per-day quotations calculate one-day totals and convert using package days', async (t) => {
+  const { agent, csrf } = await environment(t);
+  const vehicle = await agent.post('/api/vehicles').set('X-CSRF-Token', csrf)
+    .send({ name: 'Bus', vehicleNumber: 'MH 12 EF 9876' }).expect(201);
+  const dailyInput = {
+    ...quotation(), pricingBasis: 'daily', estimatedOtherCharges: 0,
+    lineItems: [{ vehicleType: '45 Seater AC', dailyBaseFare: 19500,
+      includedDailyKm: 300, extraRatePerKm: 65, estimatedExtraKm: 0 }],
+  };
+  const created = await agent.post('/api/corporate-quotations').set('X-CSRF-Token', csrf)
+    .send(dailyInput).expect(201);
+  assert.equal(created.body.fixedDailyTotal, 19500);
+  assert.equal(created.body.estimatedTax, 3510);
+  assert.equal(created.body.estimatedTotal, 23010);
+  assert.equal(created.body.lineItems[0].includedDailyKm, 300);
+  assert.equal(created.body.lineItems[0].monthlyBaseFare, undefined);
+  const assignment = [{ lineId: created.body.lineItems[0].id, vehicleId: vehicle.body.id }];
+  await agent.post(`/api/corporate-quotations/${created.body.id}/convert`)
+    .set('X-CSRF-Token', csrf).send({ assignments: assignment }).expect(400);
+  const revised = await agent.put(`/api/corporate-quotations/${created.body.id}`)
+    .set('X-CSRF-Token', csrf)
+    .send({ ...dailyInput, revision: 1, lineItems: [{ ...dailyInput.lineItems[0],
+      id: created.body.lineItems[0].id, packageDays: 26 }] }).expect(200);
+  assert.equal(revised.body.revisions[0].pricingBasis, 'daily');
+  const converted = await agent.post(`/api/corporate-quotations/${created.body.id}/convert`)
+    .set('X-CSRF-Token', csrf).send({ assignments: assignment }).expect(200);
+  assert.equal(converted.body.contracts[0].monthlyBaseFare, 507000);
+  assert.equal(converted.body.contracts[0].includedMonthlyKm, 7800);
+  assert.equal(converted.body.contracts[0].packageDays, 26);
+
+  const legacy = await agent.post('/api/corporate-quotations').set('X-CSRF-Token', csrf)
+    .send({ ...quotation(), lineItems: [quotation().lineItems[0]] }).expect(201);
+  const switched = await agent.put(`/api/corporate-quotations/${legacy.body.id}`)
+    .set('X-CSRF-Token', csrf)
+    .send({ ...dailyInput, revision: 1, lineItems: [{ ...dailyInput.lineItems[0],
+      id: legacy.body.lineItems[0].id, packageDays: 26 }] }).expect(200);
+  assert.equal(switched.body.pricingBasis, 'daily');
+  assert.equal(switched.body.fixedDailyTotal, 19500);
+  assert.equal(switched.body.fixedMonthlyTotal, undefined);
+  assert.equal(switched.body.revisions[0].fixedMonthlyTotal, 45000);
 });
 
 test('corporate quotation records persist through repeat PostgreSQL migration', async (t) => {

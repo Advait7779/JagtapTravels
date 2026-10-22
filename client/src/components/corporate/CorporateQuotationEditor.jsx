@@ -6,13 +6,14 @@ const newLine = () => ({
   id: `line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   vehicleType: '',
   packageDays: '',
-  monthlyBaseFare: '',
-  includedMonthlyKm: '',
+  dailyBaseFare: '',
+  includedDailyKm: '',
   extraRatePerKm: '',
   estimatedExtraKm: '0',
 });
 
 const newForm = () => ({
+  pricingBasis: 'daily',
   companyId: '', companyName: '', companyAddress: '', companyGstin: '',
   contactName: '', contactPhone: '', contactEmail: '',
   proposedStartDate: localDate(15), proposedEndDate: '', validityDate: localDate(30),
@@ -24,12 +25,14 @@ const fieldClass = 'form-input bg-slate-50 focus:outline-none focus:ring-2 focus
 
 export default function CorporateQuotationEditor({ quotation, customers = [], onClose, onSave }) {
   const [form, setForm] = useState(() => quotation
-    ? { ...quotation, lineItems: quotation.lineItems.map((line) => ({ ...line, packageDays: line.packageDays ?? '' })) }
+    ? { ...quotation, pricingBasis: quotation.pricingBasis || 'monthly',
+      lineItems: quotation.lineItems.map((line) => ({ ...line, packageDays: line.packageDays ?? '' })) }
     : newForm());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const totals = useMemo(() => {
-    const fixed = roundMoney(form.lineItems.reduce((sum, line) => sum + (Number(line.monthlyBaseFare) || 0), 0));
+    const fixed = roundMoney(form.lineItems.reduce((sum, line) => sum +
+      (Number(form.pricingBasis === 'daily' ? line.dailyBaseFare : line.monthlyBaseFare) || 0), 0));
     const excess = roundMoney(form.lineItems.reduce((sum, line) =>
       sum + (Number(line.estimatedExtraKm) || 0) * (Number(line.extraRatePerKm) || 0), 0));
     const subtotal = roundMoney(fixed + excess + (Number(form.estimatedOtherCharges) || 0));
@@ -76,7 +79,7 @@ export default function CorporateQuotationEditor({ quotation, customers = [], on
             <div className="rounded-md bg-amber-400/15 p-2 text-amber-400"><Buildings size={23} weight="bold" /></div>
             <div>
               <h2 className="text-base font-bold">{quotation ? `Edit ${quotation.quotationNumber}` : 'New Corporate Quotation'}</h2>
-              <p className="text-xs text-slate-300">Monthly vehicle package proposal</p>
+              <p className="text-xs text-slate-300">{form.pricingBasis === 'daily' ? 'Per-day vehicle package proposal' : 'Monthly vehicle package proposal'}</p>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close quotation editor" className="rounded-md p-2 text-slate-300 hover:bg-white/10 hover:text-white"><X size={20} /></button>
@@ -112,9 +115,18 @@ export default function CorporateQuotationEditor({ quotation, customers = [], on
 
           <section className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-bold text-navy-950">Monthly vehicle offers</h3>
-              <button type="button" disabled={form.lineItems.length >= 20} onClick={() => update('lineItems', [...form.lineItems, newLine()])} className="inline-flex items-center gap-1 rounded-md border border-navy-900 px-3 py-2 text-xs font-bold text-navy-950 hover:bg-slate-50"><Plus size={15} /> Add vehicle</button>
+              <h3 className="text-sm font-bold text-navy-950">{form.pricingBasis === 'daily' ? 'Per-day vehicle offers' : 'Monthly vehicle offers'}</h3>
+              <div className="flex flex-wrap justify-end gap-2">
+                {form.pricingBasis === 'monthly' && <button type="button" onClick={() => setForm((current) => ({
+                  ...current,
+                  pricingBasis: 'daily',
+                  lineItems: current.lineItems.map((line) => ({ ...line, dailyBaseFare: '', includedDailyKm: '' })),
+                }))} className="rounded-md border border-amber-400 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-50">Switch to per-day prices</button>}
+                <button type="button" disabled={form.lineItems.length >= 20} onClick={() => update('lineItems', [...form.lineItems, newLine()])} className="inline-flex items-center gap-1 rounded-md border border-navy-900 px-3 py-2 text-xs font-bold text-navy-950 hover:bg-slate-50"><Plus size={15} /> Add vehicle</button>
+              </div>
             </div>
+            {quotation && quotation.pricingBasis !== 'daily' && form.pricingBasis === 'daily' &&
+              <p className="text-xs text-amber-800">Enter the correct per-day amount and KM for every vehicle. Previous monthly values were not converted automatically.</p>}
             <div className="space-y-3">
               {form.lineItems.map((line, index) => (
                 <div key={line.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -122,8 +134,13 @@ export default function CorporateQuotationEditor({ quotation, customers = [], on
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     <label className="form-label">Vehicle type *<input className={fieldClass} required maxLength={200} placeholder="Innova Crysta" value={line.vehicleType} onChange={(event) => updateLine(line.id, 'vehicleType', event.target.value)} /></label>
                     <label className="form-label">Days / month<input className={fieldClass} type="number" min="1" max="31" step="1" placeholder="e.g. 26 or 30" value={line.packageDays ?? ''} onChange={(event) => updateLine(line.id, 'packageDays', event.target.value)} /></label>
-                    <label className="form-label">Monthly fixed fare ₹ *<input className={fieldClass} type="number" required min="0.01" step="0.01" value={line.monthlyBaseFare} onChange={(event) => updateLine(line.id, 'monthlyBaseFare', event.target.value)} /></label>
-                    <label className="form-label">Included KM/month<input className={fieldClass} type="number" min="0" step="0.01" value={line.includedMonthlyKm} onChange={(event) => updateLine(line.id, 'includedMonthlyKm', event.target.value)} /></label>
+                    {form.pricingBasis === 'daily' ? <>
+                      <label className="form-label">Per Day Package Amount ₹ *<input className={fieldClass} type="number" required min="0.01" step="0.01" value={line.dailyBaseFare ?? ''} onChange={(event) => updateLine(line.id, 'dailyBaseFare', event.target.value)} /></label>
+                      <label className="form-label">Per Day Package KM<input className={fieldClass} type="number" min="0" step="0.01" value={line.includedDailyKm ?? ''} onChange={(event) => updateLine(line.id, 'includedDailyKm', event.target.value)} /></label>
+                    </> : <>
+                      <label className="form-label">Monthly fixed fare ₹ *<input className={fieldClass} type="number" required min="0.01" step="0.01" value={line.monthlyBaseFare ?? ''} onChange={(event) => updateLine(line.id, 'monthlyBaseFare', event.target.value)} /></label>
+                      <label className="form-label">Included KM/month<input className={fieldClass} type="number" min="0" step="0.01" value={line.includedMonthlyKm ?? ''} onChange={(event) => updateLine(line.id, 'includedMonthlyKm', event.target.value)} /></label>
+                    </>}
                     <label className="form-label">Excess rate ₹/KM<input className={fieldClass} type="number" min="0" step="0.01" value={line.extraRatePerKm} onChange={(event) => updateLine(line.id, 'extraRatePerKm', event.target.value)} /></label>
                   </div>
                 </div>
@@ -133,9 +150,9 @@ export default function CorporateQuotationEditor({ quotation, customers = [], on
 
           <div className="rounded-md bg-navy-950 p-4 text-white">
             <div className="grid gap-2 text-xs sm:grid-cols-3">
-              <div>Monthly package <strong className="block text-sm">{formatINR(totals.subtotal)}</strong></div>
+              <div>{form.pricingBasis === 'daily' ? '1day charges' : 'Monthly package'} <strong className="block text-sm">{formatINR(totals.subtotal)}</strong></div>
               <div>{form.taxMode === 'gst' ? `GST ${form.gstRate}%` : 'No GST'}<strong className="block text-sm">{formatINR(totals.tax)}</strong></div>
-              <div className="text-amber-300">Monthly total<strong className="block text-lg">{formatINR(totals.total)}</strong></div>
+              <div className="text-amber-300">Total amount<strong className="block text-lg">{formatINR(totals.total)}</strong></div>
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">

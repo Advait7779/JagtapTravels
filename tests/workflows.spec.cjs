@@ -97,8 +97,8 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await corporateEditor.getByLabel('Phone *').fill('9876543210');
   await corporateEditor.getByLabel('Vehicle type *').fill('Innova Crysta');
   await corporateEditor.getByLabel('Days / month').fill('26');
-  await corporateEditor.getByLabel('Monthly fixed fare ₹ *').fill('45000');
-  await corporateEditor.getByLabel('Included KM/month').fill('2500');
+  await corporateEditor.getByLabel('Per Day Package Amount ₹ *').fill('45000');
+  await corporateEditor.getByLabel('Per Day Package KM').fill('2500');
   await corporateEditor.getByLabel('Excess rate ₹/KM').fill('14');
   await corporateEditor.getByLabel('Tax treatment').selectOption('nongst');
   await expect(corporateEditor.getByText('₹45,000.00').last()).toBeVisible();
@@ -113,7 +113,10 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await quoteRow.getByRole('button', { name: 'View / PDF' }).click();
   const corporatePreview = page.getByRole('dialog', { name: 'Corporate quotation preview' });
   await expect(corporatePreview.getByText('₹45,000.00').last()).toBeVisible();
-  await expect(corporatePreview.getByText('26 Days')).toBeVisible();
+  await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package km' })).toBeVisible();
+  await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package Amount' })).toBeVisible();
+  await expect(corporatePreview.getByText('1day charges')).toBeVisible();
+  await expect(corporatePreview.getByText('TOTAL AMOUNT')).toBeVisible();
   await page.emulateMedia({ media: 'print' });
   await expect(page.locator('.corporate-quotation-printable')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('corporate-quotation-print.png'), fullPage: true });
