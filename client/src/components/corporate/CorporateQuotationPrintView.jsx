@@ -73,8 +73,8 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
                 <tr className="bg-navy-950 text-white">
                   <th className="p-2">Type of Vehicle</th>
                   <th className="p-2 text-center">Days</th>
-                  <th className="p-2 text-center">{dailyPricing ? 'Per Day Package km' : 'Package KM'}</th>
-                  <th className="p-2 text-right">{dailyPricing ? 'Per Day Package Amount' : 'Package Amount'}</th>
+                  <th className="p-2 text-center">Per Day Package km</th>
+                  <th className="p-2 text-right">Per Day Package Amount</th>
                   <th className="p-2 text-right">Extra km Rate</th>
                 </tr>
               </thead>
