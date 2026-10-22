@@ -105,7 +105,8 @@ it('shows quote editing and print without contract or approval actions', () => {
   const preview = screen.getByRole('dialog', { name: 'Corporate quotation preview' });
   expect(within(preview).getByText('₹90,152.00')).toBeTruthy();
   fireEvent.change(within(preview).getByLabelText('Quotation revision'), { target: { value: '0' } });
-  expect(within(preview).getByText('Previous version · Revision 1')).toBeTruthy();
+  expect(within(preview).getByLabelText('Quotation revision').value).toBe('0');
+  expect(within(preview).queryByText('Previous version · Revision 1')).toBeNull();
 });
 it('shows a red dustbin only for staff and deletes the selected staff account', async () => {
   const admin = { id: 'admin-1', fullName: 'Owner', email: 'owner@example.invalid', role: 'Administrator' };

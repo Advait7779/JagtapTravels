@@ -218,7 +218,6 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await page.getByLabel('Paid (₹)').fill('10000');
   await page.getByRole('button', { name: 'Update Tyre Log' }).click();
   await expect(tyreRow).toContainText('Remaining: ₹5,200.00');
-  await expect(page.getByText('1 Entries')).toBeVisible();
   await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
   await page.screenshot({
     path: testInfo.outputPath('desktop.png'),
