@@ -49,10 +49,10 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
           </div>
         </div>
 
-        <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#855238] sm:p-10">
+        <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#905F43] sm:p-10">
           <header className="flex items-start justify-between gap-5 border-b-2 border-[#F97316] pb-5">
             <div className="space-y-1">
-              <h1 className="text-2xl font-black uppercase">{company.companyName || 'Jagtap Travels'}</h1>
+              <h1 className="text-2xl font-black uppercase text-[#A57252]">{company.companyName || 'Jagtap Travels'}</h1>
               {company.address && <p className="max-w-md text-xs">{company.address}</p>}
               <p className="text-xs">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
               <a className="block text-xs" href="https://jagtaptravels.com/" target="_blank" rel="noreferrer">jagtaptravels.com</a>
@@ -64,13 +64,13 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
           </header>
 
           <div className="pt-10 pb-5 text-xs">
-            <p className="text-base font-bold">{quote.companyName}</p>
+            <p className="text-base font-bold text-[#A57252]">{quote.companyName}</p>
           </div>
 
           <div className="mt-16 overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
-                <tr className="bg-[#FED7AA]">
+                <tr className="bg-[#FFE8CB]">
                   <th className="p-2">Type of Vehicle</th>
                   <th className="p-2 text-center">Days</th>
                   <th className="p-2 text-center">Per Day Package km</th>
@@ -97,17 +97,23 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
             {(Number(quote.estimatedExcessTotal) > 0 || Number(quote.estimatedOtherCharges) > 0) && <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>Subtotal</span><strong>{formatINR(quote.estimatedSubtotal)}</strong></div>}
             <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
-            <div className="flex justify-between bg-[#FDBA74] p-2 text-sm font-black"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
+            <div className="flex justify-between bg-[#FFE8CB] p-2 text-sm font-black"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
           <ul className="mt-6 list-disc space-y-1 pl-5 text-xs">
             <li>KM calculated from Hadapsar to Hadapsar.</li>
             <li>Toll, parking and RTO permit charges extra.</li>
           </ul>
-          {corporateQuotationStampUrl(settings.corporateQuotationStampUrl) && (
-            <div className="mt-6 ml-auto flex w-full max-w-sm justify-end">
-              <CorporateQuotationStamp url={settings.corporateQuotationStampUrl} />
+          <div className="mt-6 ml-auto flex w-full max-w-sm justify-end">
+            <div className="relative h-32 w-48">
+              <p className="absolute top-4 left-0 text-sm font-bold">Thanks,</p>
+              <p className="absolute bottom-5 left-0 text-sm font-bold uppercase">Jagtap Travels</p>
+              {corporateQuotationStampUrl(settings.corporateQuotationStampUrl) && (
+                <div className="absolute inset-y-0 right-0">
+                  <CorporateQuotationStamp url={settings.corporateQuotationStampUrl} />
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </article>
       </div>
     </div>
