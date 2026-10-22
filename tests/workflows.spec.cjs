@@ -119,7 +119,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package km' })).toBeVisible();
   await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package Amount' })).toBeVisible();
   await expect(corporatePreview.getByRole('columnheader', { name: 'Days' })).toBeVisible();
-  await expect(corporatePreview.getByText('26 Days')).toBeVisible();
+  await expect(corporatePreview.getByRole('cell', { name: '26' })).toBeVisible();
   await expect(corporatePreview.getByText('1day charges')).toBeVisible();
   await expect(corporatePreview.getByText('TOTAL AMOUNT')).toBeVisible();
   await page.emulateMedia({ media: 'print' });

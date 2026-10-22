@@ -45,7 +45,7 @@ it('shows the day and per-day columns with the new brand in a corporate quotatio
   expect(screen.getByRole('columnheader', { name: 'Per Day Package km' })).toBeTruthy();
   expect(screen.getByRole('columnheader', { name: 'Per Day Package Amount' })).toBeTruthy();
   expect(screen.getByRole('columnheader', { name: 'Days' })).toBeTruthy();
-  expect(screen.getByText('26 Days')).toBeTruthy();
+  expect(screen.getByRole('cell', { name: '26' })).toBeTruthy();
   expect(screen.queryByRole('columnheader', { name: /month/i })).toBeNull();
   expect(screen.getByText('1day charges')).toBeTruthy();
   expect(screen.getByText('TOTAL AMOUNT')).toBeTruthy();

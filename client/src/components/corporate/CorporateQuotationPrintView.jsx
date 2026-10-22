@@ -85,7 +85,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
                 {quote.lineItems.map((line) => (
                   <tr key={line.id} className="border-b border-slate-300">
                     <td className="p-2 font-bold">{line.vehicleType}</td>
-                    <td className="p-2 text-center">{line.packageDays ? `${line.packageDays} Days` : '—'}</td>
+                    <td className="p-2 text-center">{line.packageDays || '—'}</td>
                     <td className="p-2 text-center">{dailyPricing ? line.includedDailyKm : line.includedMonthlyKm}</td>
                     <td className="p-2 text-right">{formatINR(dailyPricing ? line.dailyBaseFare : line.monthlyBaseFare)}</td>
                     <td className="p-2 text-right">{formatINR(line.extraRatePerKm)}</td>
