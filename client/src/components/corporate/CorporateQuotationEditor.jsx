@@ -131,7 +131,7 @@ export default function CorporateQuotationEditor({ quotation, customers = [], on
               {form.lineItems.map((line, index) => (
                 <div key={line.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 flex items-center justify-between"><h4 className="text-xs font-bold text-slate-700">Vehicle offer {index + 1}</h4><button type="button" aria-label={`Remove vehicle offer ${index + 1}`} disabled={form.lineItems.length === 1} onClick={() => update('lineItems', form.lineItems.filter((item) => item.id !== line.id))} className="text-rose-600 hover:text-rose-800"><Trash size={17} /></button></div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <div className="grid items-end gap-3 sm:grid-cols-2 md:grid-cols-5">
                     <label className="form-label">Vehicle type *<input className={fieldClass} required maxLength={200} placeholder="Innova Crysta" value={line.vehicleType} onChange={(event) => updateLine(line.id, 'vehicleType', event.target.value)} /></label>
                     <label className="form-label">Days / month<input className={fieldClass} type="number" min="1" max="31" step="1" placeholder="e.g. 26 or 30" value={line.packageDays ?? ''} onChange={(event) => updateLine(line.id, 'packageDays', event.target.value)} /></label>
                     {form.pricingBasis === 'daily' ? <>
