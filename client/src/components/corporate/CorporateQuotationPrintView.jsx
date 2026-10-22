@@ -100,6 +100,10 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             <div className="flex justify-between border-b border-slate-300 p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
             <div className="flex justify-between bg-navy-950 p-2 text-sm font-black text-white"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
+          <ul className="mt-6 list-disc space-y-1 border-t border-slate-300 pt-4 pl-5 text-xs text-slate-700">
+            <li>KM calculated from Hadapsar to Hadapsar.</li>
+            <li>Toll, parking and RTO permit charges extra.</li>
+          </ul>
         </article>
       </div>
     </div>
