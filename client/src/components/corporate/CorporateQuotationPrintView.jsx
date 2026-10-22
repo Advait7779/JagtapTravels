@@ -63,7 +63,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
           </header>
 
           <div className="py-5 text-xs">
-            <p className="text-base font-bold text-[#8B745D]">{quote.companyName}</p>
+            <p className="text-base font-bold text-[#75604B]">{quote.companyName}</p>
           </div>
 
           <div className="mt-5 overflow-x-auto">
