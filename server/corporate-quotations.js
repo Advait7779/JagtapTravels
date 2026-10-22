@@ -31,6 +31,7 @@ function validateCorporateQuotation(input, data, existing = null) {
     ? data.customers.find((row) => same(row.id, companyId))
     : null;
   if (companyId && !customer) throw new HttpError(400, 'Selected company no longer exists.');
+  const quotationDate = date(input.quotationDate || existing?.quotationDate || today(), 'Quotation date', true);
   const proposedStartDate = date(input.proposedStartDate, 'Proposed start date', true);
   const proposedEndDate = date(input.proposedEndDate, 'Proposed end date');
   const validityDate = date(input.validityDate, 'Validity date', true);
@@ -96,6 +97,7 @@ function validateCorporateQuotation(input, data, existing = null) {
     contactName: text(input.contactName, 'Contact name', false, 200),
     contactPhone: text(input.contactPhone || customer?.phone, 'Contact phone', true, 50),
     contactEmail,
+    quotationDate,
     proposedStartDate,
     proposedEndDate,
     validityDate,
@@ -139,7 +141,6 @@ function createCorporateQuotationService(repo) {
           revisions: [],
           status: 'Draft',
           contractIds: [],
-          quotationDate: today(),
           createdAt: now,
           updatedAt: now,
         };

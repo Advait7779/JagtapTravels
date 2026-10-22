@@ -49,6 +49,7 @@ it('shows the day and per-day columns with the new brand in a corporate quotatio
   expect(screen.queryByRole('columnheader', { name: /month/i })).toBeNull();
   expect(screen.getByText('1day charges')).toBeTruthy();
   expect(screen.getByText('TOTAL AMOUNT')).toBeTruthy();
+  expect(screen.getByText('Date: 16 Oct 2026')).toBeTruthy();
   expect(container.textContent).toContain('Jagtap Travels');
   expect(container.textContent).not.toContain('Jagtap Tours and Travels');
 });

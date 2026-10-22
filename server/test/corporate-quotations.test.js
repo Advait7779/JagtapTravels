@@ -69,8 +69,9 @@ test('corporate quotations are admin-only, server-priced, versioned and convert 
   const vehicle2 = await agent.post('/api/vehicles').set('X-CSRF-Token', csrf)
     .send({ name: 'Sedan', vehicleNumber: 'MH 12 CD 5678' }).expect(201);
   const created = await agent.post('/api/corporate-quotations').set('X-CSRF-Token', csrf)
-    .send({ ...quotation(), estimatedTotal: 1, status: 'Accepted' }).expect(201);
+    .send({ ...quotation(), quotationDate: dateAfter(1), estimatedTotal: 1, status: 'Accepted' }).expect(201);
   const quote = created.body;
+  assert.equal(quote.quotationDate, dateAfter(1));
   assert.match(quote.quotationNumber, /^CQ-\d{4}-001$/);
   assert.equal(quote.status, 'Draft');
   assert.equal(quote.pricingBasis, 'monthly');
@@ -87,9 +88,11 @@ test('corporate quotations are admin-only, server-priced, versioned and convert 
     .send({ status: 'Sent' }).expect(200);
   const revised = await agent.put(`/api/corporate-quotations/${quote.id}`)
     .set('X-CSRF-Token', csrf)
-    .send({ ...quotation(), revision: 1, lineItems: quotation().lineItems.map((line, index) => ({ ...line, id: quote.lineItems[index].id })) })
+    .send({ ...quotation(), quotationDate: dateAfter(2), revision: 1, lineItems: quotation().lineItems.map((line, index) => ({ ...line, id: quote.lineItems[index].id })) })
     .expect(200);
   assert.equal(revised.body.revision, 2);
+  assert.equal(revised.body.quotationDate, dateAfter(2));
+  assert.equal(revised.body.revisions[0].quotationDate, dateAfter(1));
   assert.equal(revised.body.lineItems[0].packageDays, 26);
   assert.equal(revised.body.revisions[0].lineItems[0].packageDays, 26);
   assert.equal(revised.body.revisions.length, 1);

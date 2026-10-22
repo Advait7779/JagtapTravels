@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Buildings, Plus, Trash, X } from '@phosphor-icons/react';
-import { formatINR, localDate, roundMoney } from '../../utils/formatters';
+import { dateInput, formatINR, localDate, roundMoney } from '../../utils/formatters';
 
 const newLine = () => ({
   id: `line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -16,7 +16,7 @@ const newForm = () => ({
   pricingBasis: 'daily',
   companyId: '', companyName: '', companyAddress: '', companyGstin: '',
   contactName: '', contactPhone: '', contactEmail: '',
-  proposedStartDate: localDate(15), proposedEndDate: '', validityDate: localDate(30),
+  quotationDate: localDate(), proposedStartDate: localDate(15), proposedEndDate: '', validityDate: localDate(30),
   taxMode: 'gst', gstRate: 18, lineItems: [newLine()], estimatedOtherCharges: '0',
   paymentTerms: '', serviceTerms: '', tollParkingTerms: '', notes: '',
 });
@@ -26,6 +26,7 @@ const fieldClass = 'form-input bg-slate-50 focus:outline-none focus:ring-2 focus
 export default function CorporateQuotationEditor({ quotation, customers = [], onClose, onSave }) {
   const [form, setForm] = useState(() => quotation
     ? { ...quotation, pricingBasis: quotation.pricingBasis || 'monthly',
+      quotationDate: quotation.quotationDate || dateInput(quotation.createdAt) || localDate(),
       lineItems: quotation.lineItems.map((line) => ({ ...line, packageDays: line.packageDays ?? '' })) }
     : newForm());
   const [busy, setBusy] = useState(false);
@@ -98,6 +99,7 @@ export default function CorporateQuotationEditor({ quotation, customers = [], on
           <section className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
             <h3 className="text-sm font-bold text-navy-950">Service and tax</h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="form-label">Quotation date *<input className={fieldClass} type="date" required value={form.quotationDate} onChange={(event) => update('quotationDate', event.target.value)} /></label>
               <label className="form-label">Proposed start *<input className={fieldClass} type="date" required value={form.proposedStartDate} onChange={(event) => update('proposedStartDate', event.target.value)} /></label>
               <label className="form-label">Tax treatment
                 <select className={fieldClass} value={form.taxMode} onChange={(event) => update('taxMode', event.target.value)}>

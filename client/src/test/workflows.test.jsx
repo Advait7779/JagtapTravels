@@ -67,6 +67,7 @@ it('prepares a corporate per-day quote and shows server-bound proposal details',
   render(<CorporateQuotationHub quotations={[]} customers={[]} vehicles={[]} onRefresh={refresh} onView={vi.fn()} onOpenContracts={vi.fn()} />);
   fireEvent.click(screen.getByRole('button', { name: 'New corporate quotation' }));
   const editor = screen.getByRole('dialog', { name: 'New corporate quotation' });
+  expect(within(editor).getByLabelText('Quotation date *').value).toBe(localDate());
   fireEvent.change(within(editor).getByLabelText('Company name *'), { target: { value: 'Example Industries' } });
   fireEvent.change(within(editor).getByLabelText('Phone *'), { target: { value: '9876543210' } });
   fireEvent.change(within(editor).getByLabelText('Type of Vehicle *'), { target: { value: 'Innova Crysta' } });
@@ -79,6 +80,7 @@ it('prepares a corporate per-day quote and shows server-bound proposal details',
   fireEvent.click(within(editor).getByRole('button', { name: 'Save quotation' }));
   await waitFor(() => expect(add).toHaveBeenCalledTimes(1));
   expect(add.mock.calls[0][0].pricingBasis).toBe('daily');
+  expect(add.mock.calls[0][0].quotationDate).toBe(localDate());
   expect(add.mock.calls[0][0].lineItems[0]).toMatchObject({ vehicleType: 'Innova Crysta', includedDailyKm: '2500', extraRatePerKm: '14' });
   await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
 });

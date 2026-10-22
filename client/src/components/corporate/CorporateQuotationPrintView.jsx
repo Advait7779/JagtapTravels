@@ -60,7 +60,10 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
               {company.address && <p className="max-w-md text-xs text-slate-600">{company.address}</p>}
               <p className="text-xs text-slate-600">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
             </div>
-            <img src="/jagtap-brand-logo.png" alt="Jagtap Travels" className="h-20 w-auto shrink-0 object-contain sm:h-24" />
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <img src="/jagtap-brand-logo.png" alt="Jagtap Travels" className="h-20 w-auto object-contain sm:h-24" />
+              <p className="text-xs font-semibold text-slate-700">Date: {formatDate(quote.quotationDate || quote.createdAt)}</p>
+            </div>
           </header>
 
           <div className="border-b border-slate-300 py-5 text-xs">

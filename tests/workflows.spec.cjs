@@ -93,6 +93,8 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await page.getByRole('button', { name: /^Corporate Quotations/ }).click();
   await page.getByRole('button', { name: 'New corporate quotation' }).click();
   const corporateEditor = page.getByRole('dialog', { name: 'New corporate quotation' });
+  await expect(corporateEditor.getByLabel('Quotation date *')).not.toBeEmpty();
+  await corporateEditor.getByLabel('Quotation date *').fill('2026-10-10');
   await corporateEditor.getByLabel('Company name *').fill('Browser Customer');
   await corporateEditor.getByLabel('Phone *').fill('9876543210');
   await corporateEditor.getByLabel('Type of Vehicle *').fill('Innova Crysta');
@@ -112,6 +114,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(quoteRow.getByRole('button', { name: 'Create contracts' })).toHaveCount(0);
   await quoteRow.getByRole('button', { name: 'View / PDF' }).click();
   const corporatePreview = page.getByRole('dialog', { name: 'Corporate quotation preview' });
+  await expect(corporatePreview.getByText('Date: 10 Oct 2026')).toBeVisible();
   await expect(corporatePreview.getByText('₹45,000.00').last()).toBeVisible();
   await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package km' })).toBeVisible();
   await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package Amount' })).toBeVisible();
