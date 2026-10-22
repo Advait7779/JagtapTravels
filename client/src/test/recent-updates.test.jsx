@@ -29,7 +29,7 @@ it('shows the base fare as the tour quote total and lists extra charges', async 
   expect(screen.getByText(/GST CHARGES EXTRA 18%/)).toBeTruthy();
 });
 
-it('shows four per-day columns and the new brand in a corporate quotation preview', () => {
+it('shows the day and per-day columns with the new brand in a corporate quotation preview', () => {
   const quotation = {
     quotationNumber: 'CQ-1', revision: 1, quotationDate: '2026-10-16',
     companyName: 'Customer Co', contactPhone: '9876543210', pricingBasis: 'daily',
@@ -44,6 +44,8 @@ it('shows four per-day columns and the new brand in a corporate quotation previe
     onClose={vi.fn()} />);
   expect(screen.getByRole('columnheader', { name: 'Per Day Package km' })).toBeTruthy();
   expect(screen.getByRole('columnheader', { name: 'Per Day Package Amount' })).toBeTruthy();
+  expect(screen.getByRole('columnheader', { name: 'Days' })).toBeTruthy();
+  expect(screen.getByText('26 Days')).toBeTruthy();
   expect(screen.queryByRole('columnheader', { name: /month/i })).toBeNull();
   expect(screen.getByText('1day charges')).toBeTruthy();
   expect(screen.getByText('TOTAL AMOUNT')).toBeTruthy();
