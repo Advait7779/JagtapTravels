@@ -41,18 +41,18 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
   return (
     <div className="print-overlay fixed inset-0 z-50 overflow-y-auto bg-black/50 p-2 sm:p-5" role="dialog" aria-modal="true" aria-label="Corporate quotation preview">
       <div className="print-shell mx-auto my-2 max-w-4xl overflow-hidden rounded-md bg-white shadow-2xl">
-        <div className="no-print flex flex-wrap items-center justify-end gap-3 bg-[#FFF1E6] p-4 text-[#7C2D12]">
+        <div className="no-print flex flex-wrap items-center justify-end gap-3 bg-[#FFF1E6] p-4 text-[#A84F19]">
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1 rounded-md border border-[#FB923C] px-3 py-2 text-xs font-bold hover:bg-[#FFEDD5]"><Printer size={16} /> Print</button>
-            <button type="button" disabled={downloading} onClick={savePdf} className="inline-flex items-center gap-1 rounded-md bg-[#FB923C] px-3 py-2 text-xs font-bold text-[#431407] hover:bg-[#F97316]"><FilePdf size={16} /> {downloading ? 'Preparing…' : 'Save PDF'}</button>
+            <button type="button" disabled={downloading} onClick={savePdf} className="inline-flex items-center gap-1 rounded-md bg-[#FB923C] px-3 py-2 text-xs font-bold text-[#8A3D0D] hover:bg-[#F97316]"><FilePdf size={16} /> {downloading ? 'Preparing…' : 'Save PDF'}</button>
             <button type="button" onClick={onClose} aria-label="Close quotation preview" className="rounded-md border border-[#FB923C] p-2 hover:bg-[#FFEDD5]"><X size={18} /></button>
           </div>
         </div>
 
-        <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#905F43] sm:p-10">
+        <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#A84F19] sm:p-10">
           <header className="flex items-start justify-between gap-5 border-b-2 border-[#F97316] pb-5">
             <div className="space-y-1">
-              <h1 className="text-2xl font-black uppercase text-[#A57252]">{company.companyName || 'Jagtap Travels'}</h1>
+              <h1 className="text-2xl font-black uppercase">{company.companyName || 'Jagtap Travels'}</h1>
               {company.address && <p className="max-w-md text-xs">{company.address}</p>}
               <p className="text-xs">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
               <a className="block text-xs" href="https://jagtaptravels.com/" target="_blank" rel="noreferrer">Website - jagtaptravels.com</a>
@@ -64,7 +64,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
           </header>
 
           <div className="pt-14 pb-5 text-xs">
-            <p className="text-base font-bold text-[#A57252]">{quote.companyName}</p>
+            <p className="text-base font-bold">{quote.companyName}</p>
           </div>
 
           <div className="mt-20 overflow-x-auto">
@@ -99,11 +99,11 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
             <div className="flex justify-between bg-[#FFE8CB] p-2 text-sm font-black"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
-          <ul className="mt-6 list-disc space-y-1 pl-5 text-xs">
+          <ul className="mt-10 list-disc space-y-1 pl-5 text-xs">
             <li>KM calculated from Hadapsar to Hadapsar.</li>
             <li>Toll, parking and RTO permit charges extra.</li>
           </ul>
-          <div className="mt-6 ml-auto flex w-full max-w-sm justify-end">
+          <div className="mt-10 ml-auto flex w-full max-w-sm justify-end">
             <div className="relative h-32 w-48">
               <p className="absolute top-4 left-0 text-sm font-bold">Thanks,</p>
               <p className="absolute bottom-5 left-0 text-sm font-bold uppercase">Jagtap Travels</p>
