@@ -11,6 +11,7 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { api } from '../services/api';
+import CorporateQuotationStamp, { corporateQuotationStampUrl, DEFAULT_CORPORATE_QUOTATION_STAMP } from './corporate/CorporateQuotationStamp';
 import TeamUsers from './TeamUsers';
 
 export default function Settings({ settings, onSave }) {
@@ -18,6 +19,7 @@ export default function Settings({ settings, onSave }) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [uploadingStamp, setUploadingStamp] = useState(false);
+  const [uploadingCorporateQuotationStamp, setUploadingCorporateQuotationStamp] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
 
@@ -42,6 +44,7 @@ export default function Settings({ settings, onSave }) {
 
   const isStampRemoved = form.stampUrl === 'none';
   const currentStamp = isStampRemoved ? null : (form.stampUrl || '/stamp.jpg');
+  const currentCorporateQuotationStamp = corporateQuotationStampUrl(form.corporateQuotationStampUrl);
 
   const isSigRemoved = form.signatureUrl === 'none';
   const currentSignature = isSigRemoved ? null : (form.signatureUrl || '/signature.jpg');
@@ -91,6 +94,39 @@ export default function Settings({ settings, onSave }) {
       setMessage('Default Jagtap Travels stamp restored successfully.');
     } catch (err) {
       setMessage(err.message || 'Failed to restore company stamp.');
+    }
+  };
+
+  const handleCorporateQuotationStampUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingCorporateQuotationStamp(true);
+    setMessage('');
+    try {
+      const res = await api.uploadSettingsAsset(file);
+      if (res?.fileUrl) {
+        const updated = { ...form, corporateQuotationStampUrl: res.fileUrl };
+        setForm(updated);
+        await onSave(updated);
+        setMessage('Corporate quotations stamp updated successfully.');
+      }
+    } catch (err) {
+      setMessage(err.message || 'Failed to upload corporate quotations stamp.');
+    } finally {
+      setUploadingCorporateQuotationStamp(false);
+      event.target.value = '';
+    }
+  };
+
+  const updateCorporateQuotationStamp = async (corporateQuotationStampUrlValue, successMessage) => {
+    const updated = { ...form, corporateQuotationStampUrl: corporateQuotationStampUrlValue };
+    setForm(updated);
+    setMessage('');
+    try {
+      await onSave(updated);
+      setMessage(successMessage);
+    } catch (err) {
+      setMessage(err.message || 'Failed to update corporate quotations stamp.');
     }
   };
 
@@ -236,7 +272,7 @@ export default function Settings({ settings, onSave }) {
               </h3>
             </div>
             <p className="text-xs text-slate-500">
-              Upload the stamp, signature, and Non-GST invoice payment QR used on the corresponding documents.
+              Upload the stamps, signature, and Non-GST invoice payment QR used on the corresponding documents.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-5">
@@ -461,6 +497,44 @@ export default function Settings({ settings, onSave }) {
                     >
                       <ArrowCounterClockwise size={13} weight="bold" />
                       <span>Restore Default</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div data-testid="corporate-quotation-stamp-setting" className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5">
+                  <SealCheck size={18} weight="bold" className="text-blue-600" />
+                  <span className="text-xs font-bold text-slate-900 uppercase">Corporate Quotations Stamp</span>
+                </div>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                  currentCorporateQuotationStamp ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>{currentCorporateQuotationStamp ? 'Active' : 'Removed'}</span>
+              </div>
+              <p className="text-xs text-slate-500">Shown below the total on corporate quotation previews, printouts, and PDFs.</p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex h-40 w-44 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white">
+                  {currentCorporateQuotationStamp ? (
+                    <CorporateQuotationStamp url={form.corporateQuotationStampUrl} />
+                  ) : (
+                    <span className="text-xs text-slate-400">No stamp active</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <label className="btn-primary flex cursor-pointer items-center gap-1.5 px-3 py-2 text-xs">
+                    <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload Corporate Quotations Stamp" className="hidden" onChange={handleCorporateQuotationStampUpload} disabled={uploadingCorporateQuotationStamp} />
+                    <UploadSimple size={14} weight="bold" />
+                    {uploadingCorporateQuotationStamp ? 'Uploading…' : 'Upload New Stamp'}
+                  </label>
+                  {currentCorporateQuotationStamp ? (
+                    <button type="button" onClick={() => updateCorporateQuotationStamp('none', 'Corporate quotations stamp removed.')} className="flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100">
+                      <X size={14} weight="bold" /> Remove
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => updateCorporateQuotationStamp(DEFAULT_CORPORATE_QUOTATION_STAMP, 'Default corporate quotations stamp restored.')} className="flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100">
+                      <ArrowCounterClockwise size={14} weight="bold" /> Restore Default
                     </button>
                   )}
                 </div>

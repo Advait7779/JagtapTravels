@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const path = require('node:path');
 test('public site, setup, vehicle service, documents, billing and mobile navigation', async ({
   page,
 }, testInfo) => {
@@ -36,6 +37,14 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await page.getByLabel('UPI ID').fill('test-travel@bank');
   await page.getByRole('button', { name: 'Save Business Settings', exact: true }).click();
   await expect(page.getByText('Settings updated successfully.')).toBeVisible();
+  const corporateStampSetting = page.getByTestId('corporate-quotation-stamp-setting');
+  await corporateStampSetting.getByLabel('Upload Corporate Quotations Stamp').setInputFiles(path.resolve(__dirname, '../client/public/stamp.jpg'));
+  await expect(page.getByText('Corporate quotations stamp updated successfully.')).toBeVisible();
+  await expect(corporateStampSetting.getByRole('img', { name: 'Corporate quotations stamp' })).toHaveAttribute('src', /\/api\/uploads\//);
+  await corporateStampSetting.getByRole('button', { name: 'Remove' }).click();
+  await expect(page.getByText('Corporate quotations stamp removed.')).toBeVisible();
+  await corporateStampSetting.getByRole('button', { name: 'Restore Default' }).click();
+  await expect(page.getByText('Default corporate quotations stamp restored.')).toBeVisible();
   await expect(page.getByText('Account Security')).toHaveCount(0);
   await expect(page.getByText('Change password')).toHaveCount(0);
   await page.getByRole('heading', { name: 'Team users' }).scrollIntoViewIfNeeded();
@@ -114,6 +123,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(quoteRow.getByRole('button', { name: 'Create contracts' })).toHaveCount(0);
   await quoteRow.getByRole('button', { name: 'View / PDF' }).click();
   const corporatePreview = page.getByRole('dialog', { name: 'Corporate quotation preview' });
+  await expect(corporatePreview.getByRole('img', { name: 'Corporate quotations stamp' })).toBeVisible();
   await expect(corporatePreview.getByText('Date: 10 Oct 2026')).toBeVisible();
   await expect(corporatePreview.getByText('₹45,000.00').last()).toBeVisible();
   await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package km' })).toBeVisible();

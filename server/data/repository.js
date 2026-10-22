@@ -27,6 +27,7 @@ const emptyState = () => ({
   counters: {},
   settings: {
     companyName: 'Jagtap Travels',
+    corporateQuotationStampUrl: '/corporate-quotation-stamp.png',
     nonGstQrUrl: '/non-gst-qr.jpeg',
     ratePerKmSedan: '12',
     ratePerKmErtiga: '14',

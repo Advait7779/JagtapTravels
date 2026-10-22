@@ -40,7 +40,7 @@ it('shows the day and per-day columns with the new brand in a corporate quotatio
     estimatedOtherCharges: 0, estimatedTax: 0, estimatedTotal: 45000,
     company: { companyName: 'Jagtap Tours and Travels' }, revisions: [],
   };
-  const { container } = render(<CorporateQuotationPrintView quotation={quotation}
+  const { container, rerender } = render(<CorporateQuotationPrintView quotation={quotation}
     onClose={vi.fn()} />);
   expect(screen.getByRole('columnheader', { name: 'Per Day Package km' })).toBeTruthy();
   expect(screen.getByRole('columnheader', { name: 'Per Day Package Amount' })).toBeTruthy();
@@ -50,6 +50,9 @@ it('shows the day and per-day columns with the new brand in a corporate quotatio
   expect(screen.getByText('1day charges')).toBeTruthy();
   expect(screen.getByText('TOTAL AMOUNT')).toBeTruthy();
   expect(screen.getByText('Date: 16 Oct 2026')).toBeTruthy();
+  expect(screen.getByAltText('Corporate quotations stamp').getAttribute('src')).toBe('/corporate-quotation-stamp.png');
   expect(container.textContent).toContain('Jagtap Travels');
   expect(container.textContent).not.toContain('Jagtap Tours and Travels');
+  rerender(<CorporateQuotationPrintView quotation={quotation} settings={{ corporateQuotationStampUrl: 'none' }} onClose={vi.fn()} />);
+  expect(screen.queryByAltText('Corporate quotations stamp')).toBeNull();
 });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FilePdf, Printer, X } from '@phosphor-icons/react';
 import { formatDate, formatINR } from '../../utils/formatters';
+import CorporateQuotationStamp, { corporateQuotationStampUrl } from './CorporateQuotationStamp';
 
 export default function CorporateQuotationPrintView({ quotation, onClose, settings = {} }) {
   const [revisionIndex, setRevisionIndex] = useState(-1);
@@ -102,6 +103,11 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             <div className="flex justify-between border-b border-slate-300 p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
             <div className="flex justify-between bg-navy-950 p-2 text-sm font-black text-white"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
+          {corporateQuotationStampUrl(settings.corporateQuotationStampUrl) && (
+            <div className="mt-3 ml-auto flex w-full max-w-sm justify-end">
+              <CorporateQuotationStamp url={settings.corporateQuotationStampUrl} />
+            </div>
+          )}
           <ul className="mt-6 list-disc space-y-1 border-t border-slate-300 pt-4 pl-5 text-xs text-slate-700">
             <li>KM calculated from Hadapsar to Hadapsar.</li>
             <li>Toll, parking and RTO permit charges extra.</li>

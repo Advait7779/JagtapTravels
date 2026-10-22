@@ -207,20 +207,25 @@ test('Non-GST invoice payment QR can be saved and removed in business settings',
   const { agent, csrf } = await setupAdmin(app);
   const initial = await agent.get('/api/settings').expect(200);
   assert.equal(initial.body.nonGstQrUrl, '/non-gst-qr.jpeg');
+  assert.equal(initial.body.corporateQuotationStampUrl, '/corporate-quotation-stamp.png');
 
   await agent.put('/api/settings').set('X-CSRF-Token', csrf).send({
     companyName: initial.body.companyName,
     nonGstQrUrl: '/api/uploads/payment-qr.png',
+    corporateQuotationStampUrl: '/api/uploads/quotation-stamp.png',
   }).expect(200);
   const updated = await agent.get('/api/settings').expect(200);
   assert.equal(updated.body.nonGstQrUrl, '/api/uploads/payment-qr.png');
+  assert.equal(updated.body.corporateQuotationStampUrl, '/api/uploads/quotation-stamp.png');
 
   await agent.put('/api/settings').set('X-CSRF-Token', csrf).send({
     companyName: updated.body.companyName,
     nonGstQrUrl: 'none',
+    corporateQuotationStampUrl: 'none',
   }).expect(200);
   const removed = await agent.get('/api/settings').expect(200);
   assert.equal(removed.body.nonGstQrUrl, 'none');
+  assert.equal(removed.body.corporateQuotationStampUrl, 'none');
 });
 
 test('administrator can save a Daily KM log while staff remain restricted', async (t) => {

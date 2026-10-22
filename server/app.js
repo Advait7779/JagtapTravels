@@ -607,6 +607,7 @@ function createApp(repo, options = {}) {
         'ifsc',
         'upi',
         'stampUrl',
+        'corporateQuotationStampUrl',
         'signatureUrl',
         'nonGstQrUrl',
         'ratePerKmSedan',
