@@ -136,7 +136,7 @@ test('MFA endpoints are removed and password login completes directly', async (t
 });
 
 test('sessions expire after inactivity and can be individually or globally revoked', async (t) => {
-  const { app } = await environment(t, { idleMs: 500 });
+  const { app, repo } = await environment(t, { idleMs: 60_000 });
   const first = await setupAdmin(app);
   const secondAgent = request.agent(app);
   const secondLogin = await secondAgent
@@ -151,7 +151,11 @@ test('sessions expire after inactivity and can be individually or globally revok
     .set('X-CSRF-Token', first.csrf)
     .expect(200);
   await secondAgent.get('/api/auth/me').expect(401);
-  await new Promise((resolve) => setTimeout(resolve, 550));
+  const currentSessionId = sessions.body.find((session) => session.current).id;
+  await repo.change((data) => {
+    const currentSession = data.sessions.find((session) => session.id === currentSessionId);
+    currentSession.lastSeenAt = new Date(Date.now() - 61_000).toISOString();
+  });
   await first.agent.get('/api/auth/me').expect(401);
 
   const signedIn = request.agent(app);
