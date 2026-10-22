@@ -21,6 +21,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
     const element = document.querySelector('.corporate-quotation-printable');
     if (!element) return;
     setDownloading(true);
+    element.classList.add('corporate-quotation-export');
     try {
       const module = await import('html2pdf.js');
       const html2pdf = module.default || module;
@@ -34,6 +35,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
     } catch {
       window.print();
     } finally {
+      element.classList.remove('corporate-quotation-export');
       setDownloading(false);
     }
   };
@@ -103,7 +105,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             <li>KM calculated from Hadapsar to Hadapsar.</li>
             <li>Toll, parking and RTO permit charges extra.</li>
           </ul>
-          <div className="mt-6 ml-auto flex w-full max-w-sm justify-end">
+          <div className="corporate-quotation-signoff mt-6 ml-auto flex w-full max-w-sm justify-end">
             <div className="relative h-32 w-48">
               <p className="absolute top-4 left-0 text-sm font-bold">Thanks,</p>
               <p className="absolute bottom-5 left-0 text-sm font-bold uppercase">Jagtap Travels</p>

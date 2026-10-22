@@ -138,6 +138,9 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await page.screenshot({ path: testInfo.outputPath('corporate-quotation-print.png'), fullPage: true });
   await page.pdf({ path: testInfo.outputPath('corporate-quotation.pdf'), format: 'A4', printBackground: true });
   await page.emulateMedia({ media: 'screen' });
+  const quotationDownload = page.waitForEvent('download');
+  await corporatePreview.getByRole('button', { name: 'Save PDF' }).click();
+  await (await quotationDownload).saveAs(testInfo.outputPath('corporate-quotation-downloaded.pdf'));
   await corporatePreview.getByRole('button', { name: 'Close quotation preview' }).click();
 
   await page.evaluate(async () => {
