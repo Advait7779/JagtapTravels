@@ -119,15 +119,6 @@
 .printable-area {
   overflow-wrap: anywhere;
 }
-.corporate-quotation-export {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  aspect-ratio: 194 / 281;
-}
-.corporate-quotation-export .corporate-quotation-signoff {
-  margin-top: auto;
-}
 @media print {
   @page {
     margin: 0mm;
@@ -217,15 +208,6 @@
     margin: 0 auto !important;
     box-shadow: none !important;
     background: #ffffff !important;
-  }
-  .corporate-quotation-printable {
-    display: flex !important;
-    flex-direction: column !important;
-    aspect-ratio: auto !important;
-    min-height: 297mm !important;
-  }
-  .corporate-quotation-signoff {
-    margin-top: auto !important;
   }
   .printable-area header,
   .printable-area footer,
