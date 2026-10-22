@@ -63,11 +63,11 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             </div>
           </header>
 
-          <div className="pt-10 pb-5 text-xs">
+          <div className="pt-14 pb-5 text-xs">
             <p className="text-base font-bold text-[#A57252]">{quote.companyName}</p>
           </div>
 
-          <div className="mt-16 overflow-x-auto">
+          <div className="mt-20 overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="bg-[#FFE8CB]">
@@ -91,7 +91,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
               </tbody>
             </table>
           </div>
-          <div className="mt-8 ml-auto w-full max-w-sm border border-[#FB923C] text-xs">
+          <div className="mt-12 ml-auto w-full max-w-sm border border-[#FB923C] text-xs">
             <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>{dailyPricing ? '1day charges' : 'Package charges'}</span><strong>{formatINR(dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal)}</strong></div>
             {Number(quote.estimatedExcessTotal) > 0 && <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>Estimated excess KM</span><strong>{formatINR(quote.estimatedExcessTotal)}</strong></div>}
             {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
