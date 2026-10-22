@@ -49,28 +49,28 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
           </div>
         </div>
 
-        <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#431407] sm:p-10">
+        <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#855238] sm:p-10">
           <header className="flex items-start justify-between gap-5 border-b-2 border-[#F97316] pb-5">
             <div className="space-y-1">
-              <h1 className="text-2xl font-black uppercase text-[#C2410C]">{company.companyName || 'Jagtap Travels'}</h1>
-              {company.address && <p className="max-w-md text-xs text-[#7C4A32]">{company.address}</p>}
-              <p className="text-xs text-[#7C4A32]">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
-              <a className="block text-xs text-[#C2410C]" href="https://jagtaptravels.com/" target="_blank" rel="noreferrer">jagtaptravels.com</a>
+              <h1 className="text-2xl font-black uppercase">{company.companyName || 'Jagtap Travels'}</h1>
+              {company.address && <p className="max-w-md text-xs">{company.address}</p>}
+              <p className="text-xs">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
+              <a className="block text-xs" href="https://jagtaptravels.com/" target="_blank" rel="noreferrer">jagtaptravels.com</a>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               <img src="/jagtap-brand-logo.png" alt="Jagtap Travels" className="h-20 w-auto object-contain sm:h-24" />
-              <p className="text-xs font-semibold text-[#7C4A32]">Date: {formatDate(quote.quotationDate || quote.createdAt)}</p>
+              <p className="text-xs font-semibold">Date: {formatDate(quote.quotationDate || quote.createdAt)}</p>
             </div>
           </header>
 
-          <div className="py-5 text-xs">
-            <p className="text-base font-bold text-[#7C2D12]">{quote.companyName}</p>
+          <div className="pt-10 pb-5 text-xs">
+            <p className="text-base font-bold">{quote.companyName}</p>
           </div>
 
-          <div className="mt-12 overflow-x-auto">
+          <div className="mt-16 overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
-                <tr className="bg-[#FED7AA] text-[#7C2D12]">
+                <tr className="bg-[#FED7AA]">
                   <th className="p-2">Type of Vehicle</th>
                   <th className="p-2 text-center">Days</th>
                   <th className="p-2 text-center">Per Day Package km</th>
@@ -97,15 +97,14 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
             {(Number(quote.estimatedExcessTotal) > 0 || Number(quote.estimatedOtherCharges) > 0) && <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>Subtotal</span><strong>{formatINR(quote.estimatedSubtotal)}</strong></div>}
             <div className="flex justify-between border-b border-[#FDBA74] p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
-            <div className="flex justify-between bg-[#FDBA74] p-2 text-sm font-black text-[#431407]"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
+            <div className="flex justify-between bg-[#FDBA74] p-2 text-sm font-black"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
-          <ul className="mt-6 list-disc space-y-1 pl-5 text-xs text-[#7C4A32]">
+          <ul className="mt-6 list-disc space-y-1 pl-5 text-xs">
             <li>KM calculated from Hadapsar to Hadapsar.</li>
             <li>Toll, parking and RTO permit charges extra.</li>
           </ul>
-          <div className="mt-4 border-t border-[#FDBA74]" />
           {corporateQuotationStampUrl(settings.corporateQuotationStampUrl) && (
-            <div className="mt-3 ml-auto flex w-full max-w-sm justify-end">
+            <div className="mt-6 ml-auto flex w-full max-w-sm justify-end">
               <CorporateQuotationStamp url={settings.corporateQuotationStampUrl} />
             </div>
           )}
