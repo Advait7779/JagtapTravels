@@ -67,8 +67,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             <p className="text-base font-extrabold">{quote.companyName}</p>
           </div>
 
-          {!dailyPricing && <p className="mt-5 text-xs text-slate-600">Existing quotation with monthly pricing</p>}
-          <div className={`${dailyPricing ? 'mt-5' : 'mt-2'} overflow-x-auto`}>
+          <div className="mt-5 overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="bg-navy-950 text-white">
