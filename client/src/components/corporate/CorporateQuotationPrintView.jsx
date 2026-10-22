@@ -55,7 +55,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
               <h1 className="text-2xl font-black uppercase text-[#A57252]">{company.companyName || 'Jagtap Travels'}</h1>
               {company.address && <p className="max-w-md text-xs">{company.address}</p>}
               <p className="text-xs">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
-              <a className="block text-xs" href="https://jagtaptravels.com/" target="_blank" rel="noreferrer">jagtaptravels.com</a>
+              <a className="block text-xs" href="https://jagtaptravels.com/" target="_blank" rel="noreferrer">Website - jagtaptravels.com</a>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               <img src="/jagtap-brand-logo.png" alt="Jagtap Travels" className="h-20 w-auto object-contain sm:h-24" />
