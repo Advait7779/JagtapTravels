@@ -39,37 +39,37 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
   };
 
   return (
-    <div className="print-overlay fixed inset-0 z-50 overflow-y-auto bg-[#514233]/60 p-2 sm:p-5" role="dialog" aria-modal="true" aria-label="Corporate quotation preview">
+    <div className="print-overlay fixed inset-0 z-50 overflow-y-auto bg-[#6A4530]/60 p-2 sm:p-5" role="dialog" aria-modal="true" aria-label="Corporate quotation preview">
       <div className="print-shell mx-auto my-2 max-w-4xl overflow-hidden rounded-md bg-white shadow-2xl">
-        <div className="no-print flex flex-wrap items-center justify-end gap-3 bg-[#E2CCAC] p-4 text-[#3F2B1D]">
+        <div className="no-print flex flex-wrap items-center justify-end gap-3 bg-[#F7E3CE] p-4 text-[#57341F]">
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1 rounded-md border border-[#AE885E] px-3 py-2 text-xs font-bold hover:bg-[#D3B58E]"><Printer size={16} /> Print</button>
-            <button type="button" disabled={downloading} onClick={savePdf} className="inline-flex items-center gap-1 rounded-md bg-[#D4A870] px-3 py-2 text-xs font-bold text-[#3F2B1D] hover:bg-[#C8955C]"><FilePdf size={16} /> {downloading ? 'Preparing…' : 'Save PDF'}</button>
-            <button type="button" onClick={onClose} aria-label="Close quotation preview" className="rounded-md border border-[#AE885E] p-2 hover:bg-[#D3B58E]"><X size={18} /></button>
+            <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1 rounded-md border border-[#D39A68] px-3 py-2 text-xs font-bold hover:bg-[#F2D4B5]"><Printer size={16} /> Print</button>
+            <button type="button" disabled={downloading} onClick={savePdf} className="inline-flex items-center gap-1 rounded-md bg-[#E8AF78] px-3 py-2 text-xs font-bold text-[#57341F] hover:bg-[#DB9E64]"><FilePdf size={16} /> {downloading ? 'Preparing…' : 'Save PDF'}</button>
+            <button type="button" onClick={onClose} aria-label="Close quotation preview" className="rounded-md border border-[#D39A68] p-2 hover:bg-[#F2D4B5]"><X size={18} /></button>
           </div>
         </div>
 
-        <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#372A20] sm:p-10">
-          <header className="flex items-start justify-between gap-5 border-b-2 border-[#AE885E] pb-5">
+        <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#4F3729] sm:p-10">
+          <header className="flex items-start justify-between gap-5 border-b-2 border-[#D39A68] pb-5">
             <div className="space-y-1">
-              <h1 className="text-2xl font-black uppercase text-[#794416]">{company.companyName || 'Jagtap Travels'}</h1>
-              {company.address && <p className="max-w-md text-xs text-[#594838]">{company.address}</p>}
-              <p className="text-xs text-[#594838]">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
+              <h1 className="text-2xl font-black uppercase text-[#9A4C1A]">{company.companyName || 'Jagtap Travels'}</h1>
+              {company.address && <p className="max-w-md text-xs text-[#73513D]">{company.address}</p>}
+              <p className="text-xs text-[#73513D]">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               <img src="/jagtap-brand-logo.png" alt="Jagtap Travels" className="h-20 w-auto object-contain sm:h-24" />
-              <p className="text-xs font-semibold text-[#4C3725]">Date: {formatDate(quote.quotationDate || quote.createdAt)}</p>
+              <p className="text-xs font-semibold text-[#70462D]">Date: {formatDate(quote.quotationDate || quote.createdAt)}</p>
             </div>
           </header>
 
           <div className="py-5 text-xs">
-            <p className="text-base font-bold text-[#533F2D]">{quote.companyName}</p>
+            <p className="text-base font-bold text-[#6C432B]">{quote.companyName}</p>
           </div>
 
           <div className="mt-5 overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
-                <tr className="bg-[#D4B992] text-[#3F2B1D]">
+                <tr className="bg-[#F2D4B5] text-[#57341F]">
                   <th className="p-2">Type of Vehicle</th>
                   <th className="p-2 text-center">Days</th>
                   <th className="p-2 text-center">Per Day Package km</th>
@@ -79,7 +79,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
               </thead>
               <tbody>
                 {quote.lineItems.map((line) => (
-                  <tr key={line.id} className="border-b border-[#C29F75]">
+                  <tr key={line.id} className="border-b border-[#DEB58E]">
                     <td className="p-2 font-bold">{line.vehicleType}</td>
                     <td className="p-2 text-center">{line.packageDays || '—'}</td>
                     <td className="p-2 text-center">{dailyPricing ? line.includedDailyKm : line.includedMonthlyKm}</td>
@@ -90,23 +90,24 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
               </tbody>
             </table>
           </div>
-          <div className="mt-6 ml-auto w-full max-w-sm border border-[#AE885E] text-xs">
-            <div className="flex justify-between border-b border-[#C29F75] p-2"><span>{dailyPricing ? '1day charges' : 'Package charges'}</span><strong>{formatINR(dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal)}</strong></div>
-            {Number(quote.estimatedExcessTotal) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2"><span>Estimated excess KM</span><strong>{formatINR(quote.estimatedExcessTotal)}</strong></div>}
-            {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2"><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
-            {(Number(quote.estimatedExcessTotal) > 0 || Number(quote.estimatedOtherCharges) > 0) && <div className="flex justify-between border-b border-[#C29F75] p-2"><span>Subtotal</span><strong>{formatINR(quote.estimatedSubtotal)}</strong></div>}
-            <div className="flex justify-between border-b border-[#C29F75] p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
-            <div className="flex justify-between bg-[#CCA474] p-2 text-sm font-black text-[#3F2B1D]"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
+          <div className="mt-6 ml-auto w-full max-w-sm border border-[#D39A68] text-xs">
+            <div className="flex justify-between border-b border-[#DEB58E] p-2"><span>{dailyPricing ? '1day charges' : 'Package charges'}</span><strong>{formatINR(dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal)}</strong></div>
+            {Number(quote.estimatedExcessTotal) > 0 && <div className="flex justify-between border-b border-[#DEB58E] p-2"><span>Estimated excess KM</span><strong>{formatINR(quote.estimatedExcessTotal)}</strong></div>}
+            {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#DEB58E] p-2"><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
+            {(Number(quote.estimatedExcessTotal) > 0 || Number(quote.estimatedOtherCharges) > 0) && <div className="flex justify-between border-b border-[#DEB58E] p-2"><span>Subtotal</span><strong>{formatINR(quote.estimatedSubtotal)}</strong></div>}
+            <div className="flex justify-between border-b border-[#DEB58E] p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
+            <div className="flex justify-between bg-[#E8AF78] p-2 text-sm font-black text-[#57341F]"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
+          <ul className="mt-6 list-disc space-y-1 pl-5 text-xs text-[#684A37]">
+            <li>KM calculated from Hadapsar to Hadapsar.</li>
+            <li>Toll, parking and RTO permit charges extra.</li>
+          </ul>
+          <div className="mt-4 border-t border-[#DEB58E]" />
           {corporateQuotationStampUrl(settings.corporateQuotationStampUrl) && (
             <div className="mt-3 ml-auto flex w-full max-w-sm justify-end">
               <CorporateQuotationStamp url={settings.corporateQuotationStampUrl} />
             </div>
           )}
-          <ul className="mt-6 list-disc space-y-1 border-t border-[#C29F75] pt-4 pl-5 text-xs text-[#413226]">
-            <li>KM calculated from Hadapsar to Hadapsar.</li>
-            <li>Toll, parking and RTO permit charges extra.</li>
-          </ul>
         </article>
       </div>
     </div>
