@@ -123,6 +123,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(quoteRow.getByRole('button', { name: 'Create contracts' })).toHaveCount(0);
   await quoteRow.getByRole('button', { name: 'View / PDF' }).click();
   const corporatePreview = page.getByRole('dialog', { name: 'Corporate quotation preview' });
+  await expect(corporatePreview.getByLabel('Quotation revision')).toHaveCount(0);
   await expect(corporatePreview.getByRole('img', { name: 'Corporate quotations stamp' })).toBeVisible();
   await expect(corporatePreview.getByText('Date: 10 Oct 2026')).toBeVisible();
   await expect(corporatePreview.getByText('₹45,000.00').last()).toBeVisible();
