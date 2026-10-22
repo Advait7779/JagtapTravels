@@ -132,16 +132,16 @@ export default function CorporateQuotationEditor({ quotation, customers = [], on
                 <div key={line.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 flex items-center justify-between"><h4 className="text-xs font-bold text-slate-700">Vehicle offer {index + 1}</h4><button type="button" aria-label={`Remove vehicle offer ${index + 1}`} disabled={form.lineItems.length === 1} onClick={() => update('lineItems', form.lineItems.filter((item) => item.id !== line.id))} className="text-rose-600 hover:text-rose-800"><Trash size={17} /></button></div>
                   <div className="grid items-end gap-3 sm:grid-cols-2 md:grid-cols-5">
-                    <label className="form-label">Vehicle type *<input className={fieldClass} required maxLength={200} placeholder="Innova Crysta" value={line.vehicleType} onChange={(event) => updateLine(line.id, 'vehicleType', event.target.value)} /></label>
+                    <label className="form-label">Type of Vehicle *<input className={fieldClass} required maxLength={200} placeholder="Innova Crysta" value={line.vehicleType} onChange={(event) => updateLine(line.id, 'vehicleType', event.target.value)} /></label>
                     <label className="form-label">Days / month<input className={fieldClass} type="number" min="1" max="31" step="1" placeholder="e.g. 26 or 30" value={line.packageDays ?? ''} onChange={(event) => updateLine(line.id, 'packageDays', event.target.value)} /></label>
                     {form.pricingBasis === 'daily' ? <>
-                      <label className="form-label">Per Day Package Amount ₹ *<input className={fieldClass} type="number" required min="0.01" step="0.01" value={line.dailyBaseFare ?? ''} onChange={(event) => updateLine(line.id, 'dailyBaseFare', event.target.value)} /></label>
-                      <label className="form-label">Per Day Package KM<input className={fieldClass} type="number" min="0" step="0.01" value={line.includedDailyKm ?? ''} onChange={(event) => updateLine(line.id, 'includedDailyKm', event.target.value)} /></label>
+                      <label className="form-label">Per Day Package km<input className={fieldClass} type="number" min="0" step="0.01" value={line.includedDailyKm ?? ''} onChange={(event) => updateLine(line.id, 'includedDailyKm', event.target.value)} /></label>
+                      <label className="form-label">Per Day Package Amount *<input className={fieldClass} type="number" required min="0.01" step="0.01" value={line.dailyBaseFare ?? ''} onChange={(event) => updateLine(line.id, 'dailyBaseFare', event.target.value)} /></label>
                     </> : <>
                       <label className="form-label">Monthly fixed fare ₹ *<input className={fieldClass} type="number" required min="0.01" step="0.01" value={line.monthlyBaseFare ?? ''} onChange={(event) => updateLine(line.id, 'monthlyBaseFare', event.target.value)} /></label>
                       <label className="form-label">Included KM/month<input className={fieldClass} type="number" min="0" step="0.01" value={line.includedMonthlyKm ?? ''} onChange={(event) => updateLine(line.id, 'includedMonthlyKm', event.target.value)} /></label>
                     </>}
-                    <label className="form-label">Excess rate ₹/KM<input className={fieldClass} type="number" min="0" step="0.01" value={line.extraRatePerKm} onChange={(event) => updateLine(line.id, 'extraRatePerKm', event.target.value)} /></label>
+                    <label className="form-label">Extra km Rate<input className={fieldClass} type="number" min="0" step="0.01" value={line.extraRatePerKm} onChange={(event) => updateLine(line.id, 'extraRatePerKm', event.target.value)} /></label>
                   </div>
                 </div>
               ))}

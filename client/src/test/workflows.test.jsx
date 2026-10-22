@@ -69,10 +69,10 @@ it('prepares a corporate per-day quote and shows server-bound proposal details',
   const editor = screen.getByRole('dialog', { name: 'New corporate quotation' });
   fireEvent.change(within(editor).getByLabelText('Company name *'), { target: { value: 'Example Industries' } });
   fireEvent.change(within(editor).getByLabelText('Phone *'), { target: { value: '9876543210' } });
-  fireEvent.change(within(editor).getByLabelText('Vehicle type *'), { target: { value: 'Innova Crysta' } });
-  fireEvent.change(within(editor).getByLabelText('Per Day Package Amount ₹ *'), { target: { value: '45000' } });
-  fireEvent.change(within(editor).getByLabelText('Per Day Package KM'), { target: { value: '2500' } });
-  fireEvent.change(within(editor).getByLabelText('Excess rate ₹/KM'), { target: { value: '14' } });
+  fireEvent.change(within(editor).getByLabelText('Type of Vehicle *'), { target: { value: 'Innova Crysta' } });
+  fireEvent.change(within(editor).getByLabelText('Per Day Package Amount *'), { target: { value: '45000' } });
+  fireEvent.change(within(editor).getByLabelText('Per Day Package km'), { target: { value: '2500' } });
+  fireEvent.change(within(editor).getByLabelText('Extra km Rate'), { target: { value: '14' } });
   expect(within(editor).queryByLabelText('Estimated excess KM')).toBeNull();
   expect(within(editor).queryByLabelText('Valid until *')).toBeNull();
   expect(within(editor).getByText('₹53,100.00')).toBeTruthy();
@@ -92,8 +92,8 @@ it('requires fresh per-day figures when switching an older monthly quotation', (
   }} onClose={vi.fn()} onSave={vi.fn()} />);
   expect(screen.getByLabelText('Monthly fixed fare ₹ *').value).toBe('45000');
   fireEvent.click(screen.getByRole('button', { name: 'Switch to per-day prices' }));
-  expect(screen.getByLabelText('Per Day Package Amount ₹ *').value).toBe('');
-  expect(screen.getByLabelText('Per Day Package KM').value).toBe('');
+  expect(screen.getByLabelText('Per Day Package Amount *').value).toBe('');
+  expect(screen.getByLabelText('Per Day Package km').value).toBe('');
   expect(screen.getByText(/Previous monthly values were not converted automatically/)).toBeTruthy();
 });
 it('shows quote editing and print without contract or approval actions', () => {

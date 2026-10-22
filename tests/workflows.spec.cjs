@@ -95,11 +95,11 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   const corporateEditor = page.getByRole('dialog', { name: 'New corporate quotation' });
   await corporateEditor.getByLabel('Company name *').fill('Browser Customer');
   await corporateEditor.getByLabel('Phone *').fill('9876543210');
-  await corporateEditor.getByLabel('Vehicle type *').fill('Innova Crysta');
+  await corporateEditor.getByLabel('Type of Vehicle *').fill('Innova Crysta');
   await corporateEditor.getByLabel('Days / month').fill('26');
-  await corporateEditor.getByLabel('Per Day Package Amount ₹ *').fill('45000');
-  await corporateEditor.getByLabel('Per Day Package KM').fill('2500');
-  await corporateEditor.getByLabel('Excess rate ₹/KM').fill('14');
+  await corporateEditor.getByLabel('Per Day Package Amount *').fill('45000');
+  await corporateEditor.getByLabel('Per Day Package km').fill('2500');
+  await corporateEditor.getByLabel('Extra km Rate').fill('14');
   await corporateEditor.getByLabel('Tax treatment').selectOption('nongst');
   await expect(corporateEditor.getByText('₹45,000.00').last()).toBeVisible();
   await corporateEditor.getByRole('button', { name: 'Save quotation' }).click();
