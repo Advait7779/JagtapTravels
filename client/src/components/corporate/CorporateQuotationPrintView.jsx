@@ -67,7 +67,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             <p className="text-base font-black uppercase text-[#794416] tracking-wide">{quote.companyName}</p>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
+          <div className="mt-16 overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="bg-[#D4B992] text-[#3F2B1D]">
