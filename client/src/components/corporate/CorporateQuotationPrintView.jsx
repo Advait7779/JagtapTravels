@@ -50,7 +50,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
         </div>
 
         <article className="printable-area corporate-quotation-printable bg-white p-6 text-[#372A20] sm:p-10 font-['Plus_Jakarta_Sans',sans-serif]">
-          <header className="flex items-start justify-between gap-5 border-b-2 border-[#AE885E] pb-5">
+          <header className="flex items-start justify-between gap-5 border-b-2 border-[#AE885E] pb-5" style={{ borderBottom: '2px solid #AE885E' }}>
             <div className="space-y-1">
               <h1 className="text-2xl font-black uppercase text-[#794416]">{company.companyName || 'Jagtap Travels'}</h1>
               {company.address && <p className="max-w-md text-xs text-[#594838]">{company.address}</p>}
@@ -71,33 +71,33 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="bg-[#D4B992] text-[#3F2B1D]">
-                  <th className="p-2 font-bold">Type of Vehicle</th>
-                  <th className="p-2 text-center font-bold">Days</th>
-                  <th className="p-2 text-center font-bold">Per Day Package km</th>
-                  <th className="p-2 text-right font-bold">Per Day Package Amount</th>
-                  <th className="p-2 text-right font-bold">Extra km Rate</th>
+                  <th className="p-2 font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Type of Vehicle</th>
+                  <th className="p-2 text-center font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Days</th>
+                  <th className="p-2 text-center font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Per Day Package km</th>
+                  <th className="p-2 text-right font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Per Day Package Amount</th>
+                  <th className="p-2 text-right font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Extra km Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {quote.lineItems.map((line) => (
                   <tr key={line.id} className="border-b border-[#C29F75]">
-                    <td className="p-2 font-bold">{line.vehicleType}</td>
-                    <td className="p-2 text-center font-medium">{line.packageDays || '—'}</td>
-                    <td className="p-2 text-center font-medium">{dailyPricing ? line.includedDailyKm : line.includedMonthlyKm}</td>
-                    <td className="p-2 text-right font-semibold">{formatINR(dailyPricing ? line.dailyBaseFare : line.monthlyBaseFare)}</td>
-                    <td className="p-2 text-right font-semibold">{formatINR(line.extraRatePerKm)}</td>
+                    <td className="p-2 font-bold border-b border-[#C29F75]" style={{ borderBottom: '1px solid #C29F75' }}>{line.vehicleType}</td>
+                    <td className="p-2 text-center font-medium border-b border-[#C29F75]" style={{ borderBottom: '1px solid #C29F75' }}>{line.packageDays || '—'}</td>
+                    <td className="p-2 text-center font-medium border-b border-[#C29F75]" style={{ borderBottom: '1px solid #C29F75' }}>{dailyPricing ? line.includedDailyKm : line.includedMonthlyKm}</td>
+                    <td className="p-2 text-right font-semibold border-b border-[#C29F75]" style={{ borderBottom: '1px solid #C29F75' }}>{formatINR(dailyPricing ? line.dailyBaseFare : line.monthlyBaseFare)}</td>
+                    <td className="p-2 text-right font-semibold border-b border-[#C29F75]" style={{ borderBottom: '1px solid #C29F75' }}>{formatINR(line.extraRatePerKm)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="mt-8 ml-auto w-full max-w-sm border border-[#AE885E] text-xs">
-            <div className="flex justify-between border-b border-[#C29F75] p-2"><span>{dailyPricing ? '1day charges' : 'Package charges'}</span><strong>{formatINR(dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal)}</strong></div>
-            {Number(quote.estimatedExcessTotal) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2"><span>Estimated excess KM</span><strong>{formatINR(quote.estimatedExcessTotal)}</strong></div>}
-            {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2"><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
-            {(Number(quote.estimatedExcessTotal) > 0 || Number(quote.estimatedOtherCharges) > 0) && <div className="flex justify-between border-b border-[#C29F75] p-2"><span>Subtotal</span><strong>{formatINR(quote.estimatedSubtotal)}</strong></div>}
-            <div className="flex justify-between border-b border-[#C29F75] p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
-            <div className="flex justify-between bg-[#CCA474] p-2 text-sm font-black text-[#3F2B1D]"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
+          <div className="mt-8 ml-auto w-full max-w-sm border border-[#AE885E] text-xs" style={{ border: '1px solid #AE885E' }}>
+            <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>{dailyPricing ? '1day charges' : 'Package charges'}</span><strong>{formatINR(dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal)}</strong></div>
+            {Number(quote.estimatedExcessTotal) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>Estimated excess KM</span><strong>{formatINR(quote.estimatedExcessTotal)}</strong></div>}
+            {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
+            {(Number(quote.estimatedExcessTotal) > 0 || Number(quote.estimatedOtherCharges) > 0) && <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>Subtotal</span><strong>{formatINR(quote.estimatedSubtotal)}</strong></div>}
+            <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
+            <div className="flex justify-between bg-[#CCA474] p-2 text-sm font-black text-[#3F2B1D]" style={{ backgroundColor: '#CCA474', color: '#3F2B1D' }}><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
           <ul className="mt-28 list-disc space-y-1.5 pl-5 text-xs text-[#594838] font-medium">
             <li>KM calculated from Hadapsar to Hadapsar.</li>
