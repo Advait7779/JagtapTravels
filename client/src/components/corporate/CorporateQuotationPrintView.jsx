@@ -55,6 +55,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
               <h1 className="text-2xl font-black uppercase text-[#794416]">{company.companyName || 'Jagtap Travels'}</h1>
               {company.address && <p className="max-w-md text-xs text-[#594838]">{company.address}</p>}
               <p className="text-xs text-[#594838]">{company.phone || company.contact || ''} {company.email ? `· ${company.email}` : ''}</p>
+              <a className="block text-xs text-[#794416] hover:underline" href="https://jagtaptravels.com/" target="_blank" rel="noreferrer">Website - jagtaptravels.com</a>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               <img src="/jagtap-brand-logo.png" alt="Jagtap Travels" className="h-20 w-auto object-contain sm:h-24" />
@@ -62,35 +63,35 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             </div>
           </header>
 
-          <div className="py-5 text-xs">
-            <p className="text-base font-bold text-[#533F2D]">{quote.companyName}</p>
+          <div className="pt-10 pb-4 text-xs">
+            <p className="text-base font-black uppercase text-[#794416] tracking-wide">{quote.companyName}</p>
           </div>
 
-          <div className="mt-5 overflow-x-auto">
+          <div className="mt-6 overflow-x-auto">
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="bg-[#D4B992] text-[#3F2B1D]">
-                  <th className="p-2">Type of Vehicle</th>
-                  <th className="p-2 text-center">Days</th>
-                  <th className="p-2 text-center">Per Day Package km</th>
-                  <th className="p-2 text-right">Per Day Package Amount</th>
-                  <th className="p-2 text-right">Extra km Rate</th>
+                  <th className="p-2 font-bold">Type of Vehicle</th>
+                  <th className="p-2 text-center font-bold">Days</th>
+                  <th className="p-2 text-center font-bold">Per Day Package km</th>
+                  <th className="p-2 text-right font-bold">Per Day Package Amount</th>
+                  <th className="p-2 text-right font-bold">Extra km Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {quote.lineItems.map((line) => (
                   <tr key={line.id} className="border-b border-[#C29F75]">
                     <td className="p-2 font-bold">{line.vehicleType}</td>
-                    <td className="p-2 text-center">{line.packageDays || '—'}</td>
-                    <td className="p-2 text-center">{dailyPricing ? line.includedDailyKm : line.includedMonthlyKm}</td>
-                    <td className="p-2 text-right">{formatINR(dailyPricing ? line.dailyBaseFare : line.monthlyBaseFare)}</td>
-                    <td className="p-2 text-right">{formatINR(line.extraRatePerKm)}</td>
+                    <td className="p-2 text-center font-medium">{line.packageDays || '—'}</td>
+                    <td className="p-2 text-center font-medium">{dailyPricing ? line.includedDailyKm : line.includedMonthlyKm}</td>
+                    <td className="p-2 text-right font-semibold">{formatINR(dailyPricing ? line.dailyBaseFare : line.monthlyBaseFare)}</td>
+                    <td className="p-2 text-right font-semibold">{formatINR(line.extraRatePerKm)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="mt-6 ml-auto w-full max-w-sm border border-[#AE885E] text-xs">
+          <div className="mt-8 ml-auto w-full max-w-sm border border-[#AE885E] text-xs">
             <div className="flex justify-between border-b border-[#C29F75] p-2"><span>{dailyPricing ? '1day charges' : 'Package charges'}</span><strong>{formatINR(dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal)}</strong></div>
             {Number(quote.estimatedExcessTotal) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2"><span>Estimated excess KM</span><strong>{formatINR(quote.estimatedExcessTotal)}</strong></div>}
             {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2"><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
@@ -98,15 +99,21 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             <div className="flex justify-between border-b border-[#C29F75] p-2"><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
             <div className="flex justify-between bg-[#CCA474] p-2 text-sm font-black text-[#3F2B1D]"><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
           </div>
-          {corporateQuotationStampUrl(settings.corporateQuotationStampUrl) && (
-            <div className="mt-3 ml-auto flex w-full max-w-sm justify-end">
-              <CorporateQuotationStamp url={settings.corporateQuotationStampUrl} />
-            </div>
-          )}
-          <ul className="mt-6 list-disc space-y-1 border-t border-[#C29F75] pt-4 pl-5 text-xs text-[#413226]">
+          <ul className="mt-28 list-disc space-y-1.5 pl-5 text-xs text-[#594838] font-medium">
             <li>KM calculated from Hadapsar to Hadapsar.</li>
             <li>Toll, parking and RTO permit charges extra.</li>
           </ul>
+          <div className="mt-20 ml-auto flex w-full max-w-sm justify-end">
+            <div className="relative h-32 w-48">
+              <p className="absolute top-4 left-0 text-sm font-bold text-[#794416]">Thanks,</p>
+              <p className="absolute bottom-5 left-0 text-sm font-bold uppercase text-[#794416]">Jagtap Travels</p>
+              {corporateQuotationStampUrl(settings.corporateQuotationStampUrl) && (
+                <div className="absolute inset-y-0 right-0">
+                  <CorporateQuotationStamp url={settings.corporateQuotationStampUrl} />
+                </div>
+              )}
+            </div>
+          </div>
         </article>
       </div>
     </div>
