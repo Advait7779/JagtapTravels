@@ -39,7 +39,7 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
   };
 
   return (
-    <div className="print-overlay fixed inset-0 z-50 overflow-y-auto bg-[#514233]/60 p-2 sm:p-5" role="dialog" aria-modal="true" aria-label="Corporate quotation preview">
+    <div className="print-overlay fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 p-2 sm:p-5" role="dialog" aria-modal="true" aria-label="Corporate quotation preview">
       <div className="print-shell mx-auto my-2 max-w-4xl overflow-hidden rounded-md bg-white shadow-2xl">
         <div className="no-print flex flex-wrap items-center justify-end gap-3 bg-[#E2CCAC] p-4 text-[#3F2B1D]">
           <div className="flex flex-wrap items-center gap-2">
