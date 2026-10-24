@@ -33,7 +33,7 @@ const VEHICLE_OPTIONS = [
   'Prime Sedan (Swift Dzire / Etios 4 Seater)',
   'Force Urbania (12 / 17 Seater Pushback)',
   'Tempo Traveller (13 / 17 / 20 Seater AC)',
-  'AC Luxury Tour Bus (32 / 45 Seater)',
+  'AC Luxury Tour Bus (32 / 45 / 50 Seater)',
 ];
 
 function CustomSelect({ label, required, value, onChange, options }) {

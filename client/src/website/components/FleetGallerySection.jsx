@@ -51,8 +51,8 @@ export default function FleetGallerySection({ onBookClick }) {
           </div>
         </div>
 
-        {/* 7-Card Fleet Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+        {/* 8-Card Fleet Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
           {FLEET_VEHICLES.map((vehicle) => {
             const whatsappUrl = `https://wa.me/${vehicle.whatsappNumber}?text=${encodeURIComponent(
               vehicle.whatsappMessage

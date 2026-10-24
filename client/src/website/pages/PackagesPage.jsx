@@ -122,6 +122,24 @@ const PACKAGES_DATA = [
     ],
   },
   {
+    id: 'bus-50',
+    title: '50 Seater 3x2 School & Group Tourist Coach',
+    capacityBadge: '50 Seater (3x2)',
+    plate: 'MH 12 VW 7221',
+    tag: 'School & Group Special',
+    route: 'Pune ➔ Mahabaleshwar ➔ Imagica ➔ Shirdi ➔ Konkan & Statewide Group Tours',
+    image: '/images/fleet/bus-50-seater.jpeg',
+    fallbackImage: '/bus-50-seater.jpeg',
+    description:
+      'High-capacity 50-seater coach with comfortable 3x2 pushback seating arrangement. Tuned for school picnics, college industrial visits, devotional yatras, and large group outings.',
+    inclusions: [
+      'High-capacity 3x2 cushioned seats with headrest covers',
+      'Specially verified chauffeurs for student and family safety',
+      'PA & surround audio system for school/college tour entertainment',
+      'Massive underfloor luggage bays & overhead parcel racks',
+    ],
+  },
+  {
     id: 'all-fleet',
     title: 'Complete Fleet Lineup (17 to 50 Seats)',
     capacityBadge: '17 to 50 Seater Range',
