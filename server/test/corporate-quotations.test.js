@@ -148,6 +148,23 @@ test('corporate quotations are admin-only, server-priced, versioned and convert 
   assert.equal((await repo.read()).corporateContracts.length, 2);
 });
 
+test('corporate quotations can be saved and converted without a contact phone', async (t) => {
+  const { repo, agent, csrf } = await environment(t);
+  const vehicle = await agent.post('/api/vehicles').set('X-CSRF-Token', csrf)
+    .send({ name: 'Innova', vehicleNumber: 'MH 12 AB 1234' }).expect(201);
+  const input = { ...quotation(), contactPhone: '', lineItems: [quotation().lineItems[0]] };
+  const created = await agent.post('/api/corporate-quotations').set('X-CSRF-Token', csrf)
+    .send(input).expect(201);
+  assert.equal(created.body.contactPhone, '');
+  const converted = await agent.post(`/api/corporate-quotations/${created.body.id}/convert`)
+    .set('X-CSRF-Token', csrf)
+    .send({ assignments: [{ lineId: created.body.lineItems[0].id, vehicleId: vehicle.body.id }] })
+    .expect(200);
+  assert.equal(converted.body.contracts[0].companyName, 'Example Industries');
+  assert.equal(converted.body.contracts[0].companyId, null);
+  assert.equal((await repo.read()).customers.length, 0);
+});
+
 test('per-day quotations calculate one-day totals and convert using package days', async (t) => {
   const { agent, csrf } = await environment(t);
   const vehicle = await agent.post('/api/vehicles').set('X-CSRF-Token', csrf)

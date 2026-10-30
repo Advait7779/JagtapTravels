@@ -105,7 +105,7 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(corporateEditor.getByLabel('Quotation date *')).not.toBeEmpty();
   await corporateEditor.getByLabel('Quotation date *').fill('2026-10-10');
   await corporateEditor.getByLabel('Company name *').fill('Browser Customer');
-  await corporateEditor.getByLabel('Phone *').fill('9876543210');
+  await expect(corporateEditor.getByLabel('Phone')).not.toHaveAttribute('required');
   await corporateEditor.getByLabel('Type of Vehicle *').fill('Innova Crysta');
   await corporateEditor.getByLabel('Days / month').fill('26');
   await corporateEditor.getByLabel('Per Day Package Amount *').fill('45000');

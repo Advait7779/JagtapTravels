@@ -95,7 +95,7 @@ function validateCorporateQuotation(input, data, existing = null) {
     companyAddress: text(input.companyAddress, 'Company address', false, 1000),
     companyGstin: text(input.companyGstin, 'Company GSTIN', false, 30),
     contactName: text(input.contactName, 'Contact name', false, 200),
-    contactPhone: text(input.contactPhone || customer?.phone, 'Contact phone', true, 50),
+    contactPhone: text(input.contactPhone || customer?.phone, 'Contact phone', false, 50),
     contactEmail,
     quotationDate,
     proposedStartDate,
@@ -229,7 +229,7 @@ function createCorporateQuotationService(repo) {
           const existing = data.customers.find((customer) =>
             customer.name.toLowerCase() === quote.companyName.toLowerCase());
           if (existing) customerId = existing.id;
-          else {
+          else if (quote.contactPhone) {
             const customer = {
               ...validate('customers', {
                 name: quote.companyName,

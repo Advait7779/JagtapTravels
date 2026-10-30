@@ -92,7 +92,7 @@ export default function CorporateQuotationEditor({ quotation, customers = [], on
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="form-label">Company name *<input className={fieldClass} required maxLength={200} list="corporate-quotation-companies" value={form.companyName} onChange={(event) => selectCompany(event.target.value)} /></label>
               <datalist id="corporate-quotation-companies">{customers.map((customer) => <option key={customer.id} value={customer.name} />)}</datalist>
-              <label className="form-label">Phone *<input className={fieldClass} type="tel" required maxLength={50} value={form.contactPhone} onChange={(event) => update('contactPhone', event.target.value)} /></label>
+              <label className="form-label">Phone<input className={fieldClass} type="tel" maxLength={50} value={form.contactPhone} onChange={(event) => update('contactPhone', event.target.value)} /></label>
             </div>
           </section>
 
