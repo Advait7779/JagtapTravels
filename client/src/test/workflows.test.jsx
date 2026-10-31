@@ -23,6 +23,7 @@ import CorporateQuotationEditor from '../components/corporate/CorporateQuotation
 import CorporateQuotationPrintView from '../components/corporate/CorporateQuotationPrintView';
 import CorporateInvoiceTable from '../components/corporate/CorporateInvoiceTable';
 import CorporateInvoiceModal from '../components/corporate/CorporateInvoiceModal';
+import Settings from '../components/Settings';
 import CorporateLogsheetPrintView from '../components/corporate/CorporateLogsheetPrintView';
 import App from '../App';
 import Sidebar from '../components/Sidebar';
@@ -559,6 +560,45 @@ it('corporate invoice renders bank name and branch dynamically from settings', a
   expect(screen.getByText(/BRANCH -\s+Saswad Branch/)).toBeTruthy();
   expect(screen.getByText('9011507220')).toBeTruthy();
   expect(screen.getByText('8888094770')).toBeTruthy();
+});
+it.each([['GST', false], ['Non-GST', true]])('uses current %s invoice images instead of an older saved snapshot', (_label, isNonGst) => {
+  const savedInvoice = {
+    id: 'saved-invoice', invoiceNo: '404', invoiceDate: '2026-10-31', period: 'OCTOBER',
+    partyName: 'Alpha Industries', isNonGst, showStamp: true, showSignature: true,
+    company: { stampUrl: '/api/uploads/old-stamp.png', signatureUrl: '/api/uploads/old-signature.png' },
+    lineItems: [{ id: 'line-1', particulars: 'Vehicle package', packageAmount: 1000 }],
+  };
+  const contract = { id: 'contract-1', companyName: 'Alpha Industries' };
+  const settings = { stampUrl: '/api/uploads/current-stamp.png', signatureUrl: '/api/uploads/current-signature.png' };
+  const view = render(<CorporateInvoiceModal isOpen onClose={vi.fn()} contract={contract}
+    selectedMonth="2026-10" initialIsNonGst={isNonGst} initialInvoiceData={savedInvoice} settings={settings} />);
+  const stamp = screen.getByAltText('Official Stamp');
+  const signature = screen.getByAltText('Authorized Signature');
+  expect(stamp.getAttribute('src')).toBe(settings.stampUrl);
+  expect(signature.getAttribute('src')).toBe(settings.signatureUrl);
+  fireEvent.error(stamp);
+  fireEvent.error(signature);
+  expect(screen.getByAltText('Official Stamp').getAttribute('src')).toBe('/stamp.jpg');
+  expect(screen.getByAltText('Authorized Signature').getAttribute('src')).toBe('/signature.jpg');
+  expect(screen.getByRole('alert').textContent).toMatch(/blue default image/);
+  view.unmount();
+
+  render(<CorporateInvoiceModal isOpen onClose={vi.fn()} contract={contract}
+    selectedMonth="2026-10" initialIsNonGst={isNonGst} initialInvoiceData={savedInvoice} settings={{}} />);
+  expect(screen.getByAltText('Official Stamp').getAttribute('src')).toBe('/stamp.jpg');
+  expect(screen.getByAltText('Authorized Signature').getAttribute('src')).toBe('/signature.jpg');
+});
+
+it('shows unavailable uploaded images in Business Settings without substituting default images', () => {
+  vi.spyOn(api, 'getUsers').mockResolvedValue([]);
+  render(<Settings settings={{ companyName: 'Jagtap Travels', stampUrl: '/api/uploads/missing-stamp.png',
+    signatureUrl: '/api/uploads/missing-signature.png' }} onSave={vi.fn()} />);
+  fireEvent.error(screen.getByAltText('Company Stamp'));
+  fireEvent.error(screen.getByAltText('Authorized Signature'));
+  expect(screen.queryByAltText('Company Stamp')).toBeNull();
+  expect(screen.queryByAltText('Authorized Signature')).toBeNull();
+  expect(screen.getByText(/Stamp image unavailable/)).toBeTruthy();
+  expect(screen.getByText(/Signature image unavailable/)).toBeTruthy();
 });
 it('shows the configured payment QR only on corporate Non-GST invoices', () => {
   vi.spyOn(api, 'getSavedCorporateInvoice').mockResolvedValue(null);

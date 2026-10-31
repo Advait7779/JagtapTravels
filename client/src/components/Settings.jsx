@@ -22,6 +22,8 @@ export default function Settings({ settings, onSave }) {
   const [uploadingCorporateQuotationStamp, setUploadingCorporateQuotationStamp] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
+  const [failedStampUrl, setFailedStampUrl] = useState('');
+  const [failedSignatureUrl, setFailedSignatureUrl] = useState('');
 
   useEffect(() => {
     setForm(settings || {});
@@ -44,10 +46,12 @@ export default function Settings({ settings, onSave }) {
 
   const isStampRemoved = form.stampUrl === 'none';
   const currentStamp = isStampRemoved ? null : (form.stampUrl || '/stamp.jpg');
+  const stampUnavailable = Boolean(currentStamp && failedStampUrl === currentStamp);
   const currentCorporateQuotationStamp = corporateQuotationStampUrl(form.corporateQuotationStampUrl);
 
   const isSigRemoved = form.signatureUrl === 'none';
   const currentSignature = isSigRemoved ? null : (form.signatureUrl || '/signature.jpg');
+  const signatureUnavailable = Boolean(currentSignature && failedSignatureUrl === currentSignature);
   const currentNonGstQr = form.nonGstQrUrl === 'none' ? null : (form.nonGstQrUrl || '/non-gst-qr.jpeg');
 
   const handleStampUpload = async (e) => {
@@ -286,12 +290,12 @@ export default function Settings({ settings, onSave }) {
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                        currentStamp
+                        currentStamp && !stampUnavailable
                           ? 'bg-blue-50 text-blue-700 border-blue-200'
                           : 'bg-amber-50 text-amber-700 border-amber-200'
                       }`}
                     >
-                      {currentStamp ? 'Active' : 'Removed'}
+                      {stampUnavailable ? 'Unavailable' : currentStamp ? 'Active' : 'Removed'}
                     </span>
                     {currentStamp ? (
                       <button
@@ -321,16 +325,14 @@ export default function Settings({ settings, onSave }) {
                 <div className={`bg-white border rounded-md p-3 flex items-center justify-center min-h-[140px] relative ${
                   currentStamp ? 'border-slate-200' : 'border-dashed border-slate-300'
                 }`}>
-                  {currentStamp ? (
+                  {currentStamp && !stampUnavailable ? (
                     <>
                       <img
                         src={currentStamp}
                         alt="Company Stamp"
                         className="h-28 w-28 object-contain"
                         style={{ mixBlendMode: 'multiply' }}
-                        onError={(e) => {
-                          e.currentTarget.src = '/stamp.jpg';
-                        }}
+                        onError={() => setFailedStampUrl(currentStamp)}
                       />
                       <button
                         type="button"
@@ -341,6 +343,8 @@ export default function Settings({ settings, onSave }) {
                         <X size={14} weight="bold" />
                       </button>
                     </>
+                  ) : stampUnavailable ? (
+                    <p role="alert" className="text-center text-xs text-rose-700">Stamp image unavailable. Re-upload it and check persistent upload storage.</p>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-400 py-4 text-center">
                       <SealCheck size={32} className="opacity-30 mb-1" />
@@ -399,12 +403,12 @@ export default function Settings({ settings, onSave }) {
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                        currentSignature
+                        currentSignature && !signatureUnavailable
                           ? 'bg-blue-50 text-blue-700 border-blue-200'
                           : 'bg-amber-50 text-amber-700 border-amber-200'
                       }`}
                     >
-                      {currentSignature ? 'Active' : 'Removed'}
+                      {signatureUnavailable ? 'Unavailable' : currentSignature ? 'Active' : 'Removed'}
                     </span>
                     {currentSignature ? (
                       <button
@@ -434,16 +438,14 @@ export default function Settings({ settings, onSave }) {
                 <div className={`bg-white border rounded-md p-3 flex items-center justify-center min-h-[140px] relative ${
                   currentSignature ? 'border-slate-200' : 'border-dashed border-slate-300'
                 }`}>
-                  {currentSignature ? (
+                  {currentSignature && !signatureUnavailable ? (
                     <>
                       <img
                         src={currentSignature}
                         alt="Authorized Signature"
                         className="h-24 w-auto max-w-[220px] object-contain"
                         style={{ mixBlendMode: 'multiply' }}
-                        onError={(e) => {
-                          e.currentTarget.src = '/signature.jpg';
-                        }}
+                        onError={() => setFailedSignatureUrl(currentSignature)}
                       />
                       <button
                         type="button"
@@ -454,6 +456,8 @@ export default function Settings({ settings, onSave }) {
                         <X size={14} weight="bold" />
                       </button>
                     </>
+                  ) : signatureUnavailable ? (
+                    <p role="alert" className="text-center text-xs text-rose-700">Signature image unavailable. Re-upload it and check persistent upload storage.</p>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-400 py-4 text-center">
                       <PenNib size={32} className="opacity-30 mb-1" />

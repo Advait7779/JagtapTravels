@@ -168,22 +168,20 @@ export default function CorporateInvoiceModal({
   const [showStamp, setShowStamp] = useState(settings?.stampUrl !== 'none');
   const [showSignature, setShowSignature] = useState(settings?.signatureUrl !== 'none');
 
-  // Resolved stamp and signature URLs (authoritative settings take precedence over stale invoice cache)
+  // Use current business settings, never images saved inside an older invoice.
   const isStampRemoved = settings?.stampUrl === 'none';
   const effectiveStampUrl = useMemo(() => {
     if (isStampRemoved) return null;
-    if (settings?.stampUrl && settings.stampUrl !== 'none') return settings.stampUrl;
-    if (company?.stampUrl && company.stampUrl !== 'none') return company.stampUrl;
-    return '/stamp.jpg';
-  }, [isStampRemoved, settings?.stampUrl, company?.stampUrl]);
+    return settings?.stampUrl || '/stamp.jpg';
+  }, [isStampRemoved, settings?.stampUrl]);
 
   const isSignatureRemoved = settings?.signatureUrl === 'none';
   const effectiveSignatureUrl = useMemo(() => {
     if (isSignatureRemoved) return null;
-    if (settings?.signatureUrl && settings.signatureUrl !== 'none') return settings.signatureUrl;
-    if (company?.signatureUrl && company.signatureUrl !== 'none') return company.signatureUrl;
-    return '/signature.jpg';
-  }, [isSignatureRemoved, settings?.signatureUrl, company?.signatureUrl]);
+    return settings?.signatureUrl || '/signature.jpg';
+  }, [isSignatureRemoved, settings?.signatureUrl]);
+  const [failedStampUrl, setFailedStampUrl] = useState('');
+  const [failedSignatureUrl, setFailedSignatureUrl] = useState('');
 
   const effectiveNonGstQrUrl = useMemo(() => {
     if (!isNonGst || settings?.nonGstQrUrl === 'none') return null;
@@ -512,8 +510,8 @@ export default function CorporateInvoiceModal({
         hsnSac: company.hsnSac || defaultCompany.hsnSac,
         bankAccountNo: company.bankAccountNo || defaultCompany.bankAccountNo,
         bankIfsc: company.bankIfsc || defaultCompany.bankIfsc,
-        stampUrl: effectiveStampUrl || company.stampUrl,
-        signatureUrl: effectiveSignatureUrl || company.signatureUrl,
+        stampUrl: effectiveStampUrl || 'none',
+        signatureUrl: effectiveSignatureUrl || 'none',
         nonGstQrUrl: isNonGst ? (settings?.nonGstQrUrl === 'none' ? 'none' : effectiveNonGstQrUrl) : '',
       },
       lineItems,
@@ -1137,6 +1135,12 @@ export default function CorporateInvoiceModal({
 
     return (
       <div className="print-preview-container overflow-auto max-h-[calc(100vh-180px)] bg-slate-100 p-3 sm:p-6 print:overflow-visible print:max-h-none print:h-auto print:bg-white print:p-0 print:m-0 print:shadow-none">
+        {((failedStampUrl && failedStampUrl === effectiveStampUrl) ||
+          (failedSignatureUrl && failedSignatureUrl === effectiveSignatureUrl)) && (
+          <p role="alert" className="no-print mb-3 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+            An uploaded stamp or signature is unavailable. The blue default image is shown instead. Re-upload the image in Business Settings and check persistent upload storage.
+          </p>
+        )}
         <div
           ref={printRef}
           className="printable-area bg-white mx-auto shadow-lg print:shadow-none print:m-0 print:max-w-none"
@@ -1380,7 +1384,7 @@ export default function CorporateInvoiceModal({
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 128, flexShrink: 0 }}>
                         {showStamp && !isStampRemoved && effectiveStampUrl && (
                           <img
-                            src={effectiveStampUrl}
+                            src={failedStampUrl === effectiveStampUrl ? '/stamp.jpg' : effectiveStampUrl}
                             alt="Official Stamp"
                             style={{
                               height: 125,
@@ -1391,12 +1395,10 @@ export default function CorporateInvoiceModal({
                               mixBlendMode: 'multiply',
                               opacity: 0.95,
                             }}
-                            onError={(e) => {
-                              if (!e.currentTarget.src.endsWith('/stamp.jpg')) {
-                                e.currentTarget.src = '/stamp.jpg';
-                              } else {
-                                e.currentTarget.style.display = 'none';
-                              }
+                            onError={(event) => {
+                              if (event.currentTarget.src.endsWith('/stamp.jpg'))
+                                event.currentTarget.style.display = 'none';
+                              else setFailedStampUrl(effectiveStampUrl);
                             }}
                           />
                         )}
@@ -1404,7 +1406,7 @@ export default function CorporateInvoiceModal({
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: 160, flexShrink: 0, paddingRight: 4 }}>
                         {showSignature && !isSignatureRemoved && effectiveSignatureUrl && (
                           <img
-                            src={effectiveSignatureUrl}
+                            src={failedSignatureUrl === effectiveSignatureUrl ? '/signature.jpg' : effectiveSignatureUrl}
                             alt="Authorized Signature"
                             style={{
                               height: 68,
@@ -1413,12 +1415,10 @@ export default function CorporateInvoiceModal({
                               objectFit: 'contain',
                               mixBlendMode: 'multiply',
                             }}
-                            onError={(e) => {
-                              if (!e.currentTarget.src.endsWith('/signature.jpg')) {
-                                e.currentTarget.src = '/signature.jpg';
-                              } else {
-                                e.currentTarget.style.display = 'none';
-                              }
+                            onError={(event) => {
+                              if (event.currentTarget.src.endsWith('/signature.jpg'))
+                                event.currentTarget.style.display = 'none';
+                              else setFailedSignatureUrl(effectiveSignatureUrl);
                             }}
                           />
                         )}
