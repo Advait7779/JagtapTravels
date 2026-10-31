@@ -484,7 +484,9 @@ export default function App() {
       await api[confirmDialog.method](confirmDialog.id);
       await refresh();
       toast.delete('Successfully deleted', {
-        description: confirmDialog.label ? `${confirmDialog.label} removed` : 'Record removed',
+        description: confirmDialog.method === 'deleteBill'
+          ? 'Customer invoice and payment records removed.'
+          : confirmDialog.label ? `${confirmDialog.label} removed` : 'Record removed',
       });
       setConfirmDialog(null);
     } catch (err) {
@@ -902,9 +904,9 @@ export default function App() {
                   remove(
                     'deleteBill',
                     id,
-                    'Cancel this unpaid invoice? Its number and history will be retained. Invoices with payments cannot be cancelled.',
-                    'Cancel Invoice',
-                    'Cancel Invoice',
+                    'Delete this customer invoice and its payment records permanently? This cannot be undone.',
+                    'Delete Customer Invoice',
+                    'Delete Invoice',
                   )
                 }
               />

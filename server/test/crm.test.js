@@ -164,7 +164,7 @@ for (const [mode, setup] of [
     const rebill = await service.add('bills', { ...bill, linkedSlipId: s.id });
     assert.notEqual(rebill.billNumber, b.billNumber);
   });
-  test(mode + ': authoritative totals, payment settlement, retry and history', async (t) => {
+  test(mode + ': authoritative totals, payment settlement, retry and invoice deletion', async (t) => {
     const { service } = await setup(t);
     const b = await service.add('bills', {
       ...bill,
@@ -188,7 +188,9 @@ for (const [mode, setup] of [
       service.pay(b.id, { ...payload, requestId: 'another', amount: 1 }),
       /balance/,
     );
-    await assert.rejects(service.remove('bills', b.id), /payments/);
+    await service.remove('bills', b.id);
+    assert.equal((await service.list('bills')).length, 0);
+    await assert.rejects(service.pay(b.id, payload), /not found/);
   });
   test(mode + ': invalid financial, date and odometer submissions are rejected', async (t) => {
     const { service } = await setup(t);

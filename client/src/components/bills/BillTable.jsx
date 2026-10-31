@@ -269,16 +269,14 @@ export default function BillTable({ bills, onAddBill, onViewBill, onRecordPaymen
                               Payment
                             </button>
                           )}
-                          {/* Cancel unpaid invoice */}
                           <button
                             onClick={() => onDeleteBill(bill.id)}
-                            title="Cancel unpaid invoice"
-                            disabled={
-                              !!bill.voidedAt || Number(bill.totalPaid ?? bill.advancePaid ?? 0) > 0
-                            }
-                            className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                            title="Delete customer invoice and payment records"
+                            aria-label={`Delete invoice ${billNo}`}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 text-[11px] font-bold transition-colors"
                           >
                             <Trash size={14} weight="bold" />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </td>

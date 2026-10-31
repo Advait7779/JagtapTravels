@@ -1102,16 +1102,11 @@ function createService(repo) {
       return repo.change((d) => {
         const row = find(d, collection, key);
         if (collection === 'bills') {
-          if (row.voidedAt) throw new HttpError(409, 'Invoice already cancelled.');
-          if (Number(row.totalPaid ?? row.advancePaid) > 0)
-            throw new HttpError(
-              409,
-              'Invoices with payments cannot be cancelled. Retain the financial record.',
-            );
-          row.voidedAt = new Date().toISOString();
-          row.paymentStatus = 'Cancelled';
-          row.balanceDue = 0;
-          if (row.linkedSlipId) find(d, 'meterReadings', row.linkedSlipId).status = 'Completed';
+          if (row.linkedSlipId) {
+            const slip = d.meterReadings.find((item) => same(item.id, row.linkedSlipId));
+            if (slip) slip.status = 'Completed';
+          }
+          d.bills = d.bills.filter((bill) => !same(bill.id, key));
           return { success: true };
         }
         if (collection === 'meterReadings') {

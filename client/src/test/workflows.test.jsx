@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import BillModal from '../components/bills/BillModal';
+import BillTable from '../components/bills/BillTable';
 import QuotationModal from '../components/quotations/QuotationModal';
 import QuotationTable from '../components/quotations/QuotationTable';
 import MeterReadingModal from '../components/meterReadings/MeterReadingModal';
@@ -31,6 +32,18 @@ import TeamUsers from '../components/TeamUsers';
 import { localDate, dateInput } from '../utils/formatters';
 import { api } from '../services/api';
 afterEach(() => vi.restoreAllMocks());
+it('lets an administrator delete a paid customer invoice', () => {
+  const onDeleteBill = vi.fn();
+  render(<BillTable
+    bills={[{ id: 'dummy-bill', billNumber: 'JTT-2026-001', customerName: 'Test Customer',
+      paymentStatus: 'Paid', totalAmount: 1000, totalPaid: 1000, balanceDue: 0,
+      payments: [{ id: 'payment-1', amount: 1000 }] }]}
+    onAddBill={vi.fn()} onViewBill={vi.fn()} onRecordPayment={vi.fn()}
+    onDeleteBill={onDeleteBill}
+  />);
+  fireEvent.click(screen.getByRole('button', { name: 'Delete invoice JTT-2026-001' }));
+  expect(onDeleteBill).toHaveBeenCalledWith('dummy-bill');
+});
 it('hides corporate contracts, billing, payroll and settings from staff', () => {
   render(<Sidebar activeTab="quotations" setActiveTab={vi.fn()} user={{ role: 'Staff' }} />);
   expect(screen.getByRole('button', { name: /^Quotations/ })).toBeTruthy();
