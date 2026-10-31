@@ -421,6 +421,85 @@ it('corporate invoice search accepts displayed, numeric and ISO dates', () => {
   expect(screen.getByText('CORP-002')).toBeTruthy();
   expect(screen.queryByText('CORP-001')).toBeNull();
 });
+it.each([['GST', false], ['Non-GST', true]])('repeats a %s invoice into a new month without changing the source', (_label, isNonGst) => {
+  const source = {
+    id: 'invoice-1', contractId: 'contract-1', invoiceNo: '404', month: '2026-10',
+    invoiceDate: '2026-10-31', period: 'OCTOBER', isNonGst,
+    partyName: 'Alpha Industries', lineItems: [{ particulars: 'Vehicle package' }],
+  };
+  const onRepeatInvoice = vi.fn();
+  const onViewInvoice = vi.fn();
+  render(<CorporateInvoiceTable invoices={[source]} onRepeatInvoice={onRepeatInvoice} onViewInvoice={onViewInvoice} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Repeat invoice 404 for another month' }));
+  const dialog = screen.getByRole('dialog', { name: 'Repeat corporate invoice' });
+  expect(within(dialog).getByLabelText('Billing month').value).toBe('2026-11');
+  expect(within(dialog).getByLabelText('Invoice date').value).toBe('2026-11-30');
+  expect(within(dialog).getByLabelText('New invoice number').value).toBe('405');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Create copy' }));
+  expect(onRepeatInvoice).toHaveBeenCalledWith(source, {
+    month: '2026-11', invoiceDate: '2026-11-30', invoiceNo: '405',
+  });
+  expect(source).toMatchObject({ id: 'invoice-1', month: '2026-10', invoiceNo: '404' });
+  expect(onViewInvoice).not.toHaveBeenCalled();
+});
+
+it('opens an existing month instead of copying and rejects reused invoice numbers', () => {
+  const source = { id: 'source', contractId: 'contract-1', invoiceNo: '404', month: '2026-10',
+    isNonGst: false, partyName: 'Alpha Industries' };
+  const target = { id: 'target', contractId: 'contract-1', invoiceNo: '405', month: '2026-11',
+    isNonGst: false, partyName: 'Alpha Industries' };
+  const onRepeatInvoice = vi.fn();
+  const onViewInvoice = vi.fn();
+  render(<CorporateInvoiceTable invoices={[source, target]}
+    onRepeatInvoice={onRepeatInvoice} onViewInvoice={onViewInvoice} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Repeat invoice 404 for another month' }));
+  let dialog = screen.getByRole('dialog', { name: 'Repeat corporate invoice' });
+  expect(within(dialog).getByLabelText('New invoice number').value).toBe('406');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Create copy' }));
+  expect(onViewInvoice).toHaveBeenCalledWith(target);
+  expect(onRepeatInvoice).not.toHaveBeenCalled();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Repeat invoice 404 for another month' }));
+  dialog = screen.getByRole('dialog', { name: 'Repeat corporate invoice' });
+  fireEvent.change(within(dialog).getByLabelText('Billing month'), { target: { value: '2026-12' } });
+  fireEvent.change(within(dialog).getByLabelText('New invoice number'), { target: { value: '405' } });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Create copy' }));
+  expect(within(dialog).getByRole('alert').textContent).toMatch(/already in use/);
+  expect(onRepeatInvoice).not.toHaveBeenCalled();
+});
+
+it.each([['GST', false], ['Non-GST', true]])('opens a repeated %s invoice as an unsaved copy', async (_label, isNonGst) => {
+  const getSaved = vi.spyOn(api, 'getSavedCorporateInvoice').mockResolvedValue(null);
+  const save = vi.spyOn(api, 'saveCorporateInvoice').mockResolvedValue({ id: 'copied-invoice' });
+  const source = {
+    id: 'original-invoice', contractId: 'contract-1', month: '2026-11',
+    invoiceNo: '405', invoiceDate: '2026-11-30', period: 'NOVEMBER',
+    isNonGst, invoiceType: isNonGst ? 'nongst' : 'gst', gstRate: isNonGst ? 0 : 9,
+    partyName: 'Alpha Industries', partyAddress: 'Pune',
+    lineItems: [{ id: 'original-line', particulars: 'Innova package', packageKm: 3000,
+      packageAmount: 50000, extraKm: 100, extraKmRate: 10, extraAmount: 1000 }],
+    tollItems: [{ id: 'original-toll', vehicle: 'INNOVA', type: 'TOLL', amount: 200 }],
+  };
+  render(<CorporateInvoiceModal isOpen onClose={vi.fn()}
+    contract={{ id: 'contract-1', companyName: 'Alpha Industries', vehicleNumber: 'MH 12 AB 1234' }}
+    selectedMonth="2026-11" initialIsNonGst={isNonGst} initialCopyData={source} />);
+  expect(screen.getByLabelText('Invoice No').value).toBe('405');
+  expect(screen.getByLabelText('Date').value).toBe('2026-11-30');
+  expect(screen.getByLabelText('Period').value).toBe('NOVEMBER');
+  expect(screen.getByText(/Unsaved customizations/)).toBeTruthy();
+  expect(getSaved).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Save Invoice & View Preview' }));
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+  expect(save.mock.calls[0][0]).toBe('contract-1');
+  expect(save.mock.calls[0][1]).toMatchObject({
+    month: '2026-11', invoiceDate: '2026-11-30', invoiceNo: '405', isNonGst,
+    lineItems: [{ particulars: 'Innova package', packageKm: 3000, packageAmount: 50000 }],
+    tollItems: [{ vehicle: 'INNOVA', type: 'TOLL', amount: 200 }],
+  });
+  expect(save.mock.calls[0][1].id).toBeUndefined();
+  expect(save.mock.calls[0][1].lineItems[0].id).not.toBe('original-line');
+  expect(source.id).toBe('original-invoice');
+});
 it('corporate invoice server failure remains unsaved and does not notify the register', async () => {
   vi.spyOn(api, 'getSavedCorporateInvoice').mockResolvedValue(null);
   vi.spyOn(api, 'saveCorporateInvoice').mockRejectedValue(new Error('Database unavailable'));

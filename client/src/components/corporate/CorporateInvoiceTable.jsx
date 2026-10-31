@@ -8,9 +8,10 @@ import {
   Eye,
   Plus,
   ArrowsClockwise,
+  Copy,
   X,
 } from '@phosphor-icons/react';
-import { formatINR, formatDate } from '../../utils/formatters';
+import { formatINR, formatDate, localDate } from '../../utils/formatters';
 import ThemedSelect from '../ThemedSelect';
 import { usePagination, PageSizeSelector, TablePaginationFooter } from '../common/Pagination';
 
@@ -21,17 +22,81 @@ const searchableDate = (value) => {
   return [iso, `${day}/${month}/${year}`, formatDate(iso)].join(' ').toLowerCase();
 };
 
+const nextMonth = (value) => {
+  const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(value || '') ? value : localDate().slice(0, 7);
+  const [year, number] = month.split('-').map(Number);
+  return new Date(Date.UTC(year, number, 1)).toISOString().slice(0, 7);
+};
+
+const lastDayOfMonth = (value) => {
+  const [year, number] = value.split('-').map(Number);
+  return new Date(Date.UTC(year, number, 0)).toISOString().slice(0, 10);
+};
+
+const nextInvoiceNumber = (source, invoices) => {
+  const match = /^(.*?)(\d+)$/.exec(String(source.invoiceNo || ''));
+  if (!match) return '';
+  const used = new Set(invoices.map((invoice) => String(invoice.invoiceNo || '').toLowerCase()));
+  let number = Number(match[2]) + 1;
+  let candidate = `${match[1]}${String(number).padStart(match[2].length, '0')}`;
+  while (used.has(candidate.toLowerCase())) {
+    number += 1;
+    candidate = `${match[1]}${String(number).padStart(match[2].length, '0')}`;
+  }
+  return candidate;
+};
+
 export default function CorporateInvoiceTable({
   invoices = [],
   contracts = [],
   onViewInvoice,
   onDeleteInvoice,
   onGenerateNew,
+  onRepeatInvoice,
   onRefresh,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL'); // 'ALL' | 'GST' | 'NONGST'
+  const [repeatSource, setRepeatSource] = useState(null);
+  const [repeatMonth, setRepeatMonth] = useState('');
+  const [repeatDate, setRepeatDate] = useState('');
+  const [repeatNumber, setRepeatNumber] = useState('');
+  const [repeatError, setRepeatError] = useState('');
+
+  const startRepeat = (invoice) => {
+    const month = nextMonth(invoice.month);
+    setRepeatSource(invoice);
+    setRepeatMonth(month);
+    setRepeatDate(lastDayOfMonth(month));
+    setRepeatNumber(nextInvoiceNumber(invoice, invoices));
+    setRepeatError('');
+  };
+
+  const submitRepeat = (event) => {
+    event.preventDefault();
+    if (!repeatSource || !onRepeatInvoice) return;
+    const isNonGst = Boolean(repeatSource.isNonGst || repeatSource.invoiceType === 'nongst');
+    const existing = invoices.find((invoice) =>
+      String(invoice.contractId) === String(repeatSource.contractId) &&
+      invoice.month === repeatMonth &&
+      Boolean(invoice.isNonGst || invoice.invoiceType === 'nongst') === isNonGst);
+    if (existing) {
+      setRepeatSource(null);
+      onViewInvoice?.(existing);
+      return;
+    }
+    if (invoices.some((invoice) => String(invoice.invoiceNo || '').toLowerCase() === repeatNumber.trim().toLowerCase())) {
+      setRepeatError('This invoice number is already in use. Enter a different number.');
+      return;
+    }
+    onRepeatInvoice(repeatSource, {
+      month: repeatMonth,
+      invoiceDate: repeatDate,
+      invoiceNo: repeatNumber.trim(),
+    });
+    setRepeatSource(null);
+  };
 
   // Comprehensive filter supporting date, party name, invoice #, vehicle, period
   const filteredInvoices = useMemo(() => {
@@ -368,6 +433,17 @@ export default function CorporateInvoiceTable({
                           >
                             <Printer size={16} weight="bold" />
                           </button>
+                          {onRepeatInvoice && (
+                            <button
+                              type="button"
+                              onClick={() => startRepeat(inv)}
+                              className="p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                              title="Repeat for another month"
+                              aria-label={`Repeat invoice ${inv.invoiceNo} for another month`}
+                            >
+                              <Copy size={16} weight="bold" />
+                            </button>
+                          )}
                           {onDeleteInvoice && (
                             <button
                               type="button"
@@ -400,6 +476,43 @@ export default function CorporateInvoiceTable({
           />
         )}
       </div>
+      {repeatSource && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4" role="presentation">
+          <div role="dialog" aria-modal="true" aria-label="Repeat corporate invoice" className="w-full max-w-md rounded-md bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Repeat for another month</h2>
+                <p className="mt-1 text-xs text-slate-600">Copy {repeatSource.invoiceNo} as a new {repeatSource.isNonGst || repeatSource.invoiceType === 'nongst' ? 'Non-GST' : 'GST'} invoice.</p>
+              </div>
+              <button type="button" onClick={() => setRepeatSource(null)} aria-label="Close repeat invoice" className="rounded p-1 text-slate-500 hover:bg-slate-100"><X size={18} /></button>
+            </div>
+            <form onSubmit={submitRepeat} className="space-y-3">
+              <label className="form-label">Billing month
+                <input className="form-input" type="month" required value={repeatMonth} onChange={(event) => {
+                  setRepeatMonth(event.target.value);
+                  if (event.target.value) setRepeatDate(lastDayOfMonth(event.target.value));
+                  setRepeatError('');
+                }} />
+              </label>
+              <label className="form-label">Invoice date
+                <input className="form-input" type="date" required value={repeatDate} onChange={(event) => setRepeatDate(event.target.value)} />
+              </label>
+              <label className="form-label">New invoice number
+                <input className="form-input" required maxLength={100} value={repeatNumber} onChange={(event) => {
+                  setRepeatNumber(event.target.value);
+                  setRepeatError('');
+                }} />
+              </label>
+              {repeatError && <p role="alert" className="text-xs text-rose-700">{repeatError}</p>}
+              <p className="text-xs text-slate-600">Vehicle rows, KM, charges and tax treatment will be copied. Review the new month’s extra KM and toll charges before saving.</p>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setRepeatSource(null)} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">Cancel</button>
+                <button type="submit" className="rounded-md bg-navy-900 px-3 py-2 text-xs font-bold text-white">Create copy</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

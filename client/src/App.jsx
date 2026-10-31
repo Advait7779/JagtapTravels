@@ -796,6 +796,28 @@ export default function App() {
                     'Delete Invoice',
                   );
                 }}
+                onRepeatInvoice={(invoice, details) => {
+                  const matchedContract = corporateContracts.find(
+                    (contract) => String(contract.id) === String(invoice.contractId),
+                  );
+                  if (!matchedContract) {
+                    toast.error('The source corporate contract is no longer available.');
+                    return;
+                  }
+                  const monthNumber = Number(details.month.slice(5, 7));
+                  const period = new Date(Date.UTC(2020, monthNumber - 1, 1))
+                    .toLocaleString('en-US', { month: 'long', timeZone: 'UTC' }).toUpperCase();
+                  setCorporateInvoice({
+                    contract: matchedContract,
+                    month: details.month,
+                    isNonGst: Boolean(invoice.isNonGst || invoice.invoiceType === 'nongst'),
+                    copyData: {
+                      ...invoice,
+                      ...details,
+                      period,
+                    },
+                  });
+                }}
                 onGenerateNew={() => {
                   navigate('corporateContracts');
                   toast.info('Select a corporate contract and click "Tax Invoice" or "Non-GST Invoice" to create a new invoice.');
@@ -1301,6 +1323,7 @@ export default function App() {
           settings={settings}
           initialIsNonGst={Boolean(corporateInvoice.isNonGst)}
           initialInvoiceData={corporateInvoice.invoiceData || null}
+          initialCopyData={corporateInvoice.copyData || null}
           onInvoiceSaved={refresh}
         />
       )}

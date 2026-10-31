@@ -119,6 +119,7 @@ export default function CorporateInvoiceModal({
   settings = EMPTY_SETTINGS,
   initialIsNonGst = false,
   initialInvoiceData = null,
+  initialCopyData = null,
   onInvoiceSaved = null,
 }) {
   const printRef = useRef(null);
@@ -216,6 +217,7 @@ export default function CorporateInvoiceModal({
   const [isSaved, setIsSaved] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
   const [savedInvoiceId, setSavedInvoiceId] = useState(null);
+  const appliedCopyRef = useRef(null);
 
   // Populate from contract + trip logs (default initializer)
   const initializeFromContractAndLogs = useCallback(() => {
@@ -329,7 +331,7 @@ export default function CorporateInvoiceModal({
   }, [contract, selectedMonth, tripLogs, customers, vehicles, settings, initialIsNonGst]);
 
   // Apply saved invoice payload into state
-  const applySavedInvoiceData = useCallback((data) => {
+  const applySavedInvoiceData = useCallback((data, { asCopy = false } = {}) => {
     if (!data) return false;
     if (data.isNonGst !== undefined) {
       setIsNonGst(Boolean(data.isNonGst));
@@ -365,10 +367,14 @@ export default function CorporateInvoiceModal({
       );
     }
     if (Array.isArray(data.lineItems) && data.lineItems.length > 0) {
-      setLineItems(data.lineItems);
+      setLineItems(asCopy
+        ? data.lineItems.map((item) => ({ ...item, id: Date.now() + Math.random() }))
+        : data.lineItems);
     }
     if (Array.isArray(data.tollItems)) {
-      setTollItems(data.tollItems);
+      setTollItems(asCopy
+        ? data.tollItems.map((item) => ({ ...item, id: Date.now() + Math.random() }))
+        : data.tollItems);
     }
     if (data.gstRate !== undefined) setGstRate(Number(data.gstRate) || 0);
 
@@ -388,9 +394,9 @@ export default function CorporateInvoiceModal({
       setShowSignature(Boolean(data.showSignature));
     }
 
-    setIsSaved(true);
-    setSavedInvoiceId(data.id || null);
-    setSavedAt(data.updatedAt || new Date().toISOString());
+    setIsSaved(!asCopy);
+    setSavedInvoiceId(asCopy ? null : data.id || null);
+    setSavedAt(asCopy ? null : data.updatedAt || new Date().toISOString());
     return true;
   }, [settings]);
 
@@ -422,6 +428,15 @@ export default function CorporateInvoiceModal({
       return;
     }
 
+    if (initialCopyData) {
+      if (appliedCopyRef.current !== initialCopyData) {
+        applySavedInvoiceData(initialCopyData, { asCopy: true });
+        setActiveView('editor');
+        appliedCopyRef.current = initialCopyData;
+      }
+      return;
+    }
+
     setSavedInvoiceId(null);
     initializeFromContractAndLogs();
     setIsSaved(false);
@@ -444,7 +459,7 @@ export default function CorporateInvoiceModal({
     return () => {
       isCancelled = true;
     };
-  }, [contract, selectedMonth, isOpen, initialIsNonGst, initialInvoiceData, applySavedInvoiceData, initializeFromContractAndLogs]);
+  }, [contract, selectedMonth, isOpen, initialIsNonGst, initialInvoiceData, initialCopyData, applySavedInvoiceData, initializeFromContractAndLogs]);
 
   // Save current invoice changes to the authoritative server repository.
   const handleSaveInvoice = async () => {
