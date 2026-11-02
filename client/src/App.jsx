@@ -597,6 +597,24 @@ export default function App() {
     driverAdvances,
   };
 
+  const openSavedCorporateInvoice = (invoice, initialView = 'preview') => {
+    const matchedContract = corporateContracts.find(
+      (contract) => String(contract.id) === String(invoice.contractId),
+    ) || {
+      id: invoice.contractId || Date.now(),
+      companyName: invoice.partyName || 'Corporate Client',
+      vehicleName: invoice.vehicleType || 'Vehicle',
+      vehicleNumber: invoice.vehicleNumbers || '',
+    };
+    setCorporateInvoice({
+      contract: matchedContract,
+      month: invoice.month || '',
+      isNonGst: Boolean(invoice.isNonGst || invoice.invoiceType === 'nongst'),
+      invoiceData: invoice,
+      initialView,
+    });
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-['Plus_Jakarta_Sans',sans-serif]">
       {mobileOpen && (
@@ -773,22 +791,8 @@ export default function App() {
               <CorporateInvoiceTable
                 invoices={corporateInvoices}
                 contracts={corporateContracts}
-                onViewInvoice={(invoice) => {
-                  const matchedContract = corporateContracts.find(
-                    (c) => String(c.id) === String(invoice.contractId),
-                  ) || {
-                    id: invoice.contractId || Date.now(),
-                    companyName: invoice.partyName || 'Corporate Client',
-                    vehicleName: invoice.vehicleType || 'Vehicle',
-                    vehicleNumber: invoice.vehicleNumbers || '',
-                  };
-                  setCorporateInvoice({
-                    contract: matchedContract,
-                    month: invoice.month || '',
-                    isNonGst: Boolean(invoice.isNonGst || invoice.invoiceType === 'nongst'),
-                    invoiceData: invoice,
-                  });
-                }}
+                onViewInvoice={(invoice) => openSavedCorporateInvoice(invoice)}
+                onEditInvoice={(invoice) => openSavedCorporateInvoice(invoice, 'editor')}
                 onDeleteInvoice={(invoice) => {
                   remove(
                     'deleteCorporateInvoice',
@@ -1325,6 +1329,7 @@ export default function App() {
           settings={settings}
           initialIsNonGst={Boolean(corporateInvoice.isNonGst)}
           initialInvoiceData={corporateInvoice.invoiceData || null}
+          initialView={corporateInvoice.initialView || null}
           initialCopyData={corporateInvoice.copyData || null}
           onInvoiceSaved={refresh}
         />

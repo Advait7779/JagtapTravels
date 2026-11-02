@@ -6,6 +6,7 @@ import {
   Trash,
   CalendarBlank,
   Eye,
+  PencilSimple,
   Plus,
   ArrowsClockwise,
   Copy,
@@ -50,6 +51,7 @@ export default function CorporateInvoiceTable({
   invoices = [],
   contracts = [],
   onViewInvoice,
+  onEditInvoice,
   onDeleteInvoice,
   onGenerateNew,
   onRepeatInvoice,
@@ -282,7 +284,7 @@ export default function CorporateInvoiceTable({
                 <th className="py-3 px-3.5">Party / Client</th>
                 <th className="py-3 px-3.5">Particulars / Vehicles</th>
                 <th className="py-3 px-3.5 text-right">Amount</th>
-                <th className="py-3 px-3.5 text-center w-28">Actions</th>
+                <th className="py-3 px-3.5 text-center w-40">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -413,17 +415,28 @@ export default function CorporateInvoiceTable({
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 px-3.5 text-center">
+                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
                         <div className="inline-flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => onViewInvoice && onViewInvoice(inv)}
                             className="p-1.5 rounded text-navy-900 hover:bg-navy-50 hover:text-navy-950 transition-colors cursor-pointer"
-                            title="View / Edit Invoice"
-                            aria-label="View and edit corporate invoice"
+                            title="View Invoice"
+                            aria-label={`View corporate invoice ${inv.invoiceNo}`}
                           >
                             <Eye size={16} weight="bold" />
                           </button>
+                          {onEditInvoice && (
+                            <button
+                              type="button"
+                              onClick={() => onEditInvoice(inv)}
+                              className="p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                              title="Edit Invoice"
+                              aria-label={`Edit corporate invoice ${inv.invoiceNo}`}
+                            >
+                              <PencilSimple size={16} weight="bold" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => onViewInvoice && onViewInvoice(inv)}

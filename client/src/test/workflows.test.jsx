@@ -435,6 +435,45 @@ it('corporate invoice search accepts displayed, numeric and ISO dates', () => {
   expect(screen.getByText('CORP-002')).toBeTruthy();
   expect(screen.queryByText('CORP-001')).toBeNull();
 });
+it('opens saved corporate invoices separately for viewing and editing', () => {
+  const invoice = {
+    id: 'invoice-1', invoiceNo: '412', month: '2026-10',
+    partyName: 'Alpha Industries', lineItems: [{ particulars: 'Vehicle package' }],
+  };
+  const onViewInvoice = vi.fn();
+  const onEditInvoice = vi.fn();
+  render(<CorporateInvoiceTable invoices={[invoice]}
+    onViewInvoice={onViewInvoice} onEditInvoice={onEditInvoice} />);
+  fireEvent.click(screen.getByRole('button', { name: 'View corporate invoice 412' }));
+  expect(onViewInvoice).toHaveBeenCalledWith(invoice);
+  expect(onEditInvoice).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit corporate invoice 412' }));
+  expect(onEditInvoice).toHaveBeenCalledWith(invoice);
+});
+it.each([['GST', false], ['Non-GST', true]])('updates the same saved %s invoice from Edit', async (_label, isNonGst) => {
+  const save = vi.spyOn(api, 'saveCorporateInvoice').mockResolvedValue({ id: 'invoice-1' });
+  const onInvoiceSaved = vi.fn();
+  const invoice = {
+    id: 'invoice-1', contractId: 'contract-1', month: '2026-10',
+    invoiceNo: '412', invoiceDate: '2026-10-31', period: 'OCTOBER',
+    isNonGst, invoiceType: isNonGst ? 'nongst' : 'gst', gstRate: isNonGst ? 0 : 9,
+    partyName: 'Alpha Industries', poNo: 'OLD-PO',
+    lineItems: [{ id: 'line-1', particulars: 'Vehicle package', packageAmount: 50000 }],
+    tollItems: [],
+  };
+  render(<CorporateInvoiceModal isOpen onClose={vi.fn()}
+    contract={{ id: 'contract-1', companyName: 'Alpha Industries' }}
+    selectedMonth="2026-10" initialIsNonGst={isNonGst}
+    initialInvoiceData={invoice} initialView="editor" onInvoiceSaved={onInvoiceSaved} />);
+  expect(screen.getByLabelText('Invoice No').value).toBe('412');
+  fireEvent.change(screen.getByLabelText('PO No'), { target: { value: 'NEW-PO' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Invoice & View Preview' }));
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+  expect(save).toHaveBeenCalledWith('contract-1', expect.objectContaining({
+    id: 'invoice-1', invoiceNo: '412', month: '2026-10', poNo: 'NEW-PO', isNonGst,
+  }));
+  await waitFor(() => expect(onInvoiceSaved).toHaveBeenCalled());
+});
 it.each([['GST', false], ['Non-GST', true]])('repeats a %s invoice into a new month without changing the source', (_label, isNonGst) => {
   const source = {
     id: 'invoice-1', contractId: 'contract-1', invoiceNo: '404', month: '2026-10',

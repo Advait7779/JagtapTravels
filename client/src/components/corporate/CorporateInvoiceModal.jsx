@@ -119,13 +119,14 @@ export default function CorporateInvoiceModal({
   settings = EMPTY_SETTINGS,
   initialIsNonGst = false,
   initialInvoiceData = null,
+  initialView = null,
   initialCopyData = null,
   onInvoiceSaved = null,
 }) {
   const printRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
-  const [activeView, setActiveView] = useState('editor'); // 'editor' | 'preview'
+  const [activeView, setActiveView] = useState(initialView || (initialInvoiceData ? 'preview' : 'editor')); // 'editor' | 'preview'
 
   // Invoice format state
   const [isNonGst, setIsNonGst] = useState(Boolean(initialIsNonGst));
@@ -422,7 +423,7 @@ export default function CorporateInvoiceModal({
     // 0. If direct invoice record passed from Corporate Invoices table, apply immediately
     if (initialInvoiceData) {
       applySavedInvoiceData(initialInvoiceData);
-      setActiveView('preview');
+      setActiveView(initialView || 'preview');
       return;
     }
 
@@ -457,7 +458,7 @@ export default function CorporateInvoiceModal({
     return () => {
       isCancelled = true;
     };
-  }, [contract, selectedMonth, isOpen, initialIsNonGst, initialInvoiceData, initialCopyData, applySavedInvoiceData, initializeFromContractAndLogs]);
+  }, [contract, selectedMonth, isOpen, initialIsNonGst, initialInvoiceData, initialView, initialCopyData, applySavedInvoiceData, initializeFromContractAndLogs]);
 
   // Save current invoice changes to the authoritative server repository.
   const handleSaveInvoice = async () => {
