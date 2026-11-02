@@ -2,11 +2,11 @@ import React, { useState, useMemo } from 'react';
 import {
   MagnifyingGlass,
   Receipt,
-  Printer,
   Trash,
   CalendarBlank,
   Eye,
   PencilSimple,
+  CurrencyInr,
   Plus,
   ArrowsClockwise,
   Copy,
@@ -15,6 +15,7 @@ import {
 import { formatINR, formatDate, localDate } from '../../utils/formatters';
 import ThemedSelect from '../ThemedSelect';
 import { usePagination, PageSizeSelector, TablePaginationFooter } from '../common/Pagination';
+import CorporateInvoicePaymentModal from './CorporateInvoicePaymentModal';
 
 const searchableDate = (value) => {
   const iso = String(value || '').slice(0, 10);
@@ -47,11 +48,49 @@ const nextInvoiceNumber = (source, invoices) => {
   return candidate;
 };
 
+const companyNameKey = (value) => String(value || '')
+  .trim()
+  .toUpperCase()
+  .replace(/\bPRIVATE\b/g, 'PVT')
+  .replace(/\bLIMITED\b/g, 'LTD')
+  .replace(/[^A-Z0-9]/g, '');
+
+const invoiceTotalsByCompany = (invoices, contracts) => {
+  const contractById = new Map(contracts.map((contract) => [String(contract.id), contract]));
+  const gstByContractId = new Map();
+  const gstByCompanyId = new Map();
+  for (const invoice of invoices) {
+    const gstin = String(invoice.partyGstin || '').trim().toUpperCase();
+    if (!gstin) continue;
+    const contractId = String(invoice.contractId || '');
+    const companyId = contractById.get(contractId)?.companyId;
+    if (contractId) gstByContractId.set(contractId, gstin);
+    if (companyId) gstByCompanyId.set(String(companyId), gstin);
+  }
+
+  const totals = new Map();
+  for (const invoice of invoices) {
+    const contractId = String(invoice.contractId || '');
+    const companyId = contractById.get(contractId)?.companyId;
+    const gstin = String(invoice.partyGstin || '').trim().toUpperCase()
+      || gstByContractId.get(contractId)
+      || (companyId && gstByCompanyId.get(String(companyId)));
+    const name = String(invoice.partyName || contractById.get(contractId)?.companyName || 'Corporate Client').trim();
+    const key = gstin ? `gst:${gstin}` : `name:${companyNameKey(name) || companyId || contractId}`;
+    const amount = Number(invoice.grandTotal ?? invoice.totalAmount ?? 0);
+    const existing = totals.get(key) || { key, name, cents: 0 };
+    existing.cents += Number.isFinite(amount) ? Math.round(amount * 100) : 0;
+    totals.set(key, existing);
+  }
+  return [...totals.values()].sort((a, b) => a.name.localeCompare(b.name));
+};
+
 export default function CorporateInvoiceTable({
   invoices = [],
   contracts = [],
   onViewInvoice,
   onEditInvoice,
+  onRecordPayment,
   onDeleteInvoice,
   onGenerateNew,
   onRepeatInvoice,
@@ -65,6 +104,8 @@ export default function CorporateInvoiceTable({
   const [repeatDate, setRepeatDate] = useState('');
   const [repeatNumber, setRepeatNumber] = useState('');
   const [repeatError, setRepeatError] = useState('');
+  const [paymentInvoiceId, setPaymentInvoiceId] = useState(null);
+  const paymentInvoice = invoices.find((invoice) => String(invoice.id) === String(paymentInvoiceId));
 
   const startRepeat = (invoice) => {
     const month = nextMonth(invoice.month);
@@ -167,6 +208,11 @@ export default function CorporateInvoiceTable({
       );
     });
   }, [invoices, searchTerm, dateFilter, typeFilter]);
+
+  const companyTotals = useMemo(
+    () => invoiceTotalsByCompany(invoices, contracts),
+    [invoices, contracts],
+  );
 
   const {
     currentPage,
@@ -271,6 +317,20 @@ export default function CorporateInvoiceTable({
           )}
         </div>
       </div>
+
+      {companyTotals.length > 0 && (
+        <section aria-label="Corporate invoice totals" className="bg-white rounded-md border border-slate-200 shadow-xs p-3.5 sm:p-4">
+          <h2 className="text-xs font-bold text-slate-700 mb-3">Total amount by company</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+            {companyTotals.map(({ key, name, cents }) => (
+              <div key={key} role="group" aria-label={`${name} total amount`} className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3.5 py-3">
+                <span className="min-w-0 truncate text-xs font-semibold text-slate-700" title={name}>{name}</span>
+                <strong className="shrink-0 text-sm font-bold text-navy-950">{formatINR(cents / 100)}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Table Card */}
       <div className="bg-white rounded-md border border-slate-200 shadow-xs overflow-hidden">
@@ -437,15 +497,17 @@ export default function CorporateInvoiceTable({
                               <PencilSimple size={16} weight="bold" />
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => onViewInvoice && onViewInvoice(inv)}
-                            className="p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-                            title="Print / Save PDF"
-                            aria-label="Print or export invoice to PDF"
-                          >
-                            <Printer size={16} weight="bold" />
-                          </button>
+                          {onRecordPayment && (
+                            <button
+                              type="button"
+                              onClick={() => setPaymentInvoiceId(inv.id)}
+                              className="p-1.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                              title="Payment record"
+                              aria-label={`Payment record for invoice ${inv.invoiceNo}`}
+                            >
+                              <CurrencyInr size={16} weight="bold" />
+                            </button>
+                          )}
                           {onRepeatInvoice && (
                             <button
                               type="button"
@@ -525,6 +587,13 @@ export default function CorporateInvoiceTable({
             </form>
           </div>
         </div>
+      )}
+      {paymentInvoice && onRecordPayment && (
+        <CorporateInvoicePaymentModal
+          invoice={paymentInvoice}
+          onClose={() => setPaymentInvoiceId(null)}
+          onSave={onRecordPayment}
+        />
       )}
     </div>
   );

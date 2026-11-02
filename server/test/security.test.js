@@ -439,7 +439,7 @@ test('production configuration rejects missing or weak secrets', () => {
   );
 });
 
-test('corporate invoices are validated, recalculated, uniquely stored and safely deleted', async (t) => {
+test('corporate invoices are validated, paid, recalculated, uniquely stored and safely deleted', async (t) => {
   const { app, repo } = await environment(t);
   const { agent, csrf } = await setupAdmin(app);
   await repo.change((data) => {
@@ -505,6 +505,20 @@ test('corporate invoices are validated, recalculated, uniquely stored and safely
   assert.equal((await agent.get('/api/corporate-invoices').expect(200)).body.length, 1);
   await agent.delete('/api/corporate-contracts/contract-a').set('X-CSRF-Token', csrf).expect(409);
 
+  const firstPayment = { requestId: 'payment-1', amount: 1000, date: '2026-10-31' };
+  const paid = await agent.post(`/api/corporate-invoices/${created.body.id}/payments`)
+    .set('X-CSRF-Token', csrf).send(firstPayment).expect(201);
+  assert.equal(paid.body.payments.length, 1);
+  assert.equal(paid.body.payments[0].tdsAmount, 10);
+  const retried = await agent.post(`/api/corporate-invoices/${created.body.id}/payments`)
+    .set('X-CSRF-Token', csrf).send(firstPayment).expect(200);
+  assert.equal(retried.body.payments.length, 1);
+  const aboveBalance = await agent.post(`/api/corporate-invoices/${created.body.id}/payments`)
+    .set('X-CSRF-Token', csrf).send({ requestId: 'payment-2', amount: 100000, date: '2026-11-01' }).expect(201);
+  assert.equal(aboveBalance.body.payments[1].tdsAmount, 1000);
+  await agent.post(`/api/corporate-invoices/${created.body.id}/payments`)
+    .set('X-CSRF-Token', csrf).send({ requestId: 'payment-1', amount: 900, date: '2026-10-31' }).expect(409);
+
   await agent
     .post('/api/corporate-contracts/contract-b/saved-invoice')
     .set('X-CSRF-Token', csrf)
@@ -523,6 +537,17 @@ test('corporate invoices are validated, recalculated, uniquely stored and safely
     .expect(200);
   assert.equal(updated.body.id, created.body.id);
   assert.equal(updated.body.partyAddress, 'Updated Pune address');
+  assert.equal(updated.body.payments.length, 2);
+  const additional = await agent.post(`/api/corporate-invoices/${created.body.id}/payments`)
+    .set('X-CSRF-Token', csrf).send({ requestId: 'payment-3', amount: 416, date: '2026-11-01' }).expect(201);
+  assert.deepEqual(additional.body.payments.map((payment) => payment.tdsAmount), [10, 1000, 4.16]);
+  await agent.post(`/api/corporate-invoices/${created.body.id}/payments`)
+    .set('X-CSRF-Token', csrf).send({ requestId: 'payment-4', amount: 1, date: '2026-11-02' }).expect(201);
+  await agent.post('/api/corporate-contracts/contract-a/saved-invoice')
+    .set('X-CSRF-Token', csrf)
+    .send(payload({ id: created.body.id, lineItems: [{ particulars: 'Reduced fare', packageAmount: 100 }] }))
+    .expect(200);
+  assert.equal((await agent.get('/api/corporate-invoices').expect(200)).body[0].payments.length, 4);
 
   await repo.change((data) => {
     data.corporateContracts.push({

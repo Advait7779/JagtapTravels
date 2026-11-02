@@ -435,6 +435,39 @@ it('corporate invoice search accepts displayed, numeric and ISO dates', () => {
   expect(screen.getByText('CORP-002')).toBeTruthy();
   expect(screen.queryByText('CORP-001')).toBeNull();
 });
+it('shows cumulative corporate invoice amounts separately by company and updates them with saved records', () => {
+  const contracts = [
+    { id: 'henkel-1', companyId: 'henkel' },
+    { id: 'henkel-2', companyId: 'henkel' },
+  ];
+  const invoices = [
+    { id: '1', contractId: 'henkel-1', invoiceNo: '404', month: '2026-10',
+      partyName: 'Henkel Adhesives Pvt Ltd', partyGstin: '27ABCDE1234F1Z5', grandTotal: 100 },
+    { id: '2', contractId: 'henkel-2', invoiceNo: '405', month: '2026-10',
+      partyName: 'Henkel Adhesives Private Limited', partyGstin: '27ABCDE1234F1Z5', grandTotal: 200 },
+    { id: '3', invoiceNo: '406', month: '2026-10',
+      partyName: 'Geolife India Pvt Ltd', partyGstin: '27ABCDE1234F1Z6', grandTotal: 300 },
+  ];
+  const { rerender } = render(<CorporateInvoiceTable invoices={invoices} contracts={contracts} />);
+  const totals = screen.getByRole('region', { name: 'Corporate invoice totals' });
+  const henkel = within(totals).getByRole('group', { name: 'Henkel Adhesives Pvt Ltd total amount' });
+  const geolife = within(totals).getByRole('group', { name: 'Geolife India Pvt Ltd total amount' });
+  expect(within(henkel).getByText('₹300.00')).toBeTruthy();
+  expect(within(geolife).getByText('₹300.00')).toBeTruthy();
+
+  const added = { id: '4', contractId: 'henkel-2', invoiceNo: '407', month: '2026-11',
+    partyName: 'Henkel Adhesives Pvt Ltd', grandTotal: 50 };
+  rerender(<CorporateInvoiceTable invoices={[...invoices, added]} contracts={contracts} />);
+  expect(within(henkel).getByText('₹350.00')).toBeTruthy();
+  fireEvent.change(screen.getByPlaceholderText('Filter Date (YYYY-MM)'), { target: { value: '2026-11' } });
+  expect(within(henkel).getByText('₹350.00')).toBeTruthy();
+  expect(within(geolife).getByText('₹300.00')).toBeTruthy();
+
+  rerender(<CorporateInvoiceTable invoices={[...invoices, { ...added, grandTotal: 75 }]} contracts={contracts} />);
+  expect(within(henkel).getByText('₹375.00')).toBeTruthy();
+  rerender(<CorporateInvoiceTable invoices={[invoices[0], invoices[2], { ...added, grandTotal: 75 }]} contracts={contracts} />);
+  expect(within(henkel).getByText('₹175.00')).toBeTruthy();
+});
 it('opens saved corporate invoices separately for viewing and editing', () => {
   const invoice = {
     id: 'invoice-1', invoiceNo: '412', month: '2026-10',
@@ -449,6 +482,38 @@ it('opens saved corporate invoices separately for viewing and editing', () => {
   expect(onEditInvoice).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Edit corporate invoice 412' }));
   expect(onEditInvoice).toHaveBeenCalledWith(invoice);
+});
+it('records a partial corporate invoice payment with only the deducted TDS shown', async () => {
+  const invoice = { id: 'invoice-408', invoiceNo: '408', partyName: 'Henkel', grandTotal: 461144 };
+  const onRecordPayment = vi.fn().mockResolvedValue({ ...invoice, payments: [] });
+  const { rerender } = render(<CorporateInvoiceTable invoices={[invoice]} onRecordPayment={onRecordPayment} />);
+  expect(screen.queryByRole('button', { name: 'Print or export invoice to PDF' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Payment record for invoice 408' }));
+  const dialog = screen.getByRole('dialog', { name: 'Payments for corporate invoice 408' });
+  const amount = within(dialog).getByLabelText('Payment amount before TDS');
+  expect(amount.hasAttribute('max')).toBe(false);
+  fireEvent.change(amount, { target: { value: '100000' } });
+  expect(within(dialog).getByText('TDS deducted (1%): ₹1,000.00')).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Save payment' }));
+  await waitFor(() => expect(onRecordPayment).toHaveBeenCalledWith('invoice-408', expect.objectContaining({ amount: '100000' })));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Payments for corporate invoice 408' })).toBeNull());
+
+  rerender(<CorporateInvoiceTable invoices={[{ ...invoice, payments: [
+    { id: 'payment-1', amount: 100000, tdsAmount: 1000, date: '2026-11-02' },
+  ] }]} onRecordPayment={onRecordPayment} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Payment record for invoice 408' }));
+  const history = screen.getByRole('dialog', { name: 'Payments for corporate invoice 408' });
+  expect(within(history).getByText('TDS deducted: ₹1,000.00')).toBeTruthy();
+  expect(within(history).getByText('₹3,61,144.00')).toBeTruthy();
+});
+it('keeps the corporate payment form available after the invoice amount is covered', () => {
+  const invoice = { id: 'invoice-1', invoiceNo: '1', grandTotal: 53100,
+    payments: [{ id: 'paid-1', amount: 100000, tdsAmount: 1000, date: '2026-11-02' }] };
+  render(<CorporateInvoiceTable invoices={[invoice]} onRecordPayment={vi.fn()} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Payment record for invoice 1' }));
+  const dialog = screen.getByRole('dialog', { name: 'Payments for corporate invoice 1' });
+  expect(within(dialog).getByRole('button', { name: 'Save payment' })).toBeTruthy();
+  expect(within(dialog).getByLabelText('Payment amount before TDS').hasAttribute('max')).toBe(false);
 });
 it.each([['GST', false], ['Non-GST', true]])('updates the same saved %s invoice from Edit', async (_label, isNonGst) => {
   const save = vi.spyOn(api, 'saveCorporateInvoice').mockResolvedValue({ id: 'invoice-1' });

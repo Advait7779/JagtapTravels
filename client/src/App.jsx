@@ -793,12 +793,18 @@ export default function App() {
                 contracts={corporateContracts}
                 onViewInvoice={(invoice) => openSavedCorporateInvoice(invoice)}
                 onEditInvoice={(invoice) => openSavedCorporateInvoice(invoice, 'editor')}
+                onRecordPayment={async (invoiceId, payment) => {
+                  const updated = await api.addCorporateInvoicePayment(invoiceId, payment);
+                  await refresh();
+                  toast.success('Corporate invoice payment recorded.');
+                  return updated;
+                }}
                 onDeleteInvoice={(invoice) => {
                   remove(
                     'deleteCorporateInvoice',
                     invoice.id,
                     invoice.invoiceNo || 'Corporate Invoice',
-                    `Delete corporate invoice ${invoice.invoiceNo || '#' + invoice.id}? This will remove it from saved corporate invoices.`,
+                    `Delete corporate invoice ${invoice.invoiceNo || '#' + invoice.id}? Its payment records will also be removed.`,
                     'Delete Invoice',
                   );
                 }}

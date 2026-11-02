@@ -6,7 +6,7 @@ const crypto = require('node:crypto');
 const multer = require('multer');
 const { authRoutes } = require('./auth');
 const { auditMiddleware } = require('./audit');
-const { createService, HttpError, text } = require('./domain');
+const { createService, HttpError, text, number, date } = require('./domain');
 const { identifier, invoiceMonth, validateCorporateInvoice } = require('./corporate-invoices');
 const { createCorporateQuotationService } = require('./corporate-quotations');
 const { isAdministrator, quotationCompany, staffCanAccess, redactStaffRecord } = require('./access');
@@ -401,9 +401,11 @@ function createApp(repo, options = {}) {
             'An invoice of this type already exists for this contract and month. Open it from Corporate Invoices to edit it.',
           );
         const existing = idx >= 0 ? d.corporateInvoices[idx] : null;
+        const payments = Array.isArray(existing?.payments) ? existing.payments : [];
         const now = new Date().toISOString();
         const record = {
           ...validated,
+          payments,
           id: existing?.id || crypto.randomUUID(),
           createdAt: existing?.createdAt || now,
           updatedAt: now,
@@ -432,6 +434,41 @@ function createApp(repo, options = {}) {
           Date.parse(a.updatedAt || a.createdAt || 0),
       );
       res.json(list);
+    }),
+  );
+
+  app.post(
+    '/api/corporate-invoices/:id/payments',
+    wrap(async (req, res) => {
+      const invoiceId = String(req.params.id);
+      const requestId = text(req.body.requestId, 'Payment request ID', true, 100);
+      const amount = number(req.body.amount, 'Payment amount');
+      const paymentDate = date(req.body.date, 'Payment date', true);
+      if (amount <= 0) throw new HttpError(400, 'Payment amount must be greater than zero.');
+      let created = false;
+      const invoice = await repo.change((data) => {
+        const saved = (data.corporateInvoices || []).find((item) => String(item.id) === invoiceId);
+        if (!saved) throw new HttpError(404, 'Corporate invoice not found.');
+        saved.payments = Array.isArray(saved.payments) ? saved.payments : [];
+        const duplicate = saved.payments.find((payment) => payment.requestId === requestId);
+        if (duplicate) {
+          if (duplicate.amount !== amount || duplicate.date !== paymentDate)
+            throw new HttpError(409, 'Payment request already used with different details.');
+          return saved;
+        }
+        const amountCents = Math.round(amount * 100);
+        saved.payments.push({
+          id: crypto.randomUUID(),
+          requestId,
+          date: paymentDate,
+          amount,
+          tdsAmount: Math.round(amountCents * 0.01) / 100,
+          createdAt: new Date().toISOString(),
+        });
+        created = true;
+        return saved;
+      });
+      res.status(created ? 201 : 200).json(invoice);
     }),
   );
 
