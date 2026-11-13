@@ -73,8 +73,8 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
                 <tr className="bg-[#D4B992] text-[#3F2B1D]">
                   <th className="p-2 font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Type of Vehicle</th>
                   <th className="p-2 text-center font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Days</th>
-                  <th className="p-2 text-center font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Per Day Package km</th>
-                  <th className="p-2 text-right font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Per Day Package Amount</th>
+                  <th className="p-2 text-center font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Package KM</th>
+                  <th className="p-2 text-right font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Package Amount</th>
                   <th className="p-2 text-right font-bold bg-[#D4B992] text-[#3F2B1D]" style={{ backgroundColor: '#D4B992', color: '#3F2B1D' }}>Extra km Rate</th>
                 </tr>
               </thead>
@@ -96,12 +96,12 @@ export default function CorporateQuotationPrintView({ quotation, onClose, settin
             {Number(quote.estimatedExcessTotal) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>Estimated excess KM</span><strong>{formatINR(quote.estimatedExcessTotal)}</strong></div>}
             {Number(quote.estimatedOtherCharges) > 0 && <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>Estimated other charges</span><strong>{formatINR(quote.estimatedOtherCharges)}</strong></div>}
             {(Number(quote.estimatedExcessTotal) > 0 || Number(quote.estimatedOtherCharges) > 0) && <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>Subtotal</span><strong>{formatINR(quote.estimatedSubtotal)}</strong></div>}
-            <div className="flex justify-between border-b border-[#C29F75] p-2" style={{ borderBottom: '1px solid #C29F75' }}><span>{quote.taxMode === 'gst' ? `GST (${quote.gstRate}%)` : 'Non-GST'}</span><strong>{formatINR(quote.estimatedTax)}</strong></div>
-            <div className="flex justify-between bg-[#CCA474] p-2 text-sm font-black text-[#3F2B1D]" style={{ backgroundColor: '#CCA474', color: '#3F2B1D' }}><span>TOTAL AMOUNT</span><span>{formatINR(quote.estimatedTotal)}</span></div>
+            <div className="flex justify-between bg-[#CCA474] p-2 text-sm font-black text-[#3F2B1D]" style={{ backgroundColor: '#CCA474', color: '#3F2B1D' }}><span>TOTAL AMOUNT</span><span>{formatINR(Number(quote.estimatedSubtotal) > 0 ? quote.estimatedSubtotal : (Number(dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal) > 0 ? (dailyPricing ? quote.fixedDailyTotal : quote.fixedMonthlyTotal) : quote.estimatedTotal))}</span></div>
           </div>
           <ul className="mt-28 list-disc space-y-1.5 pl-5 text-xs text-[#594838] font-medium">
             <li>KM calculated from Hadapsar to Hadapsar.</li>
             <li>Toll, parking and RTO permit charges extra.</li>
+            <li>GST CHARGES EXTRA {quote.gstRate || 18}% &#123;CGST - {(quote.gstRate || 18) / 2}% , SGST - {(quote.gstRate || 18) / 2}%&#125;</li>
           </ul>
           <div className="mt-20 ml-auto flex w-full max-w-sm justify-end">
             <div className="relative h-32 w-48">

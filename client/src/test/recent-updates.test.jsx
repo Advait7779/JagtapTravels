@@ -42,8 +42,8 @@ it('shows the day and per-day columns with the new brand in a corporate quotatio
   };
   const { container, rerender } = render(<CorporateQuotationPrintView quotation={quotation}
     onClose={vi.fn()} />);
-  expect(screen.getByRole('columnheader', { name: 'Per Day Package km' })).toBeTruthy();
-  expect(screen.getByRole('columnheader', { name: 'Per Day Package Amount' })).toBeTruthy();
+  expect(screen.getByRole('columnheader', { name: 'Package KM' })).toBeTruthy();
+  expect(screen.getByRole('columnheader', { name: 'Package Amount' })).toBeTruthy();
   expect(screen.getByRole('columnheader', { name: 'Days' })).toBeTruthy();
   expect(screen.getByRole('cell', { name: '26' })).toBeTruthy();
   expect(screen.queryByRole('columnheader', { name: /month/i })).toBeNull();

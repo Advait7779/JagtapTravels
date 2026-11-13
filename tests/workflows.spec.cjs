@@ -127,8 +127,8 @@ test('public site, setup, vehicle service, documents, billing and mobile navigat
   await expect(corporatePreview.getByRole('img', { name: 'Corporate quotations stamp' })).toBeVisible();
   await expect(corporatePreview.getByText('Date: 10 Oct 2026')).toBeVisible();
   await expect(corporatePreview.getByText('₹45,000.00').last()).toBeVisible();
-  await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package km' })).toBeVisible();
-  await expect(corporatePreview.getByRole('columnheader', { name: 'Per Day Package Amount' })).toBeVisible();
+  await expect(corporatePreview.getByRole('columnheader', { name: 'Package KM' })).toBeVisible();
+  await expect(corporatePreview.getByRole('columnheader', { name: 'Package Amount' })).toBeVisible();
   await expect(corporatePreview.getByRole('columnheader', { name: 'Days' })).toBeVisible();
   await expect(corporatePreview.getByRole('cell', { name: '26' })).toBeVisible();
   await expect(corporatePreview.getByText('1day charges')).toBeVisible();

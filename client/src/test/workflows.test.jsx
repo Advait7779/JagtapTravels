@@ -136,7 +136,7 @@ it('shows quote editing and print without contract or approval actions', () => {
   expect(screen.queryByRole('button', { name: 'Create contracts' })).toBeNull();
   render(<CorporateQuotationPrintView quotation={quote} settings={{ companyName: 'Jagtap Travels' }} onClose={vi.fn()} />);
   const preview = screen.getByRole('dialog', { name: 'Corporate quotation preview' });
-  expect(within(preview).getByText('₹90,152.00')).toBeTruthy();
+  expect(within(preview).getAllByText('₹76,400.00').length).toBeGreaterThanOrEqual(1);
   expect(within(preview).queryByLabelText('Quotation revision')).toBeNull();
 });
 it('shows a red dustbin only for staff and deletes the selected staff account', async () => {
